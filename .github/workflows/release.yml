@@ -8,9 +8,6 @@ on:
   # Manual trigger — builds all platforms (macOS + Windows)
   workflow_dispatch:
 
-env:
-  ROSCO_VERSION: "2.10.1"
-
 jobs:
   build:
     strategy:
@@ -104,35 +101,10 @@ jobs:
             chmod +x "$dst/openfast" "$dst/turbsim"
           fi
 
-      # ── ROSCO libdiscon via conda-forge ────────────────────────────────────────
-      # ROSCO does not ship pre-built binaries on GitHub releases.
-      # conda-forge is the official distribution channel for all platforms.
-      - name: Install Miniconda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-activate-base: true
-          activate-environment: ""
-
-      - name: Get libdiscon from conda-forge
-        shell: bash -l {0}
-        run: |
-          conda install -c conda-forge rosco=${{ env.ROSCO_VERSION }} -y --quiet
-          # Find the compiled library in the conda environment
-          lib="${{ matrix.libdiscon-name }}"
-          found=$(find "$CONDA_PREFIX" -name "$lib" 2>/dev/null | head -1)
-          if [[ -z "$found" ]]; then
-            # Fallback search path on Windows (CONDA env may be in different location)
-            found=$(find "$CONDA" -name "$lib" 2>/dev/null | head -1)
-          fi
-          echo "Found libdiscon at: $found"
-          # Copy into every turbine template model directory
-          find src-tauri/resources/turbines -name "libdiscon.dylib" -o \
-               -name "libdiscon.dll" -o -name "libdiscon.so" | \
-          xargs -I{} dirname {} | sort -u | while read dir; do
-            cp "$found" "$dir/$lib"
-          done
-
-      # Remove libdiscon variants not needed for this platform (keeps bundle lean)
+      # ── Strip unused libdiscon variants ───────────────────────────────────────
+      # All three platform variants (dylib/dll/so) are committed in each turbine
+      # template directory. Remove the ones not needed for this platform so they
+      # don't bloat the bundle. No conda/pip required.
       - name: Remove unused libdiscon variants
         shell: bash
         run: |
