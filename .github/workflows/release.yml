@@ -85,6 +85,7 @@ jobs:
           pip install pyinstaller
           pyinstaller \
             --onefile \
+            --noconsole \
             --name fws_io \
             --distpath src-tauri/sidecar \
             src-tauri/sidecar/fws_io.py

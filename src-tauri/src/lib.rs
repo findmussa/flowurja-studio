@@ -2,6 +2,16 @@ use tauri::Manager;
 #[cfg(target_os = "macos")]
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 
+// On Windows, child processes inherit the parent's console and show a black
+// window. Setting CREATE_NO_WINDOW suppresses it for all spawned processes.
+#[cfg(windows)]
+fn no_window(cmd: &mut std::process::Command) -> &mut std::process::Command {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000) // CREATE_NO_WINDOW
+}
+#[cfg(not(windows))]
+fn no_window(cmd: &mut std::process::Command) -> &mut std::process::Command { cmd }
+
 // ── macOS Cmd+Q interception ──────────────────────────────────────────────────
 //
 // Cmd+Q calls NSApplication.terminate: which goes through tao's hard-coded
@@ -292,7 +302,9 @@ async fn write_text_file(path: String, content: String) -> Result<(), String> {
 #[tauri::command]
 async fn query_binary(binary: String, args: Vec<String>) -> Result<String, String> {
     tokio::task::spawn_blocking(move || {
-        let out = std::process::Command::new(&binary)
+        let mut c = std::process::Command::new(&binary);
+        no_window(&mut c);
+        let out = c
             .args(&args)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -329,6 +341,7 @@ async fn run_binary(
         });
 
     let mut cmd = std::process::Command::new(&binary);
+    no_window(&mut cmd);
     cmd.args(&args)
        .stdout(std::process::Stdio::piped())
        .stderr(std::process::Stdio::piped());
@@ -498,6 +511,7 @@ async fn run_binary_tagged(
     });
 
     let mut cmd = std::process::Command::new(&binary);
+    no_window(&mut cmd);
     cmd.args(&args)
        .stdout(std::process::Stdio::piped())
        .stderr(std::process::Stdio::piped());
@@ -863,6 +877,7 @@ type SidecarState = std::sync::Arc<std::sync::Mutex<Option<Sidecar>>>;
 fn spawn_sidecar(exe: &str, script: &str) -> Result<Sidecar, String> {
     let mut cmd = std::process::Command::new(exe);
     if !script.is_empty() { cmd.arg(script); }
+    no_window(&mut cmd);
     let mut child = cmd
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -2038,16 +2053,16 @@ pub fn run() {
             #[cfg(not(target_os = "macos"))]
             let builder = builder.decorations(true);
 
-            let window = builder.build().unwrap();
+            let _window = builder.build().unwrap();
 
             #[cfg(target_os = "macos")]
             {
-                apply_vibrancy(&window, NSVisualEffectMaterial::Sidebar, None, Some(20.0))
+                apply_vibrancy(&_window, NSVisualEffectMaterial::Sidebar, None, Some(20.0))
                     .expect("vibrancy failed");
 
                 use objc::{msg_send, sel, sel_impl};
                 use objc::runtime::Object;
-                let ns_win = window.ns_window().unwrap() as *mut Object;
+                let ns_win = _window.ns_window().unwrap() as *mut Object;
                 unsafe {
                     // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7
                     let _: () = msg_send![ns_win, setCollectionBehavior: 128usize];
