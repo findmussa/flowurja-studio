@@ -25,7 +25,8 @@
     },
     "windows": {
       "nsis": {
-        "installerHooks": "nsis/license_hook.nsh"
+        "installerIcon":   "icons/icon.ico",
+        "installerHooks":  "nsis/license_hook.nsh"
       }
     },
     "resources": {
