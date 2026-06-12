@@ -15,14 +15,6 @@
   },
   "bundle": {
     "active": true,
-    "macOS": {
-      "license": "../installer-license.txt"
-    },
-    "windows": {
-      "nsis": {
-        "license": "../installer-license.txt"
-      }
-    },
     "resources": {
       "sidecar/*": "sidecar",
       "resources/bin/*": "bin",
