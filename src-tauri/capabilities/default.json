@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema/acl/capability.json",
   "identifier": "default",
-  "description": "Nurja default capabilities",
-  "platforms": ["macOS"],
+  "description": "FlowWake Studio default capabilities",
+  "platforms": ["macOS", "windows", "linux"],
   "windows": ["main"],
   "permissions": [
     "core:default",
