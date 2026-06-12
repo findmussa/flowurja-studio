@@ -8,6 +8,9 @@ on:
   # Manual trigger — builds all platforms (macOS + Windows)
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -124,8 +127,10 @@ jobs:
           # APPLE_PASSWORD:             ${{ secrets.APPLE_PASSWORD }}
           # APPLE_TEAM_ID:              ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tagName:     ${{ github.ref_name }}
-          releaseName: 'FlowWake Studio ${{ github.ref_name }}'
+          # Only create/update a GitHub Release on tag pushes (v*).
+          # On workflow_dispatch, tagName is empty so tauri-action just builds.
+          tagName:     ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/') && format('FlowWake Studio {0}', github.ref_name) || '' }}
           releaseBody: |
             ## FlowWake Studio ${{ github.ref_name }}
 
