@@ -15,6 +15,14 @@
   },
   "bundle": {
     "active": true,
+    "macOS": {
+      "dmg": {
+        "background": "assets/dmg_background.tiff",
+        "windowSize":  { "width": 660, "height": 400 },
+        "appPosition": { "x": 170, "y": 160 },
+        "applicationFolderPosition": { "x": 490, "y": 160 }
+      }
+    },
     "windows": {
       "nsis": {
         "installerHooks": "nsis/license_hook.nsh"
