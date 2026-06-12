@@ -1,15 +1,17 @@
 name: Release
 
 on:
-  # Tag push triggers a full release draft (all platforms)
   push:
     tags:
       - 'v*'
-  # Manual trigger — builds all platforms (macOS + Windows)
   workflow_dispatch:
 
 permissions:
   contents: write
+
+# Opt into Node.js 24 early — Actions will force this from 16 Jun 2026.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -21,26 +23,13 @@ jobs:
             target:   aarch64-apple-darwin
             os-dir:   macos
             label:    macOS-arm64
-            libdiscon-name: libdiscon.dylib
             libdiscon-keep: "*.dylib"
 
           - platform: windows-latest
             target:   x86_64-pc-windows-msvc
             os-dir:   windows
             label:    Windows-x64
-            libdiscon-name: libdiscon.dll
             libdiscon-keep: "*.dll"
-
-          # Linux: no pre-built OpenFAST binaries from NREL for v4.2.0.
-          # Linux HPC users typically have OpenFAST installed system-wide;
-          # FlowWake Studio falls back to the system binary automatically.
-          # Re-enable when a bundled Linux binary is available.
-          # - platform: ubuntu-22.04
-          #   target:   x86_64-unknown-linux-gnu
-          #   os-dir:   linux
-          #   label:    Linux-x64
-          #   libdiscon-name: libdiscon.so
-          #   libdiscon-keep: "*.so"
 
     runs-on: ${{ matrix.platform }}
     name: Build (${{ matrix.label }})
@@ -77,8 +66,6 @@ jobs:
         run: npm ci
 
       # ── Python sidecar compilation ─────────────────────────────────────────────
-      # fws_io.py uses only stdlib — no extra pip deps needed.
-      # PyInstaller produces a single-file binary; no Python required on user machine.
       - name: Compile fws_io sidecar
         shell: bash
         run: |
@@ -91,9 +78,6 @@ jobs:
             src-tauri/sidecar/fws_io.py
 
       # ── Prepare OpenFAST + TurbSim binaries ────────────────────────────────────
-      # Binaries are committed in resources/bin/<os-dir>/.
-      # Copy the target platform's binaries to bin/ root, remove subdirs so
-      # Tauri's "resources/bin/*" glob only bundles the correct platform files.
       - name: Prepare OpenFAST + TurbSim binaries
         shell: bash
         run: |
@@ -106,7 +90,6 @@ jobs:
           fi
 
       # ── Strip unused libdiscon variants ───────────────────────────────────────
-      # Keep only the variant matching this platform; remove the rest.
       - name: Remove unused libdiscon variants
         shell: bash
         run: |
@@ -116,9 +99,36 @@ jobs:
             ! -name "$keep" -delete
 
       # ── Build ──────────────────────────────────────────────────────────────────
+      # macOS: build .app only — dmgbuild (below) creates the styled DMG headless.
+      # Tauri's own DMG creator uses AppleScript/Finder which fails on CI runners.
+      # Windows: build both MSI and NSIS installers as before.
       - name: Build Tauri app
         shell: bash
-        run: npm run tauri build -- --target ${{ matrix.target }}
+        run: |
+          if [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
+            npm run tauri build -- --target ${{ matrix.target }} --bundles app
+          else
+            npm run tauri build -- --target ${{ matrix.target }}
+          fi
+
+      # ── macOS: create styled DMG with dmgbuild ─────────────────────────────────
+      # dmgbuild writes the .DS_Store directly — no AppleScript, no Finder needed.
+      - name: Create styled DMG
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          pip install dmgbuild
+          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowWake Studio.app"
+          BG="src-tauri/assets/dmg_background.png"
+          SETTINGS="src-tauri/assets/dmg_settings.py"
+          OUT_DIR="src-tauri/target/${{ matrix.target }}/release/bundle/dmg"
+          mkdir -p "$OUT_DIR"
+          dmgbuild \
+            -s "$SETTINGS" \
+            -D "app=$APP" \
+            -D "bg=$BG" \
+            "FlowWake Studio" \
+            "$OUT_DIR/FlowWake Studio_0.1.0_aarch64.dmg"
 
       # ── Upload artifact (all runs) ─────────────────────────────────────────────
       - name: Upload installer artifact
@@ -132,8 +142,6 @@ jobs:
           retention-days: 7
 
       # ── Publish GitHub Release (tag pushes only) ───────────────────────────────
-      # Apple signing: add secrets to repo Settings → Secrets once enrolled in
-      # the Apple Developer Program, then uncomment the env block below.
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
