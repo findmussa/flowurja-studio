@@ -382,6 +382,8 @@ export default function App() {
   // Refs so the onCloseRequested listener (registered once) always sees fresh values
   const simRunningRef  = useRef(false);
   const moduleDirtyRef = useRef({});
+  const simPidRef      = useRef(null); // PID of the current OpenFAST run (null when idle)
+  const handlePidChange = useCallback(pid => { simPidRef.current = pid; }, []);
   // Guard: prevents two simultaneous confirmation dialogs (React StrictMode
   // mounts effects twice in dev, which would register two listeners).
   const dialogOpenRef  = useRef(false);
@@ -445,34 +447,45 @@ export default function App() {
       }
     };
 
-    // ── ⊗ button / Cmd+W ──────────────────────────────────────────────────
+    const doQuit = async () => {
+      if (simPidRef.current !== null) {
+        await invoke("kill_pid", { pid: simPidRef.current }).catch(() => {});
+      }
+      invoke("quit_app").catch(() => {});
+    };
+
+    // ── ⊗ button / Cmd+W / Alt+F4 ─────────────────────────────────────────
     // Single-window app: closing the window = quitting the app.
     // We call quit_app (→ original terminate: → tao shutdown) rather than
     // win.destroy() so the quit path is identical to Cmd+Q.
     win.onCloseRequested(async (event) => {
       event.preventDefault(); // must be synchronous
       const ok = await confirmClose();
-      if (ok) invoke("quit_app").catch(() => {});
+      if (ok) doQuit();
       else win.setFocus().catch(() => {});
     }).then(fn => { unlistenClose = fn; });
 
-    // ── Cmd+Q (intercepted in Rust via RunEvent::ExitRequested) ───────────
+    // ── Cmd+Q (intercepted in Rust via ObjC swizzle — macOS only) ─────────
     // Rust prevents the system quit and emits "should-quit" so we can show
     // the same dialog here. On confirm we call quit_app which calls
     // app.exit(0) — this skips ExitRequested so there is no second dialog.
     listen("should-quit", async () => {
       const ok = await confirmClose();
-      if (ok) invoke("quit_app").catch(() => {});
+      if (ok) doQuit();
       else win.setFocus().catch(() => {});
     }).then(fn => { unlistenQuit = fn; });
 
-    register("Super+M", () => win.minimize().catch(() => {})).catch(() => {});
-    register("Super+Control+F", () => {
-      win.isFullscreen().then(full => {
-        win.setFullscreen(!full);
-        setIsFullscreen(!full);
-      });
-    }).catch(() => {});
+    // macOS-only global shortcuts — Super = Cmd on macOS, Win key on Windows.
+    // Win+M minimizes ALL windows on Windows (system shortcut); don't register there.
+    if (platform === "macos") {
+      register("Super+M", () => win.minimize().catch(() => {})).catch(() => {});
+      register("Super+Control+F", () => {
+        win.isFullscreen().then(full => {
+          win.setFullscreen(!full);
+          setIsFullscreen(!full);
+        });
+      }).catch(() => {});
+    }
 
     const handleDblClick = (e) => {
       if (!isInHeader(e)) return;
@@ -668,7 +681,7 @@ export default function App() {
               ? { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }
               : { display: "none" }
             }>
-              <OpenFASTPanel onLog={addLog} project={project} tabRequest={ofTabReq} onModuleFilesDetected={handleModuleFilesDetected} onModuleActiveChange={handleModuleActiveChange} onDirtyChange={ofOnDirtyChange} onRegisterSave={ofOnRegisterSave} discardSeq={ofDiscardSeq} onModuleSelect={handleModuleSelect} isActive={activeModule === "openfast"} inflowWindParams={sharedInflowParams} onSimRunningChange={handleSimRunningChange} />
+              <OpenFASTPanel onLog={addLog} project={project} tabRequest={ofTabReq} onModuleFilesDetected={handleModuleFilesDetected} onModuleActiveChange={handleModuleActiveChange} onDirtyChange={ofOnDirtyChange} onRegisterSave={ofOnRegisterSave} discardSeq={ofDiscardSeq} onModuleSelect={handleModuleSelect} isActive={activeModule === "openfast"} inflowWindParams={sharedInflowParams} onSimRunningChange={handleSimRunningChange} onPidChange={handlePidChange} />
             </div>
 
             {activeModule === "turbsim"    && !!project && <TurbSimPanel    onLog={addLog} project={project} moduleFiles={moduleFiles} />}

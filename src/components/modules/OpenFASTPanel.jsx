@@ -482,7 +482,7 @@ function TurbineIcon({ spinning, className }) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFilesDetected, onModuleActiveChange, onDirtyChange, onRegisterSave, discardSeq = 0, onModuleSelect, isActive = false, inflowWindParams = null, onSimRunningChange }) {
+export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFilesDetected, onModuleActiveChange, onDirtyChange, onRegisterSave, discardSeq = 0, onModuleSelect, isActive = false, inflowWindParams = null, onSimRunningChange, onPidChange }) {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [tab,            setTab]            = useState("run");
   const [p,              setP]              = useState(DEFAULT);
@@ -520,6 +520,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
 
   // ── Refs ─────────────────────────────────────────────────────────────────────
   const unlistenRef      = useRef([]);
+  const pidRef           = useRef(null);
   const tabReqSeqRef     = useRef(0);
   const autoLoadedFstRef = useRef("");
   // JSON snapshot of `p` taken every time a .fst is loaded or saved.
@@ -913,9 +914,14 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
 
   // ── Stop ──────────────────────────────────────────────────────────────────────
   const handleStop = () => {
+    if (pidRef.current !== null) {
+      invoke("kill_pid", { pid: pidRef.current }).catch(() => {});
+      pidRef.current = null;
+    }
     unlistenRef.current.forEach(fn => fn?.());
     setRunning(false);
     onSimRunningChange?.(false);
+    onPidChange?.(null);
     onLog?.("warn", "Stopped by user.");
   };
 
@@ -988,6 +994,10 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
       let hasFatalError = false;
       let fatalMsg      = "";
 
+      const ul0 = await listen("binary-pid", evt => {
+        pidRef.current = Number(evt.payload);
+        onPidChange?.(pidRef.current);
+      });
       const ul1 = await listen("binary-stdout", evt => {
         const line = String(evt.payload);
         if (FATAL_RE.test(line)) { hasFatalError = true; fatalMsg = line.trim().slice(0, 200); }
@@ -997,7 +1007,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
       });
       const ul2 = await listen("binary-stderr", evt => onLog?.("warn", `[stderr] ${evt.payload}`));
       const ul3 = await listen("binary-done", async (evt) => {
-        ul1(); ul2(); ul3();
+        ul0(); ul1(); ul2(); ul3();
+        pidRef.current = null;
+        onPidChange?.(null);
         const payload = String(evt.payload ?? "");
         const exitOk  = payload === "ok";
 
@@ -1048,7 +1060,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
         setRunning(false);
         onSimRunningChange?.(false);
       });
-      unlistenRef.current = [ul1, ul2, ul3];
+      unlistenRef.current = [ul0, ul1, ul2, ul3];
 
       // Run against the copy in inp/ — not the original model file.
       onLog?.("info", `Running: ${ofBinPath} ${caseName}.fst`);

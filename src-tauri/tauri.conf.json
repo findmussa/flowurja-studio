@@ -15,6 +15,11 @@
   },
   "bundle": {
     "active": true,
+    "windows": {
+      "nsis": {
+        "installerHooks": "nsis/license_hook.nsh"
+      }
+    },
     "resources": {
       "sidecar/*": "sidecar",
       "resources/bin/*": "bin",
