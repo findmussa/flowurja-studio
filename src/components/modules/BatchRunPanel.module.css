@@ -1,0 +1,1119 @@
+/* ── Shell ─────────────────────────────────────── */
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Header ────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx-1);
+  letter-spacing: -0.02em;
+  -webkit-app-region: no-drag;
+}
+.desc   { font-size: 12px; color: var(--tx-5); -webkit-app-region: no-drag; }
+.badge  {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 5px;
+  background: rgba(124,58,237,0.12); color: #7C3AED;
+  letter-spacing: 0.02em; -webkit-app-region: no-drag;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .badge { background: rgba(124,58,237,0.22); }
+}
+:root[data-theme="dark"] .badge { background: rgba(124,58,237,0.22); }
+
+.badgeFailed {
+  background: rgba(220,38,38,0.12); color: #DC2626;
+}
+
+.headerSpacer { flex: 1; }
+.headerBtn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 6px;
+  cursor: pointer; font-size: 11.5px; font-family: inherit;
+  transition: background 0.12s; -webkit-app-region: no-drag;
+}
+.headerBtnPrimary {
+  background: rgba(124,58,237,0.10);
+  border: 0.5px solid rgba(124,58,237,0.35);
+  color: #7C3AED;
+}
+.headerBtnPrimary:hover { background: rgba(124,58,237,0.18); }
+.headerBtnSecondary {
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  color: var(--tx-3);
+}
+.headerBtnSecondary:hover { background: var(--bg-hover-md); }
+
+/* ── Tab bar ───────────────────────────────────── */
+.tabBar {
+  display: flex; gap: 2px;
+  padding: 6px 12px 0;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+}
+.tab {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px; background: none; border: none;
+  border-radius: 7px 7px 0 0;
+  font-size: 12.5px; font-family: inherit;
+  color: var(--tx-4); cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+  position: relative;
+}
+.tab:hover { color: var(--tx-2); background: var(--bg-hover); }
+.tabActive { color: #7C3AED; background: var(--bg-hover); font-weight: 500; }
+.tabActive::after {
+  content: ""; position: absolute;
+  bottom: -0.5px; left: 0; right: 0;
+  height: 1.5px; background: #7C3AED; border-radius: 99px;
+}
+
+/* ── Scrollable content ─────────────────────────── */
+.content { flex: 1; overflow-y: auto; min-height: 0; padding: 18px 20px 32px; }
+
+/* ── Section heads (legacy — kept for Run/Results tabs) ──────────────── */
+.sectionHead {
+  font-size: 10.5px; font-weight: 700;
+  color: rgba(124,58,237,0.75);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  margin: 0 0 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sectionHead { color: rgba(167,139,250,0.85); }
+}
+:root[data-theme="dark"] .sectionHead { color: rgba(167,139,250,0.85); }
+
+/* ── Define tab — card system ───────────────────────────────────────── */
+.defineCard {
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: var(--bg-surface);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+/* Dark: make card edge + shadow crisper so cards don't dissolve into bg */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .defineCard {
+    border-color: rgba(255,255,255,0.10);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+  }
+}
+:root[data-theme="dark"] .defineCard {
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+}
+
+.defineCardHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  background: var(--bg-muted);
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+}
+/* Dark: give the head a touch more lift so it reads as a header */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .defineCardHead {
+    background: rgba(255,255,255,0.05);
+    border-bottom-color: rgba(255,255,255,0.09);
+  }
+}
+:root[data-theme="dark"] .defineCardHead {
+  background: rgba(255,255,255,0.05);
+  border-bottom-color: rgba(255,255,255,0.09);
+}
+
+.defineCardTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx-1);
+  letter-spacing: -0.01em;
+  flex: 1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .defineCardTitle { color: rgba(255,255,255,0.82); }
+}
+:root[data-theme="dark"] .defineCardTitle { color: rgba(255,255,255,0.82); }
+
+.defineCardAction {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500; font-family: inherit;
+  color: var(--tx-3); background: none;
+  border: none; cursor: pointer;
+  padding: 2px 8px; border-radius: 5px;
+  transition: background 0.1s, color 0.1s;
+}
+.defineCardAction:hover { background: var(--bg-hover); color: var(--tx-1); }
+
+.defineCardBody { padding: 14px 16px; }
+
+/* ── Source tab row (inside Wind Source card) ───── */
+.sourceTabRow {
+  display: flex;
+  background: var(--bg-muted);
+  border-bottom: 0.5px solid var(--bd-subtle);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sourceTabRow {
+    background: rgba(255,255,255,0.03);
+    border-bottom-color: rgba(255,255,255,0.08);
+  }
+}
+:root[data-theme="dark"] .sourceTabRow {
+  background: rgba(255,255,255,0.03);
+  border-bottom-color: rgba(255,255,255,0.08);
+}
+
+.sourceTab {
+  display: flex; align-items: center; gap: 5px;
+  padding: 8px 16px;
+  font-size: 12px; font-weight: 500; font-family: inherit;
+  color: var(--tx-3);
+  background: none; border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+.sourceTab:hover { color: var(--tx-1); }
+
+/* Light mode active: standard purple */
+.sourceTabActive { color: #7C3AED; border-bottom-color: #7C3AED; font-weight: 600; }
+
+/* Dark mode active: lighter violet so it pops against dark bg */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sourceTabActive {
+    color: #A78BFA;
+    border-bottom-color: #A78BFA;
+  }
+}
+:root[data-theme="dark"] .sourceTabActive {
+  color: #A78BFA;
+  border-bottom-color: #A78BFA;
+}
+
+/* ── Run Configuration card — 2-column grid ─────── */
+.defineConfigGrid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0;
+  align-items: start;
+}
+.defineConfigCol {
+  padding: 14px 20px 14px 16px;
+}
+.defineConfigCol + .defineConfigCol {
+  border-left: 0.5px solid var(--bd-subtle);
+  padding-left: 20px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .defineConfigCol + .defineConfigCol {
+    border-left-color: rgba(255,255,255,0.08);
+  }
+}
+:root[data-theme="dark"] .defineConfigCol + .defineConfigCol {
+  border-left-color: rgba(255,255,255,0.08);
+}
+
+.defineFieldLabel {
+  font-size: 11px; font-weight: 700;
+  color: var(--tx-3);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  margin-bottom: 10px;
+}
+/* Dark: bump the label brightness so it reads as a proper section label */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .defineFieldLabel { color: rgba(255,255,255,0.55); }
+}
+:root[data-theme="dark"] .defineFieldLabel { color: rgba(255,255,255,0.55); }
+
+/* ── Source box (legacy — no longer used in Define tab) ─────────────── */
+.sourceBox {
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 10px;
+  overflow: visible;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+.sourceBoxInner {
+  display: flex; gap: 12px; align-items: stretch;
+  padding: 14px 16px;
+  background: var(--bg-muted);
+}
+.importCard {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.importCard:hover { border-color: rgba(124,58,237,0.40); background: var(--bg-surface-hov); }
+.importCardActive { border-color: rgba(124,58,237,0.50); background: rgba(124,58,237,0.04); }
+
+.importCardTitle {
+  font-size: 13px; font-weight: 600; color: var(--tx-2);
+  display: flex; align-items: center; gap: 6px;
+}
+.importCardSub { font-size: 11.5px; color: var(--tx-4); }
+.importCardBtn {
+  align-self: flex-end; margin-top: 4px;
+  padding: 4px 12px; border-radius: 6px;
+  background: rgba(124,58,237,0.10);
+  border: 0.5px solid rgba(124,58,237,0.35);
+  color: #7C3AED; font-size: 11.5px; font-family: inherit;
+  cursor: pointer; font-weight: 500;
+  transition: background 0.12s;
+}
+.importCardBtn:hover { background: rgba(124,58,237,0.18); }
+.importCardBtnDisabled {
+  opacity: 0.40; cursor: not-allowed;
+}
+
+.manualBtn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; padding: 12px;
+  background: var(--bg-surface);
+  border: 0.5px dashed var(--bd);
+  border-radius: 8px;
+  color: var(--tx-4); font-size: 12px; font-family: inherit;
+  cursor: pointer; min-width: 110px;
+  transition: border-color 0.12s, color 0.12s;
+}
+.manualBtn:hover { border-color: rgba(124,58,237,0.40); color: #7C3AED; }
+
+/* Preview strip (inline confirm) */
+.previewStrip {
+  padding: 10px 16px;
+  background: rgba(124,58,237,0.05);
+  border-top: 0.5px solid rgba(124,58,237,0.18);
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap;
+}
+.previewText { font-size: 12px; color: var(--tx-3); flex: 1; line-height: 1.55; }
+.previewStrong { font-weight: 600; color: var(--tx-1); }
+.previewActions { display: flex; gap: 6px; flex-shrink: 0; }
+.previewCancel {
+  padding: 4px 12px; border-radius: 6px;
+  background: var(--bg-hover); border: 0.5px solid var(--bd);
+  color: var(--tx-3); font-size: 12px; font-family: inherit; cursor: pointer;
+}
+.previewAdd {
+  padding: 4px 12px; border-radius: 6px;
+  background: rgba(124,58,237,0.10);
+  border: 0.5px solid rgba(124,58,237,0.35);
+  color: #7C3AED; font-size: 12px; font-family: inherit;
+  font-weight: 600; cursor: pointer;
+}
+.previewAdd:hover { background: rgba(124,58,237,0.17); }
+
+.previewConfirm {
+  padding: 4px 12px; border-radius: 6px;
+  background: #7C3AED; border: none;
+  color: #fff; font-size: 12px; font-family: inherit;
+  font-weight: 600; cursor: pointer;
+}
+
+/* ── Workers control ────────────────────────────── */
+.workersRow {
+  display: flex; align-items: center; gap: 10px;
+}
+.workersLabel { font-size: 12.5px; color: var(--tx-3); }
+.workersBtns { display: flex; gap: 4px; }
+.workerBtn {
+  width: 28px; height: 28px;
+  border-radius: 6px; border: 0.5px solid var(--bd);
+  background: var(--bg-surface); color: var(--tx-3);
+  font-size: 12px; font-family: inherit; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.workerBtn:hover { background: var(--bg-hover); }
+.workerBtnActive {
+  background: rgba(124,58,237,0.12);
+  border-color: rgba(124,58,237,0.40);
+  color: #7C3AED; font-weight: 700;
+}
+
+/* ── Case table ─────────────────────────────────── */
+.tableWrap {
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 8px; overflow: hidden;
+  margin-bottom: 20px;
+}
+.tableHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--bg-muted);
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-wrap: wrap;
+}
+.tableTitle { font-size: 12px; font-weight: 600; color: var(--tx-3); }
+.tableTitleFst {
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 10.5px; font-weight: 400; color: var(--tx-5); margin-left: 4px;
+}
+.tableActions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.tableActionBtn {
+  padding: 3px 9px; border-radius: 5px;
+  background: var(--bg-hover); border: 0.5px solid var(--bd);
+  color: var(--tx-4); font-size: 11px; font-family: inherit;
+  cursor: pointer; transition: background 0.12s;
+}
+.tableActionBtn:hover { background: var(--bg-hover-md); }
+
+.table { width: 100%; border-collapse: collapse; }
+.th {
+  font-size: 10.5px; font-weight: 700; color: var(--tx-5);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 6px 10px;
+  text-align: left;
+  background: var(--bg-muted);
+  border-bottom: 0.5px solid var(--bd-subtle);
+}
+.th:first-child { width: 36px; text-align: center; }
+.th:nth-child(2) { width: 28px; color: var(--tx-6); text-align: center; }
+
+.tr {
+  border-bottom: 0.5px solid var(--bd-subtle);
+  transition: background 0.08s;
+}
+.tr:last-child { border-bottom: none; }
+.tr:hover { background: var(--bg-hover); }
+.trSelected { background: rgba(124,58,237,0.05); }
+
+.td {
+  font-size: 12px; color: var(--tx-2);
+  padding: 6px 10px; vertical-align: middle;
+}
+.tdMono {
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 11.5px; color: var(--tx-3);
+}
+.tdNum { font-size: 11.5px; color: var(--tx-4); text-align: right; }
+.tdCb  { text-align: center; }
+.tdIdx { font-size: 10.5px; color: var(--tx-6); text-align: center; }
+
+.nameCellInner { display: flex; align-items: center; gap: 5px; }
+.nameInput {
+  border: none; background: none;
+  font-size: 12px; color: var(--tx-2); font-family: inherit;
+  width: 100%; outline: none;
+  padding: 0;
+}
+.nameInput:focus {
+  border-bottom: 0.5px solid rgba(124,58,237,0.50);
+}
+.tMaxInput {
+  border: none; background: none;
+  font-size: 11.5px; color: var(--tx-3); font-family: inherit;
+  width: 80px; outline: none; text-align: right;
+  padding: 0;
+}
+.tMaxInput:focus { border-bottom: 0.5px solid rgba(124,58,237,0.50); }
+
+.deleteRowBtn {
+  width: 18px; height: 18px;
+  border-radius: 4px; border: none; background: none;
+  color: var(--tx-6); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.12s, color 0.12s;
+  flex-shrink: 0;
+}
+.tr:hover .deleteRowBtn { opacity: 1; }
+.deleteRowBtn:hover { color: #DC2626; }
+
+.emptyRow td {
+  text-align: center; padding: 28px 0;
+  color: var(--tx-5); font-size: 12px; font-style: italic;
+}
+
+/* ── Run button (now lives in table header) ─────── */
+.runBar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  padding-top: 4px;
+}
+.runBtn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 14px; border-radius: 7px;
+  background: #7C3AED; border: none;
+  color: #fff; font-size: 12px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  transition: opacity 0.12s;
+  white-space: nowrap;
+}
+.runBtn:hover:not(:disabled) { opacity: 0.88; }
+.runBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.runBtnSub { font-size: 10.5px; font-weight: 400; opacity: 0.7; }
+
+/* ── Run tab — overall progress ─────────────────── */
+.runHeader {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.runTitle { font-size: 13px; font-weight: 600; color: var(--tx-2); flex: 1; }
+.etaChip {
+  font-size: 11.5px; color: var(--tx-4);
+  background: var(--bg-muted);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 20px; padding: 2px 10px;
+}
+.runControls { display: flex; gap: 6px; }
+.controlBtn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 6px;
+  font-size: 12px; font-family: inherit; cursor: pointer;
+  border: 0.5px solid var(--bd); background: var(--bg-hover); color: var(--tx-3);
+  transition: background 0.12s;
+}
+.controlBtn:hover { background: var(--bg-hover-md); }
+.controlBtnDanger { background: rgba(220,38,38,0.07); border-color: rgba(220,38,38,0.35); color: #DC2626; }
+.controlBtnDanger:hover { background: rgba(220,38,38,0.13); }
+
+/* Overall progress bar */
+.overallBar {
+  height: 6px; border-radius: 99px;
+  background: var(--bg-hover-md);
+  overflow: hidden; margin-bottom: 6px;
+}
+.overallBarFill {
+  height: 100%; border-radius: 99px;
+  background: #7C3AED;
+  transition: width 0.4s ease;
+}
+.overallLabel {
+  font-size: 11px; color: var(--tx-5);
+  text-align: right; margin-bottom: 16px;
+}
+
+/* ── Worker cards ───────────────────────────────── */
+.workerCards {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 18px;
+}
+.workerCard {
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 10px; overflow: hidden;
+}
+.workerCardHead {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-muted);
+  border-bottom: 0.5px solid var(--bd-subtle);
+}
+.workerCardTitle {
+  font-size: 12.5px; font-weight: 600; color: var(--tx-2); flex: 1;
+  font-family: "SF Mono", ui-monospace, monospace;
+}
+.workerCardElapsed { font-size: 11px; color: var(--tx-5); }
+.workerCardDir {
+  font-size: 10.5px; color: var(--tx-5);
+  font-family: "SF Mono", ui-monospace, monospace;
+  cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.workerCardDir:hover { color: var(--tx-3); }
+
+/* Case progress bar */
+.caseBar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px 0;
+}
+.caseBarTrack {
+  flex: 1; height: 4px; border-radius: 99px;
+  background: var(--bg-hover-md); overflow: hidden;
+}
+.caseBarFill {
+  height: 100%; border-radius: 99px;
+  background: rgba(124,58,237,0.60);
+  transition: width 0.5s linear;
+}
+.caseBarPct { font-size: 10.5px; color: var(--tx-5); min-width: 30px; text-align: right; }
+
+/* Log tail — resizable so users can see more lines */
+.logBox {
+  padding: 8px 14px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 10.5px; line-height: 1.6;
+  color: var(--tx-4);
+  min-height: 60px;
+  max-height: 300px;
+  overflow-y: auto;
+  resize: vertical;
+  background: none;
+}
+.logLine { white-space: pre-wrap; word-break: break-all; }
+.logLineTime { color: rgba(124,58,237,0.75); font-weight: 600; }
+
+/* Idle worker card */
+.workerCardIdle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px;
+  font-size: 12px; color: var(--tx-5); font-style: italic;
+}
+
+/* ── Queue list ─────────────────────────────────── */
+.queueSection { margin-top: 4px; }
+.queueFilterRow {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 8px;
+}
+.queueFilterLabel { font-size: 11px; color: var(--tx-5); }
+.queueFilter {
+  display: flex; gap: 4px;
+}
+.queueFilterBtn {
+  padding: 2px 8px; border-radius: 4px; border: none;
+  font-size: 10.5px; font-family: inherit; cursor: pointer;
+  background: var(--bg-hover); color: var(--tx-4);
+  transition: background 0.12s;
+}
+.queueFilterBtnActive { background: rgba(124,58,237,0.12); color: #7C3AED; font-weight: 600; }
+
+.queueList {
+  display: flex; flex-direction: column; gap: 1px;
+  border: 0.5px solid var(--bd-subtle); border-radius: 8px; overflow: hidden;
+}
+.queueItem {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  background: var(--bg-surface);
+  border-bottom: 0.5px solid var(--bd-subtle);
+  font-size: 12px;
+}
+.queueItem:last-child { border-bottom: none; }
+.queueItemRunning { background: rgba(124,58,237,0.04); }
+.queueItemDone    { opacity: 0.70; }
+.queueItemFailed  { background: rgba(220,38,38,0.04); }
+
+.queueIdx { font-size: 10px; color: var(--tx-6); min-width: 22px; text-align: right; }
+.queueName {
+  flex: 1; font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 11.5px; color: var(--tx-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.queueMeta { font-size: 11px; color: var(--tx-5); }
+.queueStatus { font-size: 11px; min-width: 60px; text-align: right; }
+
+/* Status dots + labels */
+.dotQueued  { width: 7px; height: 7px; border-radius: 50%; background: var(--bd-input); flex-shrink: 0; }
+.dotRunning { width: 7px; height: 7px; border-radius: 50%; background: #7C3AED; flex-shrink: 0; animation: pulse 1.2s ease-in-out infinite; }
+.dotDone    { width: 7px; height: 7px; border-radius: 50%; background: #16A34A; flex-shrink: 0; }
+.dotFailed  { width: 7px; height: 7px; border-radius: 50%; background: #DC2626; flex-shrink: 0; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.statusQueued  { color: var(--tx-5); }
+.statusRunning { color: #7C3AED; font-weight: 500; }
+.statusDone    { color: #16A34A; }
+.statusFailed  { color: #DC2626; font-weight: 500; }
+
+/* ── Empty / no project states ──────────────────── */
+.emptyState {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 10px;
+  height: 200px; color: var(--tx-5); font-size: 13px; text-align: center;
+}
+.emptyStateIcon { opacity: 0.30; }
+
+/* ── Callout ────────────────────────────────────── */
+.callout {
+  display: flex; gap: 9px; align-items: flex-start;
+  background: rgba(124,58,237,0.06);
+  border: 0.5px solid rgba(124,58,237,0.18);
+  border-radius: 8px; padding: 10px 13px;
+  margin-bottom: 14px;
+  font-size: 12px; color: rgba(124,58,237,0.90); line-height: 1.55;
+}
+.calloutWarn {
+  background: rgba(217,119,6,0.06);
+  border: 0.5px solid rgba(217,119,6,0.18);
+  border-radius: 8px; padding: 10px 13px;
+  font-size: 12px; color: rgba(180,100,4,0.90);
+  line-height: 1.55; margin-bottom: 14px;
+}
+
+/* ── Batch name input ─────────────────────────────── */
+.batchNameRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 22px;
+}
+.batchNameInput {
+  width: 100%;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px;
+  background: var(--bg-input, rgba(0,0,0,0.04));
+  border: 0.5px solid var(--bd);
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--tx-1);
+  outline: none;
+  transition: border-color 0.12s;
+}
+.batchNameInput:focus { border-color: rgba(124,58,237,0.5); }
+.batchNameInput::placeholder { color: var(--tx-6); }
+.batchNameHint {
+  font-size: 11.5px;
+  color: var(--tx-4);
+}
+.batchNameHint code {
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+/* ── Run tab: batch name sub-label ───────────────── */
+.runBatchName {
+  display: block;
+  font-size: 11px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  color: var(--tx-5);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+/* ── Worker badge ─────────────────────────────────── */
+.workerBadge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #7C3AED;
+  opacity: 0.7;
+  background: rgba(124,58,237,0.08);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* ── Queue: per-case log drawer ───────────────────── */
+.queueItemGroup {
+  display: flex;
+  flex-direction: column;
+}
+.queueItemClickable {
+  cursor: pointer;
+}
+.queueItemClickable:hover {
+  background: var(--bg-hover);
+}
+.queueLogToggle {
+  margin-left: 4px;
+  opacity: 0.45;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.logDrawer {
+  padding: 8px 12px 10px 36px;
+  background: rgba(0,0,0,0.025);
+  border-bottom: 0.5px solid var(--bd-subtle);
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--tx-4);
+  line-height: 1.6;
+  max-height: 180px;
+  overflow-y: auto;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logDrawer { background: rgba(255,255,255,0.03); }
+}
+:root[data-theme="dark"] .logDrawer { background: rgba(255,255,255,0.03); }
+
+/* ── Results tab ──────────────────────────────────── */
+.resultsSummary {
+  display: flex;
+  gap: 0;
+  padding: 14px 20px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+}
+.resultsStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 20px 0 0;
+  margin-right: 20px;
+  border-right: 0.5px solid var(--bd-subtle);
+}
+.resultsStat:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+.resultsStatNum {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--tx-1);
+  line-height: 1.1;
+}
+.resultsStatLabel {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--tx-5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.resultsStatDone .resultsStatNum   { color: #16A34A; }
+.resultsStatFailed .resultsStatNum { color: #DC2626; }
+
+.resultsActionsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+}
+.resultsBatchName {
+  font-size: 11.5px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  color: var(--tx-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+.resultsActionBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: var(--tx-3);
+  cursor: pointer;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+.resultsActionBtn:hover { background: var(--bg-hover-md); }
+.resultsActionBtnRerun {
+  background: rgba(124,58,237,0.08);
+  border-color: rgba(124,58,237,0.28);
+  color: #7C3AED;
+}
+.resultsActionBtnRerun:hover { background: rgba(124,58,237,0.15); }
+.resultsActionBtnRerun:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.resultsTableWrap {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+.resultsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rth {
+  padding: 7px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tx-5);
+  border-bottom: 0.5px solid var(--bd-subtle);
+  position: sticky;
+  top: 0;
+  background: var(--bg-base);
+  white-space: nowrap;
+}
+.rtRow {
+  border-bottom: 0.5px solid var(--bd-subtle);
+  transition: background 0.08s;
+}
+.rtRow:hover         { background: var(--bg-hover); }
+.rtRowDone           { background: rgba(22,163,74,0.03); }
+.rtRowFailed         { background: rgba(220,38,38,0.03); }
+.rtRowCancel         { opacity: 0.5; }
+.rtd {
+  padding: 7px 12px;
+  font-size: 12.5px;
+  color: var(--tx-2);
+  vertical-align: middle;
+}
+.rtCaseName {
+  font-size: 12px;
+  color: var(--tx-1);
+  font-weight: 500;
+}
+.rtError {
+  font-size: 11px;
+  color: #DC2626;
+  font-family: "SF Mono", ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+  display: block;
+}
+.rtCancel {
+  font-size: 11px;
+  color: var(--tx-5);
+}
+.openFolderBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  border-radius: 5px;
+  background: transparent;
+  border: 0.5px solid var(--bd);
+  cursor: pointer;
+  color: var(--tx-4);
+  transition: background 0.12s, color 0.12s;
+}
+.openFolderBtn:hover {
+  background: rgba(124,58,237,0.10);
+  color: #7C3AED;
+  border-color: rgba(124,58,237,0.30);
+}
+
+/* .controlBtn / .controlBtnDanger defined above near line 321 */
+
+/* ── Batch turbine hero (Run tab) ───────────────── */
+@keyframes batchBladeSpin { to { transform: rotate(360deg); } }
+
+.turbineBlades {
+  /* static by default */
+}
+.turbineBladesSpinning {
+  transform-origin: 0px 0px; /* hub is at translate(50,69) origin */
+  animation: batchBladeSpin 3s linear infinite;
+}
+
+.batchTurbineRow {
+  margin: 12px 0;
+}
+
+.batchTurbineCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .batchTurbineCard {
+    border-color: rgba(255,255,255,0.10);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+  }
+}
+:root[data-theme="dark"] .batchTurbineCard {
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+}
+
+/* Pulse ring — behind the turbine icon when running */
+.batchTurbinePulse {
+  position: absolute;
+  /* Hub renders at card_padding_left(20) + hub_x_in_svg(50/100×72=36) = 56px from card left.
+     Centering a 72px-wide circle on the hub: left = 56 - 36 = 20px. */
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);
+  animation: batchPulseAnim 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .batchTurbinePulse {
+    background: radial-gradient(circle, rgba(167,139,250,0.22) 0%, transparent 70%);
+  }
+}
+:root[data-theme="dark"] .batchTurbinePulse {
+  background: radial-gradient(circle, rgba(167,139,250,0.22) 0%, transparent 70%);
+}
+@keyframes batchPulseAnim {
+  0%   { transform: translateY(-50%) scale(0.8); opacity: 0.9; }
+  100% { transform: translateY(-50%) scale(1.8); opacity: 0; }
+}
+
+.batchTurbineIcon {
+  width: 72px;
+  height: auto;
+  flex-shrink: 0;
+  color: var(--tx-5);
+  transition: color 0.5s;
+  position: relative;
+  z-index: 1;
+}
+/* Idle: lift the turbine colour so it's readable in dark mode */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .batchTurbineIcon { color: rgba(255,255,255,0.28); }
+}
+:root[data-theme="dark"] .batchTurbineIcon { color: rgba(255,255,255,0.28); }
+
+/* Running: light violet instead of dark purple */
+.batchTurbineRunning { color: #7C3AED; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .batchTurbineRunning { color: #A78BFA; }
+}
+:root[data-theme="dark"] .batchTurbineRunning { color: #A78BFA; }
+
+/* Stat chips row beside the turbine */
+.batchTurbineStats {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.batchTurbineStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.batchTurbineStatNum {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--tx-1);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.batchTurbineStatLabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--tx-5);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .batchTurbineStatLabel { color: rgba(255,255,255,0.38); }
+}
+:root[data-theme="dark"] .batchTurbineStatLabel { color: rgba(255,255,255,0.38); }
+
+
+/* ── Sweep scanner cards ────────────────────────────── */
+.sweepCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 13px;
+  background: var(--bg-raised);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 9px;
+  transition: border-color 0.12s;
+}
+.sweepCard:hover { border-color: rgba(124,58,237,0.3); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sweepCard { border-color: rgba(255,255,255,0.09); }
+  :root:not([data-theme="light"]) .sweepCard:hover { border-color: rgba(167,139,250,0.40); }
+}
+:root[data-theme="dark"] .sweepCard { border-color: rgba(255,255,255,0.09); }
+:root[data-theme="dark"] .sweepCard:hover { border-color: rgba(167,139,250,0.40); }
+
+.sweepCardInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sweepCardLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Batch ID chip shown inline next to the label */
+.sweepCardId {
+  font-size: 10px;
+  font-weight: 500;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--tx-5);
+  background: var(--bg-muted);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sweepCardMeta {
+  font-size: 11.5px;
+  color: var(--tx-3);
+}
+
+.sweepCardDate {
+  font-size: 11px;
+  color: var(--tx-4);
+}
+
+.sweepCardImportBtn {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7C3AED;
+  background: rgba(124,58,237,0.09);
+  border: 0.5px solid rgba(124,58,237,0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.sweepCardImportBtn:hover:not(:disabled) { background: rgba(124,58,237,0.15); }
+.sweepCardImportBtn:disabled { opacity: 0.38; cursor: not-allowed; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sweepCardImportBtn {
+    color: #A78BFA;
+    background: rgba(167,139,250,0.12);
+    border-color: rgba(167,139,250,0.30);
+  }
+  :root:not([data-theme="light"]) .sweepCardImportBtn:hover:not(:disabled) {
+    background: rgba(167,139,250,0.20);
+  }
+}
+:root[data-theme="dark"] .sweepCardImportBtn {
+  color: #A78BFA;
+  background: rgba(167,139,250,0.12);
+  border-color: rgba(167,139,250,0.30);
+}
+:root[data-theme="dark"] .sweepCardImportBtn:hover:not(:disabled) {
+  background: rgba(167,139,250,0.20);
+}

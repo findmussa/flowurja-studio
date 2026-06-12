@@ -1,0 +1,203 @@
+name: Release
+
+on:
+  # Tag push triggers a full release draft (all platforms)
+  push:
+    tags:
+      - 'v*'
+  # Manual trigger for testing a single platform without tagging
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'windows-latest'
+        type: choice
+        options:
+          - macos-latest
+          - windows-latest
+
+env:
+  ROSCO_VERSION: "2.10.1"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target:   aarch64-apple-darwin
+            os-dir:   macos
+            label:    macOS-arm64
+            libdiscon-name: libdiscon.dylib
+            libdiscon-keep: "*.dylib"
+
+          - platform: windows-latest
+            target:   x86_64-pc-windows-msvc
+            os-dir:   windows
+            label:    Windows-x64
+            libdiscon-name: libdiscon.dll
+            libdiscon-keep: "*.dll"
+
+          # Linux: no pre-built OpenFAST binaries from NREL for v4.2.0.
+          # Linux HPC users typically have OpenFAST installed system-wide;
+          # FlowWake Studio falls back to the system binary automatically.
+          # Re-enable when a bundled Linux binary is available.
+          # - platform: ubuntu-22.04
+          #   target:   x86_64-unknown-linux-gnu
+          #   os-dir:   linux
+          #   label:    Linux-x64
+          #   libdiscon-name: libdiscon.so
+          #   libdiscon-keep: "*.so"
+
+    # On manual dispatch: only run the platform the user selected
+    if: github.event_name == 'push' || matrix.platform == inputs.platform
+    runs-on: ${{ matrix.platform }}
+    name: Build (${{ matrix.label }})
+
+    steps:
+      # ── Source ─────────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Toolchains ─────────────────────────────────────────────────────────────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ── Frontend ───────────────────────────────────────────────────────────────
+      - name: Install Node dependencies
+        run: npm ci
+
+      # ── Python sidecar compilation ─────────────────────────────────────────────
+      # fws_io.py uses only stdlib — no extra pip deps needed.
+      # PyInstaller produces a single-file binary; no Python required on user machine.
+      - name: Compile fws_io sidecar
+        shell: bash
+        run: |
+          pip install pyinstaller
+          pyinstaller \
+            --onefile \
+            --name fws_io \
+            --distpath src-tauri/sidecar \
+            src-tauri/sidecar/fws_io.py
+
+      # ── Prepare OpenFAST + TurbSim binaries ────────────────────────────────────
+      # Binaries are committed in resources/bin/<os-dir>/.
+      # Copy the target platform's binaries to bin/ root, remove subdirs so
+      # Tauri's "resources/bin/*" glob only bundles the correct platform files.
+      - name: Prepare OpenFAST + TurbSim binaries
+        shell: bash
+        run: |
+          src="src-tauri/resources/bin/${{ matrix.os-dir }}"
+          dst="src-tauri/resources/bin"
+          cp "$src"/* "$dst/"
+          rm -rf "$dst/macos" "$dst/windows" "$dst/linux"
+          if [[ "${{ matrix.platform }}" != "windows-latest" ]]; then
+            chmod +x "$dst/openfast" "$dst/turbsim"
+          fi
+
+      # ── ROSCO libdiscon via conda-forge ────────────────────────────────────────
+      # ROSCO does not ship pre-built binaries on GitHub releases.
+      # conda-forge is the official distribution channel for all platforms.
+      - name: Install Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Get libdiscon from conda-forge
+        shell: bash -l {0}
+        run: |
+          conda install -c conda-forge rosco=${{ env.ROSCO_VERSION }} -y --quiet
+          # Find the compiled library in the conda environment
+          lib="${{ matrix.libdiscon-name }}"
+          found=$(find "$CONDA_PREFIX" -name "$lib" 2>/dev/null | head -1)
+          if [[ -z "$found" ]]; then
+            # Fallback search path on Windows (CONDA env may be in different location)
+            found=$(find "$CONDA" -name "$lib" 2>/dev/null | head -1)
+          fi
+          echo "Found libdiscon at: $found"
+          # Copy into every turbine template model directory
+          find src-tauri/resources/turbines -name "libdiscon.dylib" -o \
+               -name "libdiscon.dll" -o -name "libdiscon.so" | \
+          xargs -I{} dirname {} | sort -u | while read dir; do
+            cp "$found" "$dir/$lib"
+          done
+
+      # Remove libdiscon variants not needed for this platform (keeps bundle lean)
+      - name: Remove unused libdiscon variants
+        shell: bash
+        run: |
+          keep="${{ matrix.libdiscon-keep }}"
+          find src-tauri/resources/turbines \
+            \( -name "libdiscon.dylib" -o -name "libdiscon.dll" -o -name "libdiscon.so" \) \
+            ! -name "$keep" -delete
+
+      # ── Build and publish release ───────────────────────────────────────────────
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS code signing + notarization
+          # Set these in: GitHub repo → Settings → Secrets and variables → Actions
+          APPLE_CERTIFICATE:          ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY:     ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID:                   ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD:             ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID:              ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName:     ${{ github.ref_name }}
+          releaseName: 'FlowWake Studio ${{ github.ref_name }}'
+          releaseBody: |
+            ## FlowWake Studio ${{ github.ref_name }}
+
+            Desktop GUI for OpenFAST and TurbSim — wind turbine aeroelastic simulation workflows.
+
+            **Downloads**
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `.dmg` — signed & notarized |
+            | Windows (64-bit) | `.exe` installer |
+
+            **Bundled**: OpenFAST v4.2.0 · TurbSim v4.2.0 · ROSCO v2.10.1
+
+            **Cite**
+            ```
+            Kalimullah, N. M. M. (2026). FlowWake Studio (v0.1.0).
+            Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
+            ```
+          releaseDraft: true
+          prerelease:  false
+          args:        --target ${{ matrix.target }}
+
+      # Upload installer as a workflow artifact so it can be downloaded for
+      # testing without publishing a release (useful for manual dispatch runs).
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlowWake-Studio-${{ matrix.label }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+            src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
+          retention-days: 7

@@ -1,0 +1,522 @@
+/* ── Root ─────────────────────────────────────────────────────────────────── */
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-app);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  backdrop-filter: blur(28px) saturate(1.6);
+  overflow: hidden;
+  background-image: radial-gradient(
+    ellipse 60% 55% at 50% 50%,
+    rgba(14, 110, 130, 0.07) 0%,
+    transparent 70%
+  );
+}
+
+/* ── Background turbine ───────────────────────────────────────────────────── */
+.bgTurbine {
+  position: absolute;
+  bottom: -30px;
+  right: -20px;
+  width: 340px;
+  height: 340px;
+  color: var(--tx-7);
+  pointer-events: none;
+  opacity: 0.6;
+  transform: rotate(-8deg);
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 390px;
+  padding: 28px 24px 24px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-card);
+  border-radius: 20px;
+  box-shadow:
+    0 2px 0 0 rgba(255,255,255,0.55) inset,
+    0 20px 60px rgba(0,0,0,0.14),
+    0  4px 16px rgba(0,0,0,0.08);
+  -webkit-app-region: no-drag;
+  animation: slideUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .card {
+    box-shadow:
+      0 2px 0 0 rgba(255,255,255,0.08) inset,
+      0 20px 60px rgba(0,0,0,0.45),
+      0  4px 16px rgba(0,0,0,0.25);
+  }
+}
+:root[data-theme="dark"] .card {
+  box-shadow:
+    0 2px 0 0 rgba(255,255,255,0.08) inset,
+    0 20px 60px rgba(0,0,0,0.45),
+    0  4px 16px rgba(0,0,0,0.25);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cardWide {
+  width: 520px;
+}
+
+/* ── Logo ─────────────────────────────────────────────────────────────────── */
+.logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.10);
+  -webkit-user-drag: none;
+}
+
+/* ── Name row ─────────────────────────────────────────────────────────────── */
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.appName {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--tx-1);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.version {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--tx-5);
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  border-radius: 5px;
+  padding: 2px 7px;
+  letter-spacing: 0.01em;
+  line-height: 1.6;
+}
+
+/* ── Tagline ──────────────────────────────────────────────────────────────── */
+.tagline {
+  font-size: 12.5px;
+  color: var(--tx-4);
+  line-height: 1.55;
+  max-width: 260px;
+  margin-bottom: 4px;
+}
+
+/* ── Divider ──────────────────────────────────────────────────────────────── */
+.divider {
+  width: 100%;
+  height: 0.5px;
+  background: var(--bd-subtle);
+  margin: 16px 0;
+}
+
+/* ── Primary button ───────────────────────────────────────────────────────── */
+.primaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  background: #0F6D82;
+  color: #fff;
+  border: none;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: background 0.14s, transform 0.1s, opacity 0.12s;
+  box-shadow: 0 2px 12px rgba(14,109,130,0.35);
+  margin-bottom: 6px;
+}
+.primaryBtn:hover:not(:disabled)  { background: #0d5e70; }
+.primaryBtn:active:not(:disabled) { transform: scale(0.985); }
+.primaryBtn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+.btnArrow {
+  margin-left: auto;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+/* ── Secondary button ─────────────────────────────────────────────────────── */
+.secondaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 38px;
+  padding: 0 16px;
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--tx-2);
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-bottom: 4px;
+}
+.secondaryBtn:hover { background: var(--bg-hover-md); }
+
+/* ── Recent projects ──────────────────────────────────────────────────────── */
+.recentLabel {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--tx-5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.recentList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.recentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  font-family: inherit;
+}
+.recentItem:hover { background: var(--bg-hover); }
+
+.recentName {
+  font-size: 12.5px;
+  color: var(--tx-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 210px;
+}
+
+.recentDate {
+  font-size: 11px;
+  color: var(--tx-5);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* ── Skip button ──────────────────────────────────────────────────────────── */
+.skipBtn {
+  font-size: 11.5px;
+  color: var(--tx-5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-family: inherit;
+  border-radius: 6px;
+  transition: color 0.12s, background 0.12s;
+  -webkit-app-region: no-drag;
+}
+.skipBtn:hover {
+  color: var(--tx-2);
+  background: var(--bg-hover);
+}
+
+/* ── Wizard: back button ──────────────────────────────────────────────────── */
+.wizardBack {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--tx-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  margin-bottom: 14px;
+  align-self: flex-start;
+  transition: color 0.1s;
+}
+.wizardBack:hover { color: var(--tx-2); }
+
+/* ── Wizard: title ────────────────────────────────────────────────────────── */
+.wizardTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--tx-1);
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+  text-align: left;
+  width: 100%;
+}
+
+/* ── Form fields ──────────────────────────────────────────────────────────── */
+.fieldGroup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.fieldLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--tx-3);
+  letter-spacing: 0.01em;
+}
+
+.fieldInput {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--tx-1);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.fieldInput:focus {
+  border-color: rgba(14,109,130,0.55);
+  box-shadow: 0 0 0 2.5px rgba(14,109,130,0.12);
+}
+.fieldInput::placeholder { color: var(--tx-5); }
+.fieldInput[readonly] { cursor: default; color: var(--tx-2); }
+
+.fileInputRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.browseBtn {
+  height: 34px;
+  padding: 0 12px;
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--tx-3);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.browseBtn:hover { background: var(--bg-hover-md); }
+
+.fieldHint {
+  font-size: 11px;
+  color: var(--tx-5);
+  line-height: 1.4;
+}
+
+/* ── Mode options (radio-style) ───────────────────────────────────────────── */
+.modeOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0.5px solid var(--bd);
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 7px;
+  background: var(--bg-surface);
+  transition: border-color 0.12s, background 0.12s;
+  text-align: left;
+  box-sizing: border-box;
+}
+.modeOption:hover { background: var(--bg-hover); }
+
+.modeOptionActive {
+  border-color: rgba(14,109,130,0.50) !important;
+  background: rgba(14,109,130,0.05) !important;
+}
+
+.radioCircle {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bd-input);
+  flex-shrink: 0;
+  margin-top: 2px;
+  position: relative;
+  transition: border-color 0.12s;
+}
+.modeOptionActive .radioCircle { border-color: #0F6D82; }
+.modeOptionActive .radioCircle::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #0F6D82;
+}
+
+.modeLabel {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--tx-1);
+  line-height: 1.3;
+}
+
+.modeDesc {
+  font-size: 11.5px;
+  color: var(--tx-4);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ── Import sub-panel ─────────────────────────────────────────────────────── */
+.importBox {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-muted);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 9px;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.sourceDirHint {
+  font-size: 11px;
+  color: var(--tx-5);
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+}
+
+/* ── Copy plan (shows which directories will be copied) ───────────────────── */
+.copyPlan {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.copyPlanRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copyPlanIcon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.copyPlanName {
+  font-size: 11px;
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  color: var(--tx-2);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copyPlanBadge {
+  font-size: 10px;
+  color: var(--tx-5);
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  border-radius: 4px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Module chips ─────────────────────────────────────────────────────────── */
+.moduleRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.moduleChip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--tx-5);
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+
+.moduleChipFound {
+  color: #1D9E75;
+  background: rgba(29,158,117,0.08);
+  border-color: rgba(29,158,117,0.28);
+}
+
+/* ── Model zoo scroll container ──────────────────────────────────────────── */
+.zooScroll {
+  width: 100%;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 3px;
+  /* Custom thin scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--bd) transparent;
+}
+.zooScroll::-webkit-scrollbar        { width: 4px; }
+.zooScroll::-webkit-scrollbar-track  { background: transparent; }
+.zooScroll::-webkit-scrollbar-thumb  { background: var(--bd); border-radius: 2px; }
+
+/* ── Error ────────────────────────────────────────────────────────────────── */
+.errorMsg {
+  font-size: 11.5px;
+  color: #EF4444;
+  background: rgba(239,68,68,0.07);
+  border: 0.5px solid rgba(239,68,68,0.25);
+  border-radius: 7px;
+  padding: 7px 10px;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 4px;
+  box-sizing: border-box;
+  line-height: 1.4;
+}

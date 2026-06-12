@@ -1,0 +1,17 @@
+{
+  "id": "IEA-10MW",
+  "name": "IEA 10MW Monopile",
+  "subtitle": "Fixed-bottom · 30 m depth · 10 MW",
+  "description": "IEA 10-198-RWT reference turbine on a monopile substructure in 30 m water depth. Rotor diameter 198 m, hub height 128 m above MSL. Full offshore simulation: SeaState (JONSWAP, Hs=4.52 m, Tp=9.45 s), HydroDyn Morison strip theory, SubDyn flexible monopile (D=9 m). ROSCO controller.",
+  "configType": "fixed",
+  "badge": "Offshore",
+  "fstFile": "IEA-10.0-198-RWT.fst",
+  "modelDir": "IEA-10-198-RWT",
+  "hubHeight": 128,
+  "rotorDiameter": 198,
+  "ratedPower": 10000,
+  "available": true,
+  "turbineClass": "IEC Class IB",
+  "windDefault": "wind/default.inp",
+  "notes": "Fixed-bottom offshore: CompSeaSt=1, CompHydro=1, CompSub=1, CompMooring=0. ROSCO DISCON.IN patched for ROSCO 2.10.x (F_VSRefSpdCornerFreq). ElastoDyn platform DOFs all False (SubDyn handles platform dynamics). HydroDyn and SubDyn files updated to OpenFAST 4.x format."
+}

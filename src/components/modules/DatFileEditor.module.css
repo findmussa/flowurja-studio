@@ -1,0 +1,194 @@
+/* ── Wrapper ─────────────────────────────────────────────── */
+.editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+  background: var(--bg-muted);
+}
+
+.filePathBox {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.filePathBox:hover {
+  border-color: var(--bd-strong);
+  background: var(--bg-surface-hov);
+}
+
+.filePathText {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  color: var(--tx-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.filePathPlaceholder {
+  flex: 1;
+  font-size: 12px;
+  color: var(--tx-5);
+  font-style: italic;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toolbarBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--tx-3);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.toolbarBtn:hover { background: var(--bg-surface-hov); color: var(--tx-1); }
+.toolbarBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px;
+}
+
+.emptyIcon {
+  opacity: 0.25;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx-3);
+}
+
+.emptyHint {
+  font-size: 12.5px;
+  color: var(--tx-5);
+  text-align: center;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.emptyBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-strong);
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--tx-2);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.emptyBtn:hover { background: var(--bg-surface-hov); }
+
+/* ── Text area ───────────────────────────────────────────── */
+.textArea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--tx-1);
+  background: var(--bg-app);
+  border: none;
+  outline: none;
+  padding: 14px 20px;
+  tab-size: 4;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+.textArea::selection {
+  background: rgba(8,145,178,0.18);
+}
+
+/* ── Status bar ──────────────────────────────────────────── */
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 16px;
+  border-top: 0.5px solid var(--bd-subtle);
+  background: var(--bg-muted);
+  flex-shrink: 0;
+}
+
+.statusItem {
+  font-size: 11px;
+  color: var(--tx-5);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusSpacer { flex: 1; }
+
+.statusDirty {
+  font-size: 11px;
+  color: #D97706;
+  font-weight: 600;
+}
+
+.saveBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  background: var(--accent-color, #0891B2);
+  border: none;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+.saveBtn:hover { opacity: 0.85; }
+.saveBtn:disabled { opacity: 0.40; cursor: not-allowed; }

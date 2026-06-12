@@ -1,0 +1,76 @@
+.shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+  /* macOS compositor provides the window shadow via titleBarStyle overlay */
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+  /* uniform gap so the sidebar and main panel float inside the window */
+  padding: 8px;
+}
+
+.sidebarWrap {
+  flex-shrink: 0;
+  display: flex;
+  /* no overflow:hidden — that was clipping the sidebar's rounded corners and shadow.
+     min-width:0 on .card/.inner is what prevents flex growth instead. */
+}
+
+.resizeHandle {
+  width: 8px;            /* matches body padding so sidebar↔main gap = sidebar↔edge gap */
+  flex-shrink: 0;
+  cursor: col-resize;
+  -webkit-app-region: no-drag;
+  background: transparent;
+  z-index: 10;
+  transition: background 0.2s;
+}
+.resizeHandle:hover { background: var(--bg-hover); }
+
+.mainCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  border-radius: 12px;
+  box-shadow: 0 0 0 0.5px var(--bd);
+  -webkit-app-region: drag;
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Windows overrides ────────────────────────────────────────────────────────
+   On Windows the OS provides native title bar + decorations, so the floating
+   transparent layout used on macOS is replaced with a standard flat layout.   */
+:global([data-platform="windows"]) .shell {
+  background: var(--bg-app);   /* solid — no compositor transparency on Windows */
+}
+:global([data-platform="windows"]) .body {
+  padding: 0;                  /* no floating gap — content fills the full frame */
+}
+:global([data-platform="windows"]) .mainCol {
+  border-radius: 0;
+  box-shadow: none;
+}
+:global([data-platform="windows"]) .resizeHandle {
+  width: 4px;                  /* thinner divider looks better without the gap */
+}

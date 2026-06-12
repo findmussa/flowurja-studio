@@ -1,0 +1,24 @@
+{
+  "name": "flowwake-studio",
+  "version": "0.1.0",
+  "description": "OpenFAST & TurbSim desktop workflow environment",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-global-shortcut": "^2.3.1",
+    "lucide-react": "^1.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/cli": "^2.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.11"
+  }
+}

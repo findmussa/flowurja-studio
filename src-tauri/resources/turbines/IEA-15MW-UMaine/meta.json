@@ -1,0 +1,18 @@
+{
+  "id": "IEA-15MW-UMaine",
+  "name": "IEA 15MW UMaine VolturnUS-S",
+  "subtitle": "Floating · Class IB · 15 MW",
+  "description": "IEA 15-240-RWT reference turbine on the UMaine VolturnUS-S semi-submersible platform. Hub height 150 m, rotor diameter 240 m. Floating offshore configuration from the IEA Wind Task 37 reference turbine series.",
+  "configType": "floating",
+  "badge": "Floating",
+  "fstFile": "IEA-15-240-RWT-UMaineSemi.fst",
+  "modelDir": "IEA-15-240-RWT-UMaineSemi",
+  "siblingDirs": ["IEA-15-240-RWT"],
+  "hubHeight": 150,
+  "rotorDiameter": 240,
+  "ratedPower": 15000,
+  "available": true,
+  "turbineClass": "IEC Class IB",
+  "windDefault": "wind/default.inp",
+  "notes": "CompServo=0 (open-loop). To enable closed-loop ROSCO control: set CompServo=1 in the .fst file — libdiscon.dylib, IEA-15-240-RWT-UMaineSemi_DISCON.IN, and Cp_Ct_Cq.IEA15MW.txt are already bundled. The shared IEA-15-240-RWT/ sibling directory contains blade, airfoil, and Cp/Ct/Cq data referenced by relative path from the model."
+}

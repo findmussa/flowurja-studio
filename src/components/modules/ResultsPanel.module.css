@@ -1,0 +1,652 @@
+/* ── Root ─────────────────────────────────────────────────────────────────── */
+.root { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:9px 18px; border-bottom:0.5px solid var(--bd-subtle);
+  flex-shrink:0;
+  -webkit-app-region: drag;
+}
+.headerLeft  { display:flex; align-items:center; gap:7px; min-width:0; -webkit-app-region: no-drag; }
+.headerRight { display:flex; align-items:center; gap:6px; flex-shrink:0; -webkit-app-region: no-drag; }
+.headerIcon  { color:#E11D48; flex-shrink:0; }
+.title { font-size:13px; font-weight:600; color:var(--tx-1); letter-spacing:-0.01em; flex-shrink:0; }
+.metaTag {
+  font-size:11px; color:var(--tx-5); background:var(--bg-muted);
+  border:0.5px solid var(--bd-subtle); border-radius:5px; padding:1px 7px; white-space:nowrap;
+}
+.trimToggle {
+  display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--tx-3);
+  cursor:pointer; user-select:none;
+}
+.trimToggle input { accent-color:#0891B2; cursor:pointer; }
+.openBtn, .scanBtn {
+  display:flex; align-items:center; gap:5px; padding:5px 11px;
+  border-radius:7px; border:0.5px solid var(--bd); background:var(--bg-hover);
+  color:var(--tx-2); font-size:12px; font-weight:500; font-family:inherit; cursor:pointer;
+  white-space:nowrap; transition:background 0.12s;
+}
+.openBtn:hover:not(:disabled), .scanBtn:hover { background:var(--bg-hover-md); color:var(--tx-1); }
+.openBtn:disabled { opacity:0.5; cursor:default; }
+
+/* ── Error bar ────────────────────────────────────────────────────────────── */
+.errorBar {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:7px 18px; background:rgba(239,68,68,0.08);
+  border-bottom:0.5px solid rgba(239,68,68,0.20); font-size:12px; color:#DC2626; flex-shrink:0;
+}
+.errorClose { display:flex; align-items:center; border:none; background:transparent; cursor:pointer; color:#DC2626; padding:2px; }
+
+/* ── Loading bar ─────────────────────────────────────────────────────────── */
+.loadingBar {
+  padding:6px 18px; font-size:12px; color:var(--tx-4); background:var(--bg-muted);
+  border-bottom:0.5px solid var(--bd-subtle); flex-shrink:0;
+}
+
+/* ── Run rack ────────────────────────────────────────────────────────────── */
+.runRack {
+  display:flex; align-items:center; gap:6px;
+  padding:7px 14px;
+  border-bottom:0.5px solid var(--bd-subtle);
+  background:var(--bg-header);
+  flex-shrink:0; flex-wrap:nowrap; overflow-x:auto; min-height:40px;
+}
+.runRack::-webkit-scrollbar { height:3px; }
+.runRack::-webkit-scrollbar-thumb { background:var(--bd-strong); border-radius:2px; }
+
+.runPill {
+  display:flex; align-items:center; gap:0;
+  background:var(--bg-surface-hov); border:0.5px solid var(--bd);
+  border-radius:8px; padding:3px 5px 3px 0; flex-shrink:0;
+  transition:opacity 0.15s; box-shadow:0 1px 4px rgba(0,0,0,0.06);
+}
+.runPillDim { opacity:0.4; }
+.runAdd {
+  display:flex; align-items:center; justify-content:center;
+  width:26px; height:26px; flex-shrink:0;
+  border-radius:7px; border:0.5px dashed var(--bd);
+  background:transparent; color:var(--tx-4); cursor:pointer;
+  transition:background 0.1s, color 0.1s, border-color 0.1s;
+}
+.runAdd:hover:not(:disabled) { background:var(--bg-hover); color:var(--tx-1); border-color:var(--bd); border-style:solid; }
+.runAdd:disabled { opacity:0.5; cursor:not-allowed; }
+.runLabelText {
+  font-size:11.5px; color:var(--tx-2); padding:2px 8px;
+  font-family:ui-monospace,"SF Mono",monospace;
+  cursor:default; user-select:none;
+  max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  border-left:3px solid transparent; /* colour set inline */
+  border-radius:3px; margin-left:2px;
+}
+.runLabelInput {
+  font-size:11.5px; color:var(--tx-1); padding:2px 7px; margin-left:2px;
+  font-family:ui-monospace,"SF Mono",monospace;
+  background:var(--bg-input); border:0.5px solid #0891B2; border-radius:4px;
+  outline:none; width:130px;
+}
+.runEye,.runX {
+  display:flex; align-items:center; border:none; background:transparent;
+  color:var(--tx-5); cursor:pointer; padding:4px; border-radius:5px;
+  transition:color 0.1s, background 0.1s; flex-shrink:0;
+}
+.runEye:hover { color:var(--tx-2); background:var(--bg-hover); }
+.runX:hover { color:#EF4444; background:rgba(239,68,68,0.10); }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.emptyState {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; padding:40px 32px; text-align:center;
+}
+.emptyIcon { color:var(--tx-7); margin-bottom:4px; }
+.emptyTitle { font-size:14px; font-weight:600; color:var(--tx-2); letter-spacing:-0.01em; }
+.emptyHint { font-size:12.5px; color:var(--tx-4); max-width:380px; line-height:1.6; }
+.emptyHint code { font-family:ui-monospace,"SF Mono",monospace; font-size:11.5px; background:var(--bg-muted); border:0.5px solid var(--bd-subtle); border-radius:4px; padding:1px 5px; color:var(--tx-3); }
+.emptyActions { display:flex; gap:8px; margin-top:4px; flex-wrap:wrap; justify-content:center; }
+.emptyBtn {
+  display:flex; align-items:center; gap:6px; padding:8px 18px;
+  border-radius:8px; border:0.5px solid var(--bd); background:var(--bg-hover);
+  color:var(--tx-2); font-size:12.5px; font-weight:500; font-family:inherit; cursor:pointer; transition:background 0.12s;
+}
+.emptyBtn:hover { background:var(--bg-hover-md); color:var(--tx-1); }
+
+/* ── Main content layout ─────────────────────────────────────────────────── */
+.content {
+  flex:1; display:flex; gap:10px; padding:10px;
+  overflow:hidden; min-height:0; background:var(--bg-base);
+}
+
+/* ── Dark-mode frosted-glass cards ───────────────────────────────────────── */
+/* Use a semi-transparent DARK overlay + backdrop-filter blur so the macOS   */
+/* vibrancy/bleed stays beautiful but the panels read as distinctly dark.    */
+/* 82 % opacity keeps the content readable; 18 % lets the desktop glow thru. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .content  { background: rgba(4, 4, 8, 0.25); }
+  :root:not([data-theme="light"]) .chanPanel {
+    background: rgba(14, 14, 18, 0.82);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    backdrop-filter: blur(20px) saturate(1.8);
+    border-color: rgba(255,255,255,0.08);
+  }
+  :root:not([data-theme="light"]) .chartCol {
+    background: rgba(14, 14, 18, 0.82);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    backdrop-filter: blur(20px) saturate(1.8);
+    border-color: rgba(255,255,255,0.08);
+  }
+  :root:not([data-theme="light"]) .runRack  { background: rgba(10, 10, 14, 0.65); }
+}
+:root[data-theme="dark"] .content  { background: rgba(4, 4, 8, 0.25); }
+:root[data-theme="dark"] .chanPanel {
+  background: rgba(14, 14, 18, 0.82);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border-color: rgba(255,255,255,0.08);
+}
+:root[data-theme="dark"] .chartCol {
+  background: rgba(14, 14, 18, 0.82);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border-color: rgba(255,255,255,0.08);
+}
+:root[data-theme="dark"] .runRack  { background: rgba(10, 10, 14, 0.65); }
+
+/* ── Channel browser card ────────────────────────────────────────────────── */
+.chanPanel {
+  width:204px; min-width:150px; flex-shrink:0; display:flex; flex-direction:column;
+  background:var(--bg-surface-hov); border:0.5px solid var(--bd-subtle);
+  border-radius:10px; overflow:hidden;
+  box-shadow:0 1px 6px rgba(0,0,0,0.07);
+}
+.chanPanelHead {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:9px 12px 6px; flex-shrink:0;
+  border-bottom:0.5px solid var(--bd-subtle);
+}
+.chanPanelLabel { font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--tx-4); }
+.chanBadge { font-size:10.5px; color:var(--tx-5); background:var(--bg-pill); border-radius:10px; padding:1px 6px; }
+
+/* Search */
+.searchRow { position:relative; margin:7px 8px 5px; flex-shrink:0; }
+.searchIcon { position:absolute; left:8px; top:50%; transform:translateY(-50%); color:var(--tx-5); pointer-events:none; }
+.searchInput { width:100%; padding:5px 28px 5px 24px; border-radius:7px; border:0.5px solid var(--bd-input); background:var(--bg-input); color:var(--tx-1); font-size:11.5px; font-family:inherit; outline:none; }
+.searchInput:focus { border-color:#0891B2; box-shadow:0 0 0 2px rgba(8,145,178,0.12); }
+.searchClear { position:absolute; right:7px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--tx-5); cursor:pointer; padding:1px; display:flex; align-items:center; }
+
+/* Channel list */
+.chanList { list-style:none; overflow-y:auto; flex:1; padding:0 4px 4px; min-height:0; }
+.chanList::-webkit-scrollbar { width:4px; }
+.chanList::-webkit-scrollbar-thumb { background:var(--bd-strong); border-radius:2px; }
+.chanItem { display:flex; align-items:center; gap:6px; padding:4px 7px; border-radius:6px; cursor:pointer; transition:background 0.08s; font-size:11.5px; color:var(--tx-3); user-select:none; }
+.chanItem:hover { background:var(--bg-hover); color:var(--tx-1); }
+.chanItemSel  { color:var(--tx-1); background:rgba(8,145,178,0.08); }
+.chanItemSel:hover { background:rgba(8,145,178,0.12); }
+.chanSwatch { width:8px; height:8px; border-radius:50%; border:1.5px solid var(--bd-strong); flex-shrink:0; transition:background 0.12s,border-color 0.12s; }
+.chanName { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:ui-monospace,"SF Mono",monospace; font-size:11px; }
+.chanUnit { font-size:10px; color:var(--tx-5); flex-shrink:0; background:var(--bg-pill); border-radius:4px; padding:0 4px; }
+.chanPartial { font-size:9px; color:#D97706; background:rgba(217,119,6,0.10); border:0.5px solid rgba(217,119,6,0.25); border-radius:4px; padding:0 4px; flex-shrink:0; }
+.chanEmpty { font-size:11px; color:var(--tx-5); padding:8px 10px; font-style:italic; }
+.chanHint { font-size:10px; color:var(--tx-6); padding:5px 12px 7px; border-top:0.5px solid var(--bd-subtle); flex-shrink:0; line-height:1.4; }
+
+/* Channel groups */
+.chanGroupWrap { list-style:none; }
+.chanGroupHeader {
+  display:flex; align-items:center; gap:5px;
+  width:100%; padding:5px 8px 4px;
+  background:none; border:none; cursor:pointer;
+  color:var(--tx-4); user-select:none;
+  position:sticky; top:0; z-index:1;
+  background:var(--bg-surface-hov);
+}
+.chanGroupHeader:hover { color:var(--tx-2); }
+.chanGroupHeaderSel {
+  display:flex; align-items:center; gap:5px;
+  padding:5px 8px 4px; color:var(--tx-4); user-select:none;
+  position:sticky; top:0; z-index:1;
+  background:var(--bg-surface-hov);
+  /* no cursor/hover — not clickable */
+}
+.chanGroupLabel { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; flex:1; text-align:left; }
+.chanGroupCount { font-size:10px; color:var(--tx-5); background:var(--bg-pill); border-radius:8px; padding:0 5px; flex-shrink:0; }
+.chanGroupList  { list-style:none; padding:0; margin:0 0 2px; }
+.chevronCollapsed { transition:transform 0.15s; }
+.chevronExpanded  { transform:rotate(90deg); transition:transform 0.15s; }
+
+/* ── Chart column card ────────────────────────────────────────────────────── */
+.chartCol {
+  flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;
+  background:var(--bg-surface-hov); border:0.5px solid var(--bd-subtle);
+  border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,0.07);
+}
+
+/* ── Chart mode bar ──────────────────────────────────────────────────────── */
+.chartBar {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:6px 12px; border-bottom:0.5px solid var(--bd-subtle);
+  flex-shrink:0;
+}
+.modeToggle { display:flex; align-items:center; gap:2px; background:var(--bg-muted); border-radius:8px; padding:2px; border:0.5px solid var(--bd-subtle); }
+.modeBtn { display:flex; align-items:center; gap:4px; padding:4px 12px; border-radius:6px; border:none; background:transparent; color:var(--tx-4); font-size:11.5px; font-family:inherit; cursor:pointer; transition:background 0.12s,color 0.12s; white-space:nowrap; }
+.modeBtnActive { background:var(--bg-surface); color:var(--tx-1); box-shadow:0 1px 4px rgba(0,0,0,0.10); font-weight:500; }
+.resetZoomBtn { display:flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; border:0.5px solid var(--bd); background:var(--bg-hover); color:var(--tx-3); font-size:11px; font-family:inherit; cursor:pointer; white-space:nowrap; transition:background 0.1s; }
+.resetZoomBtn:hover { background:var(--bg-hover-md); color:var(--tx-1); }
+.savePngBtn { display:flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; border:0.5px solid var(--bd); background:var(--bg-hover); color:var(--tx-3); font-size:11px; font-family:inherit; cursor:pointer; white-space:nowrap; transition:background 0.1s; }
+.savePngBtn:hover:not(:disabled) { background:var(--bg-hover-md); color:var(--tx-1); }
+.savePngBtn:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* ── Canvas chart wrapper ────────────────────────────────────────────────── */
+.chartWrap { flex:1; position:relative; overflow:hidden; min-height:0; border-radius:0 0 10px 10px; }
+.chartCanvas { display:block; position:absolute; inset:0; }
+.chartPlaceholder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12.5px; color:var(--tx-5); pointer-events:none; }
+.fftHint { position:absolute; bottom:44px; right:18px; font-size:10.5px; color:rgba(217,119,6,0.85); font-family:ui-monospace,"SF Mono",monospace; pointer-events:none; }
+
+/* ── Channel dash-pattern legend (multi-run + multi-channel) ────────────── */
+/* Shows which dash pattern = which channel, and which colour = which run.   */
+.chanLegend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 5px 12px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+  background: var(--bg-muted);
+}
+.chanLegendLabel {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tx-5);
+  flex-shrink: 0;
+}
+.chanLegendSep {
+  color: var(--tx-6);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.chanLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--tx-3);
+  font-family: ui-monospace, "SF Mono", monospace;
+}
+
+/* ── All-runs-hidden placeholder ─────────────────────────────────────────── */
+.allHiddenPlaceholder {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; padding:32px; text-align:center;
+}
+.allHiddenIcon  { color:var(--tx-6); margin-bottom:4px; }
+.allHiddenTitle { font-size:13.5px; font-weight:600; color:var(--tx-3); }
+.allHiddenHint  { font-size:12px; color:var(--tx-5); max-width:260px; line-height:1.5; }
+
+/* ── Hover tooltip ───────────────────────────────────────────────────────── */
+.tooltip { position:absolute; top:20px; background:var(--bg-surface-hov); border:0.5px solid var(--bd); border-radius:9px; padding:8px 10px; font-size:11.5px; box-shadow:0 4px 20px rgba(0,0,0,0.16); pointer-events:none; z-index:10; min-width:160px; max-width:240px; }
+.tooltipTime { font-size:10.5px; color:var(--tx-4); margin-bottom:5px; font-family:ui-monospace,"SF Mono",monospace; }
+.tooltipRunGroup { margin-bottom:5px; }
+.tooltipRunGroup:last-child { margin-bottom:0; }
+.tooltipRunLabel { font-size:10px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
+.tooltipRow { display:flex; align-items:center; gap:5px; padding:1.5px 0; }
+.tooltipDot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.tooltipName { flex:1; font-family:ui-monospace,"SF Mono",monospace; font-size:10.5px; color:var(--tx-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tooltipVal { font-size:11.5px; font-weight:600; color:var(--tx-1); font-family:ui-monospace,"SF Mono",monospace; }
+.tooltipUnit { font-size:10px; color:var(--tx-5); flex-shrink:0; }
+
+/* ── Stats drawer — unified for single + multi run ───────────────────────── */
+/* Replaces the old statsBar + statsTable. One card per selected channel,    */
+/* horizontal-scrollable. Always shows DEL + Wöhler m selector.              */
+.statsDrawer {
+  flex-shrink:0; border-top:0.5px solid var(--bd-subtle);
+  border-radius:0 0 10px 10px; display:flex; flex-direction:column;
+  max-height:190px; overflow:hidden;
+}
+
+/* Drawer master header */
+.statsDrawerHead {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:5px 12px 4px; border-bottom:0.5px solid var(--bd-subtle);
+  flex-shrink:0; background:var(--bg-muted);
+}
+.statsDrawerTitle { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--tx-4); }
+.statsDrawerRight { display:flex; align-items:center; gap:8px; }
+
+/* Horizontal card strip */
+.statsCards {
+  display:flex; flex:1; min-height:0; overflow-x:auto; overflow-y:hidden;
+}
+.statsCards::-webkit-scrollbar { height:3px; }
+.statsCards::-webkit-scrollbar-thumb { background:var(--bd-strong); border-radius:2px; }
+
+/* One card per channel */
+.statCard {
+  flex-shrink:0; display:flex; flex-direction:column;
+  border-right:0.5px solid var(--bd-subtle);
+}
+.statCard:last-child { border-right:none; flex:1; }
+
+/* Card label row */
+.statCardHead {
+  display:flex; align-items:center; gap:6px; padding:5px 10px 4px;
+  border-bottom:0.5px solid var(--bd-subtle);
+  background:var(--bg-hover); flex-shrink:0;
+}
+.statCardDot  { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.statCardName {
+  font-size:11px; font-weight:600; color:var(--tx-1);
+  font-family:ui-monospace,"SF Mono",monospace;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  max-width:130px;
+}
+.statCardUnit {
+  font-size:9.5px; color:var(--tx-5); background:var(--bg-pill);
+  border-radius:4px; padding:0 4px; flex-shrink:0; margin-left:auto;
+}
+
+/* Mini table inside card */
+.statCardTable { border-collapse:collapse; font-size:11px; flex:1; }
+.statCardTable th, .statCardTable td { padding:3px 10px; text-align:right; white-space:nowrap; }
+
+.statColHdr {
+  font-size:9.5px; color:var(--tx-5); font-weight:700;
+  text-transform:uppercase; letter-spacing:0.04em;
+  background:var(--bg-muted); border-bottom:0.5px solid var(--bd-subtle);
+}
+.statColHdrDEL {
+  font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+  color:#7C3AED; background:var(--bg-muted); border-bottom:0.5px solid var(--bd-subtle);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .statColHdrDEL { color:#C084FC; }
+}
+:root[data-theme="dark"] .statColHdrDEL { color:#C084FC; }
+
+.statColRun {
+  font-size:10px; font-family:ui-monospace,"SF Mono",monospace;
+  text-align:left !important; padding-left:10px !important;
+  font-weight:500; max-width:110px; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap;
+}
+.statColVal { color:var(--tx-1); font-family:ui-monospace,"SF Mono",monospace; }
+.statColDEL { color:#7C3AED; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .statColDEL { color:#C084FC; }
+}
+:root[data-theme="dark"] .statColDEL { color:#C084FC; }
+.statDataRow:hover { background:var(--bg-hover); }
+
+/* Shared button */
+.copyBtn { display:flex; align-items:center; gap:4px; padding:3px 9px; border-radius:5px; border:0.5px solid var(--bd); background:var(--bg-hover); color:var(--tx-3); font-size:11px; font-family:inherit; cursor:pointer; transition:background 0.1s; }
+.copyBtn:hover { background:var(--bg-hover-md); color:var(--tx-1); }
+
+/* ── Modals: MUST use fully opaque backgrounds ───────────────────────────── */
+/* --bg-surface is rgba(…,0.82) which lets the Tauri transparent window show  */
+/* through. Modals use hard-coded opaque colours keyed to the theme.          */
+.overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000;
+  display:flex; align-items:center; justify-content:center; padding:24px;
+  -webkit-backdrop-filter:blur(2px);
+  backdrop-filter:blur(2px);
+}
+
+.scannerModal {
+  width:760px; max-width:100%; max-height:calc(100vh - 48px);
+  background:var(--bg-surface);
+  border:0.5px solid var(--bd); border-radius:14px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.35);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+
+.scannerHeader { display:flex; align-items:center; justify-content:space-between; padding:13px 16px 11px; border-bottom:0.5px solid var(--bd-subtle); flex-shrink:0; }
+.scannerTitle { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--tx-1); }
+.closeBtn2 { display:flex; align-items:center; border:none; background:transparent; color:var(--tx-4); cursor:pointer; padding:4px; border-radius:5px; transition:background 0.1s,color 0.1s; }
+.closeBtn2:hover { background:var(--bg-hover); color:var(--tx-1); }
+.scannerPath { display:flex; align-items:center; gap:7px; padding:9px 14px; border-bottom:0.5px solid var(--bd-subtle); flex-shrink:0; }
+.scannerDirInput { flex:1; padding:6px 10px; border-radius:7px; border:0.5px solid var(--bd-input); background:var(--bg-input); color:var(--tx-1); font-size:12px; font-family:ui-monospace,"SF Mono",monospace; outline:none; }
+.scannerDirInput:focus { border-color:#0891B2; }
+.scannerPickBtn { padding:5px 12px; border-radius:7px; border:0.5px solid var(--bd); background:var(--bg-hover); color:var(--tx-3); font-size:11.5px; font-family:inherit; font-weight:500; cursor:pointer; white-space:nowrap; transition:background 0.1s,color 0.1s; }
+.scannerPickBtn:hover { background:var(--bg-hover-md); color:var(--tx-1); }
+.scannerScanBtn { padding:5px 12px; border-radius:7px; border:0.5px solid var(--bd); background:var(--bg-hover); color:var(--tx-3); font-size:11.5px; font-family:inherit; font-weight:500; cursor:pointer; white-space:nowrap; transition:background 0.1s,color 0.1s; display:flex; align-items:center; gap:5px; }
+.scannerScanBtn:hover:not(:disabled) { background:var(--bg-hover-md); color:var(--tx-1); }
+.scannerScanBtn:disabled { opacity:0.5; cursor:default; }
+.scanErr { padding:7px 14px; font-size:12px; color:#DC2626; background:rgba(239,68,68,0.07); border-bottom:0.5px solid rgba(239,68,68,0.18); flex-shrink:0; }
+/* Select-all bar (hidden — select-all is now per group header like WindField) */
+.scannerSelectBar { display:none; }
+.scannerSelectAll { display:none; }
+
+/* Grouped scrollable file list */
+.scannerGroupedWrap { flex:1; overflow-y:auto; min-height:0; }
+.scannerGroupedWrap::-webkit-scrollbar { width:5px; }
+.scannerGroupedWrap::-webkit-scrollbar-thumb { background:var(--bd-strong); border-radius:2px; }
+
+/* One folder section */
+.scannerFolderGroup { border-bottom:0.5px solid var(--bd-subtle); }
+.scannerFolderGroup:last-child { border-bottom:none; }
+
+/* Folder header row */
+.scannerFolderHead {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 14px 4px;
+  background:var(--bg-muted);
+  border-bottom:0.5px solid var(--bd-subtle);
+  position:sticky; top:0; z-index:1;
+  cursor:pointer; user-select:none; transition:background 0.1s;
+}
+.scannerFolderHead:hover { background:var(--bg-hover); }
+
+.scannerFolderChevron {
+  flex-shrink:0; color:var(--tx-5);
+  transition:transform 0.15s ease;
+}
+.scannerFolderChevronClosed { transform:rotate(-90deg); }
+.scannerFolderCheck {
+  width:13px; height:13px; flex-shrink:0;
+  accent-color:#E11D48; cursor:pointer;
+}
+.scannerFolderName {
+  flex:1; font-size:10.5px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.06em; color:var(--tx-4);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.scannerFolderCount {
+  font-size:9.5px; font-weight:600; color:var(--tx-5);
+  background:var(--bg-pill); border-radius:8px; padding:1px 6px;
+  flex-shrink:0;
+}
+
+/* Individual file row */
+.scannerFileRow {
+  display:flex; align-items:center; gap:10px;
+  padding:5px 14px 5px 22px;   /* 22px = 14px base + 8px folder indent */
+  cursor:pointer; transition:background 0.07s;
+  border-bottom:0.5px solid var(--bd-subtle);
+}
+.scannerFileRow:last-child { border-bottom:none; }
+.scannerFileRow:hover { background:var(--bg-hover); }
+.scannerFileRowSel { background:rgba(225,29,72,0.05); }
+.scannerFileRowSel:hover { background:rgba(225,29,72,0.09); }
+.scannerFileRowLoaded { background:rgba(8,145,178,0.06); cursor:default; }
+.scannerFileRowLoaded:hover { background:rgba(8,145,178,0.06); }
+.scannerFileCheck { accent-color:#E11D48; cursor:pointer; flex-shrink:0; }
+.scannerLoadedBadge { font-size:11px; color:var(--tx-5); white-space:nowrap; flex-shrink:0; padding:4px 8px; }
+.scannerAddBtn {
+  padding:4px 12px; border-radius:6px; border:0.5px solid var(--bd);
+  background:var(--bg-hover); color:var(--tx-3); font-size:11.5px;
+  font-family:inherit; font-weight:500; cursor:pointer; white-space:nowrap;
+  flex-shrink:0; transition:background 0.1s,color 0.1s;
+}
+.scannerAddBtn:hover { background:#0891B2; border-color:#0891B2; color:#fff; }
+.scannerFileName {
+  flex:1; font-size:12px;
+  color:var(--tx-2); font-family:ui-monospace,"SF Mono",monospace;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;
+}
+.scannerFileMeta {
+  font-size:11px; color:var(--tx-5); white-space:nowrap; flex-shrink:0;
+  font-family:ui-monospace,"SF Mono",monospace;
+}
+.scannerFileDate { font-size:11px; color:var(--tx-6); white-space:nowrap; flex-shrink:0; }
+
+/* Keep old table classes for backward-compat (unused but harmless) */
+.scannerTableWrap { flex:1; overflow:auto; min-height:0; }
+.scannerTableWrap::-webkit-scrollbar { width:5px; height:5px; }
+.scannerTableWrap::-webkit-scrollbar-thumb { background:var(--bd-strong); border-radius:2px; }
+.scannerTable { border-collapse:collapse; width:100%; font-size:12px; }
+.scannerTable th,.scannerTable td { padding:5px 12px; text-align:left; white-space:nowrap; }
+.scannerTable th { font-size:10.5px; font-weight:700; color:var(--tx-4); text-transform:uppercase; letter-spacing:0.04em; position:sticky; top:0; background:var(--bg-surface-hov); border-bottom:0.5px solid var(--bd-subtle); }
+.sortHead { cursor:pointer; user-select:none; transition:color 0.1s; }
+.sortHead:hover { color:var(--tx-1); }
+.scanRow { cursor:pointer; transition:background 0.07s; }
+.scanRow:hover { background:var(--bg-hover); }
+.scanRowSel { background:rgba(8,145,178,0.07); }
+.scanRowSel:hover { background:rgba(8,145,178,0.12); }
+.scanName { font-family:ui-monospace,"SF Mono",monospace; color:var(--tx-1); font-weight:500; max-width:280px; overflow:hidden; text-overflow:ellipsis; }
+.scannerFooter { display:flex; align-items:center; gap:8px; padding:10px 14px; border-top:0.5px solid var(--bd-subtle); flex-shrink:0; }
+.scanCount { font-size:12px; color:var(--tx-4); flex:1; }
+.scannerClearBtn { padding:5px 12px; border-radius:7px; border:0.5px solid var(--bd); background:transparent; color:var(--tx-4); font-size:11.5px; font-family:inherit; cursor:pointer; transition:background 0.1s,color 0.1s; }
+.scannerClearBtn:hover { background:var(--bg-hover); color:var(--tx-2); }
+.scannerLoadBtn { padding:6px 16px; border-radius:7px; border:none; background:#0891B2; color:#fff; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; transition:background 0.1s,opacity 0.1s; }
+.scannerLoadBtn:hover:not(:disabled) { background:#0e7490; }
+.scannerLoadBtn:disabled { opacity:0.45; cursor:default; }
+
+/* ── Δ run button (header) ───────────────────────────────────────────────── */
+.deltaBtn {
+  display:flex; align-items:center; gap:5px; padding:5px 11px;
+  border-radius:7px; border:0.5px solid rgba(124,58,237,0.35);
+  background:rgba(124,58,237,0.07); color:#7C3AED;
+  font-size:11.5px; font-family:inherit; cursor:pointer;
+  white-space:nowrap; transition:background 0.12s;
+}
+.deltaBtn:hover { background:rgba(124,58,237,0.13); }
+
+/* ── Δ badge in run rack ─────────────────────────────────────────────────── */
+.deltaBadge {
+  font-size:9px; font-weight:800; letter-spacing:0.02em;
+  background:rgba(124,58,237,0.15); color:#7C3AED;
+  border:0.5px solid rgba(124,58,237,0.30); border-radius:4px;
+  padding:1px 5px; margin-left:4px; flex-shrink:0;
+}
+
+/* ── Delta modal ─────────────────────────────────────────────────────────── */
+.deltaModal {
+  width:420px; max-width:100%;
+  background:#ffffff;
+  border:0.5px solid rgba(0,0,0,0.12); border-radius:14px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.26);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .deltaModal { background:#2c2c2e; border-color:rgba(255,255,255,0.12); }
+}
+:root[data-theme="dark"] .deltaModal { background:#2c2c2e; border-color:rgba(255,255,255,0.12); }
+
+.deltaModalHeader {
+  display:flex; align-items:center; gap:7px;
+  padding:13px 16px 11px; border-bottom:0.5px solid var(--bd-subtle);
+  font-size:13px; font-weight:600; color:var(--tx-1); flex-shrink:0;
+}
+.deltaModalHeader button { margin-left:auto; }
+.deltaBody { padding:16px; display:flex; flex-direction:column; gap:8px; }
+.deltaLabel { font-size:11px; font-weight:600; color:var(--tx-3); text-transform:uppercase; letter-spacing:0.05em; }
+.deltaSelect {
+  padding:6px 9px; border-radius:7px; border:0.5px solid var(--bd-input);
+  background:var(--bg-input); color:var(--tx-1); font-size:12.5px;
+  font-family:inherit; outline:none; cursor:pointer;
+}
+.deltaSelect:focus { border-color:#7C3AED; }
+.deltaHint { font-size:11.5px; color:var(--tx-4); line-height:1.55; margin-top:4px; }
+.deltaFooter { display:flex; align-items:center; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:0.5px solid var(--bd-subtle); flex-shrink:0; }
+.deltaCancelBtn { padding:6px 14px; border-radius:7px; border:0.5px solid var(--bd); background:var(--bg-hover); color:var(--tx-2); font-size:12.5px; font-family:inherit; cursor:pointer; transition:background 0.1s; }
+.deltaCancelBtn:hover { background:var(--bg-hover-md); }
+.deltaCreateBtn { padding:6px 16px; border-radius:7px; border:none; background:#7C3AED; color:#fff; font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:background 0.1s,opacity 0.1s; }
+.deltaCreateBtn:hover:not(:disabled) { background:#6D28D9; }
+.deltaCreateBtn:disabled { opacity:0.4; cursor:default; }
+
+/* ── Preset popup (anchored dropdown) ────────────────────────────────────── */
+.presetTriggerBtn {
+  display:flex; align-items:center; border:none; background:transparent;
+  color:var(--tx-5); cursor:pointer; padding:3px; border-radius:5px;
+  transition:color 0.1s, background 0.1s;
+}
+.presetTriggerBtn:hover { color:var(--tx-1); background:var(--bg-hover); }
+
+/* Position is set inline by PresetPopup (createPortal + position:fixed) so
+   the popup escapes the chanPanel's overflow:hidden clipping. */
+.presetPopup {
+  z-index:99999;
+  background:#ffffff;
+  border:0.5px solid rgba(0,0,0,0.12); border-radius:10px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.12);
+  overflow:hidden;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .presetPopup { background:#2c2c2e; border-color:rgba(255,255,255,0.12); }
+}
+:root[data-theme="dark"] .presetPopup { background:#2c2c2e; border-color:rgba(255,255,255,0.12); }
+
+.presetHeader { display:flex; align-items:center; justify-content:space-between; padding:8px 10px 6px; border-bottom:0.5px solid var(--bd-subtle); }
+.presetTitle { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--tx-4); }
+.presetCloseBtn { display:flex; align-items:center; border:none; background:transparent; color:var(--tx-5); cursor:pointer; padding:2px; border-radius:4px; }
+.presetCloseBtn:hover { color:var(--tx-1); background:var(--bg-hover); }
+.presetEmpty { font-size:11px; color:var(--tx-5); padding:9px 10px; font-style:italic; }
+.presetRow { display:flex; align-items:center; border-bottom:0.5px solid var(--bd-subtle); }
+.presetApplyBtn {
+  flex:1; display:flex; align-items:center; justify-content:space-between;
+  gap:6px; padding:7px 10px; border:none; background:transparent;
+  color:var(--tx-2); font-size:11.5px; font-family:inherit; cursor:pointer;
+  text-align:left; transition:background 0.08s;
+}
+.presetApplyBtn:hover { background:var(--bg-hover); color:var(--tx-1); }
+.presetCount { font-size:10px; color:var(--tx-5); background:var(--bg-pill); border-radius:9px; padding:0 5px; flex-shrink:0; }
+.presetDeleteBtn { display:flex; align-items:center; border:none; background:transparent; color:var(--tx-6); cursor:pointer; padding:7px 8px; transition:color 0.1s; }
+.presetDeleteBtn:hover { color:#EF4444; }
+.presetSaveRow { display:flex; gap:5px; padding:6px 8px; }
+.presetNameInput { flex:1; padding:5px 8px; border-radius:6px; border:0.5px solid var(--bd-input); background:var(--bg-input); color:var(--tx-1); font-size:11.5px; font-family:inherit; outline:none; }
+.presetNameInput:focus { border-color:#0891B2; }
+.presetSaveConfirmBtn { padding:5px 10px; border-radius:6px; border:none; background:#0891B2; color:#fff; font-size:11.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:background 0.1s,opacity 0.1s; }
+.presetSaveConfirmBtn:disabled { opacity:0.4; cursor:default; }
+.presetSaveConfirmBtn:hover:not(:disabled) { background:#0e7490; }
+/* Wrapper gives the button breathing room from the popup edges */
+.presetNewBtnWrap { padding:8px 10px 10px; }
+.presetNewBtn {
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  width:100%; padding:6px 10px;
+  border:0.5px solid var(--bd); border-radius:6px;
+  background:var(--bg-hover); color:var(--tx-2);
+  font-size:11.5px; font-weight:500; font-family:inherit;
+  cursor:pointer; transition:background 0.12s, color 0.12s, border-color 0.12s;
+}
+.presetNewBtn:hover:not(:disabled) {
+  background:rgba(8,145,178,0.10); border-color:rgba(8,145,178,0.35); color:#0891B2;
+}
+.presetNewBtn:disabled { opacity:0.4; cursor:default; }
+
+/* ── Scatter axis selectors ───────────────────────────────────────────────── */
+.scatterSelectors { display:flex; align-items:center; gap:5px; flex:1; justify-content:center; }
+.scatterSelectorLabel { font-size:10.5px; font-weight:700; color:var(--tx-4); text-transform:uppercase; letter-spacing:0.05em; }
+.scatterSelect {
+  padding:3px 8px; border-radius:6px; border:0.5px solid var(--bd-input);
+  background:var(--bg-input); color:var(--tx-1); font-size:11.5px;
+  font-family:ui-monospace,"SF Mono",monospace; outline:none; cursor:pointer;
+  max-width:140px;
+}
+.scatterSelect:focus { border-color:#0891B2; }
+
+/* ── Wöhler m selector (in stats drawer header) ──────────────────────────── */
+.wohlerLabel { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--tx-4); cursor:default; }
+.wohlerSelect {
+  padding:2px 6px; border-radius:5px; border:0.5px solid var(--bd-input);
+  background:var(--bg-input); color:var(--tx-2); font-size:11px;
+  font-family:inherit; outline:none; cursor:pointer;
+}
+.wohlerSelect:focus { border-color:#0891B2; }
+
+/* Dark mode overrides for Δ button and badge */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .deltaBtn { color:#C084FC; border-color:rgba(192,132,252,0.35); background:rgba(192,132,252,0.08); }
+  :root:not([data-theme="light"]) .deltaBadge { color:#C084FC; border-color:rgba(192,132,252,0.30); background:rgba(192,132,252,0.12); }
+}
+:root[data-theme="dark"] .deltaBtn { color:#C084FC; border-color:rgba(192,132,252,0.35); background:rgba(192,132,252,0.08); }
+:root[data-theme="dark"] .deltaBadge { color:#C084FC; border-color:rgba(192,132,252,0.30); background:rgba(192,132,252,0.12); }

@@ -1,0 +1,516 @@
+/* ── Shell ─────────────────────────────────────────── */
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Header ────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx-1);
+  letter-spacing: -0.02em;
+  -webkit-app-region: no-drag;
+}
+
+.desc {
+  font-size: 12px;
+  color: var(--tx-5);
+  -webkit-app-region: no-drag;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: rgba(124,92,191,0.12);
+  color: #7C5CBF;
+  letter-spacing: 0.02em;
+  -webkit-app-region: no-drag;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .badge { background: rgba(124,92,191,0.22); }
+}
+:root[data-theme="dark"] .badge { background: rgba(124,92,191,0.22); }
+
+.headerBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-family: inherit;
+  transition: background 0.12s;
+  -webkit-app-region: no-drag;
+}
+
+.headerBtnPrimary {
+  background: rgba(124,92,191,0.10);
+  border: 0.5px solid rgba(124,92,191,0.35);
+  color: #7C5CBF;
+}
+.headerBtnPrimary:hover { background: rgba(124,92,191,0.18); }
+
+.headerBtnSecondary {
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  color: var(--tx-3);
+}
+.headerBtnSecondary:hover { background: var(--bg-hover-md); }
+
+/* ── File bar ──────────────────────────────────────── */
+.fileBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  background: var(--bg-muted);
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
+}
+.fileBarLoaded {
+  background: rgba(124,92,191,0.05);
+  border-bottom-color: rgba(124,92,191,0.18);
+}
+
+.filePath {
+  flex: 1;
+  font-size: 11.5px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  color: var(--tx-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filePathSet { color: var(--tx-2); }
+
+.dirtyDot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #D97706;
+  flex-shrink: 0;
+}
+
+.saveBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  background: #7C5CBF;
+  border: none;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: opacity 0.12s;
+}
+.saveBtn:hover:not(.saveBtnInactive) { opacity: 0.85; }
+.saveBtnInactive { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Tab bar ───────────────────────────────────────── */
+.tabBar {
+  display: flex;
+  gap: 2px;
+  padding: 6px 12px 0;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: none;
+  border: none;
+  border-radius: 7px 7px 0 0;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--tx-4);
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+  position: relative;
+}
+.tab:hover { color: var(--tx-2); background: var(--bg-hover); }
+
+.tabActive {
+  color: #7C5CBF;
+  background: var(--bg-hover);
+  font-weight: 500;
+}
+.tabActive::after {
+  content: "";
+  position: absolute;
+  bottom: -0.5px; left: 0; right: 0;
+  height: 1.5px;
+  background: #7C5CBF;
+  border-radius: 99px;
+}
+
+/* ── Content layout ────────────────────────────────── */
+.contentRow {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.formArea {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ── Form ──────────────────────────────────────────── */
+.form {
+  padding: 18px 20px 32px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-bottom: 22px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px 14px;
+  margin-bottom: 22px;
+}
+
+.grid1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+/* ── Section header ────────────────────────────────── */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(124,92,191,0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 11px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sectionHead { color: rgba(176,148,232,0.85); }
+}
+:root[data-theme="dark"] .sectionHead { color: rgba(176,148,232,0.85); }
+
+/* ── Field ─────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tx-2);
+  line-height: 1.3;
+}
+
+.unit {
+  font-size: 12px;
+  color: var(--tx-4);
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--tx-5);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ── Inputs ────────────────────────────────────────── */
+.inp {
+  height: 30px;
+  padding: 0 9px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--tx-1);
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.inp:focus {
+  border-color: rgba(124,92,191,0.50);
+  box-shadow: 0 0 0 2.5px rgba(124,92,191,0.12);
+}
+
+.select {
+  height: 30px;
+  padding: 0 9px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--tx-1);
+  outline: none;
+  transition: border-color 0.12s;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.select:focus {
+  border-color: rgba(124,92,191,0.50);
+  box-shadow: 0 0 0 2.5px rgba(124,92,191,0.12);
+}
+
+/* ── Toggle row ────────────────────────────────────── */
+.toggleGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle {
+  position: relative;
+  width: 30px; height: 17px;
+  border-radius: 99px;
+  background: var(--bd-input);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.toggle.on { background: #7C5CBF; }
+
+.toggleThumb {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.20);
+}
+.toggle.on .toggleThumb { left: 15px; }
+
+.toggleLabel {
+  font-size: 12.5px;
+  color: var(--tx-2);
+  flex: 1;
+}
+
+.toggleNote {
+  font-size: 11px;
+  color: var(--tx-5);
+}
+
+/* ── File row ──────────────────────────────────────── */
+.fileRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.browseBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--tx-3);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+  flex-shrink: 0;
+}
+.browseBtn:hover { background: var(--bg-surface-hov); }
+
+/* ── Collapsible ───────────────────────────────────── */
+.collapsible {
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.collapsibleHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-muted);
+  border: none;
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--tx-3);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.collapsibleHead:hover { background: var(--bg-hover); color: var(--tx-2); }
+
+.collapsibleBody { padding: 14px 12px; }
+
+/* ── Right stats panel ─────────────────────────────── */
+.statsPanel {
+  width: 250px;
+  min-width: 250px;
+  flex-shrink: 0;
+  border-left: 0.5px solid var(--bd-subtle);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  background: var(--bg-muted);
+}
+
+.statsLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--tx-6);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 9px;
+}
+
+.statKey {
+  font-size: 10.5px;
+  color: var(--tx-4);
+}
+
+.statVal {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tx-1);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* ── Substructure illustration wrap ────────────────── */
+.turbineWrap {
+  width: 100%;
+  height: 200px;
+  flex-shrink: 0;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+/* ── Callout (accent) ──────────────────────────────── */
+.callout {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  background: rgba(124,92,191,0.06);
+  border: 0.5px solid rgba(124,92,191,0.18);
+  border-radius: 8px;
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: rgba(124,92,191,0.90);
+  line-height: 1.55;
+}
+
+/* ── Info callout (neutral) ─────────────────────────── */
+.calloutInfo {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  background: var(--bg-muted);
+  border: 0.5px solid var(--bd);
+  border-radius: 8px;
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--tx-4);
+  line-height: 1.55;
+}
+
+/* ── OutList textarea ──────────────────────────────── */
+.outListArea {
+  width: 100%;
+  min-height: 120px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--tx-2);
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  padding: 8px 10px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  box-sizing: border-box;
+}
+.outListArea:focus {
+  border-color: rgba(124,92,191,0.50);
+  box-shadow: 0 0 0 2.5px rgba(124,92,191,0.12);
+}

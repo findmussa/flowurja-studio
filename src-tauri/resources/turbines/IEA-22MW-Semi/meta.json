@@ -1,0 +1,18 @@
+{
+  "id": "IEA-22MW-Semi",
+  "name": "IEA 22MW Semisubmersible",
+  "subtitle": "Floating · 200 m depth · 22 MW",
+  "description": "IEA 22-280-RWT reference turbine on a semisubmersible floating platform in 200 m water depth. Rotor diameter 280 m, hub height ~169 m above MSL. Full floating simulation: SeaState (JONSWAP, Hs=0.83 m, Tp=6.9 s), HydroDyn WAMIT potential flow, MoorDyn catenary mooring (3 lines, 837 m). ROSCO controller (v2.10.1).",
+  "configType": "floating",
+  "badge": "Floating",
+  "fstFile": "IEA-22-280-RWT-Semi.fst",
+  "modelDir": "IEA-22-280-RWT-Semi",
+  "siblingDirs": ["IEA-22-280-RWT"],
+  "hubHeight": 169,
+  "rotorDiameter": 280,
+  "ratedPower": 22000,
+  "available": true,
+  "turbineClass": "IEC Class IB",
+  "windDefault": "wind/default.inp",
+  "notes": "Floating semisubmersible: CompSub=0, CompMooring=3 (MoorDyn), CompHydro=1 (HydroDyn PotMod with WAMIT data). ElastoDyn platform DOFs all True (no SubDyn — ElastoDyn handles 6-DOF platform motion). WAMIT data in HydroData/ (semi.1, semi.3, semi.hst). ROSCO 2.10.1 DISCON.IN bundled."
+}

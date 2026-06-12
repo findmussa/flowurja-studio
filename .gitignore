@@ -1,0 +1,60 @@
+# ── Rust build output (includes DMG, .app bundle, .exe, intermediate objects) ──
+src-tauri/target/
+
+# ── Node / frontend ────────────────────────────────────────────────────────────
+node_modules/
+dist/
+
+# ── Python sidecar build artifacts (PyInstaller) ──────────────────────────────
+# The compiled fws_io binary is produced by CI, not committed.
+src-tauri/sidecar/fws_io
+src-tauri/sidecar/fws_io.exe
+src-tauri/sidecar/*.spec
+build/
+
+# ── Platform binaries at resources/bin root (CI staging area) ─────────────────
+# Committed binaries live in resources/bin/macos/, /windows/, /linux/.
+# The root copies are written by the CI prep step just before `tauri build`
+# and must not be committed (they're platform-specific and 50MB each).
+src-tauri/resources/bin/openfast
+src-tauri/resources/bin/openfast.exe
+src-tauri/resources/bin/turbsim
+src-tauri/resources/bin/turbsim.exe
+
+# ── Simulation output files (not source) ──────────────────────────────────────
+TurbSim.sum
+*.outb
+*.sum
+*.ech
+
+# ── macOS filesystem metadata ──────────────────────────────────────────────────
+.DS_Store
+**/.DS_Store
+
+# ── AI coding assistant data directories ──────────────────────────────────────
+# (Claude Code, Cursor, Codex, Aider, Continue.dev, Codeium/Windsurf)
+.claude/
+.cursor/
+.codex/
+.aider*
+.continue/
+.codeium/
+
+# ── AI assistant instruction files (personal/internal, not project docs) ───────
+# (Claude Code, OpenAI Codex, Google Gemini)
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+
+# ── Internal design documents ─────────────────────────────────────────────────
+POSTPROCESSING_DESIGN.md
+
+# ── Editor / IDE ───────────────────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/*.code-workspace
+.idea/
+*.swp
+*.swo
+
+# ── Misc ───────────────────────────────────────────────────────────────────────
+*.log

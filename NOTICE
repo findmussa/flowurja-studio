@@ -1,0 +1,71 @@
+FlowWake Studio
+Copyright 2026 Nur Mahammad Mussa Kalimullah, Trinity College Dublin
+
+This product includes software and data developed by third parties.
+Their licenses are reproduced in the LICENSES/ directory.
+
+──────────────────────────────────────────────────────────────────────────────
+OpenFAST v4.2.0
+Copyright 2014 National Renewable Energy Laboratory
+Licensed under the Apache License, Version 2.0
+https://github.com/OpenFAST/openfast
+
+TurbSim v4.2.0
+Copyright 2014 National Renewable Energy Laboratory
+Licensed under the Apache License, Version 2.0
+https://github.com/OpenFAST/openfast
+
+ROSCO v2.10.1 (libdiscon)
+Copyright 2019 National Renewable Energy Laboratory
+Licensed under the Apache License, Version 2.0
+https://github.com/NREL/ROSCO
+NREL: ROSCO. Version 2.10.1, https://github.com/NREL/ROSCO, 2024.
+
+──────────────────────────────────────────────────────────────────────────────
+NREL 5MW Reference Wind Turbine
+Copyright 2009 National Renewable Energy Laboratory
+Licensed under the Apache License, Version 2.0
+https://github.com/OpenFAST/r-test/tree/main/glue-codes/openfast/5MW_Baseline
+Jonkman, J., Butterfield, S., Musial, W., & Scott, G. (2009).
+Definition of a 5-MW reference wind turbine for offshore system development.
+NREL/TP-500-38060. National Renewable Energy Laboratory.
+
+IEA Wind 10MW Reference Wind Turbine (IEA-10-198-RWT)
+Copyright 2019 International Energy Agency / National Renewable Energy Laboratory
+Licensed under Creative Commons Attribution 4.0 (CC BY 4.0)
+https://github.com/IEAWindSystems/IEA-10.0-198-RWT
+Bortolotti, P., Canet Tarres, H., Dykes, K., Merz, K., Sethuraman, L.,
+Verelst, D., & Zahle, F. (2019). IEA Wind Task 37 on Systems Engineering in
+Wind Energy — WP2.1 Reference Wind Turbines. NREL/TP-73492.
+https://www.nrel.gov/docs/fy19osti/73492.pdf
+
+IEA Wind 15MW Reference Wind Turbine (IEA-15-240-RWT)
+Copyright 2020 National Renewable Energy Laboratory / Technical University of Denmark
+Licensed under Creative Commons Attribution 4.0 (CC BY 4.0)
+https://github.com/IEAWindSystems/IEA-15-240-RWT
+Gaertner, E., Rinker, J., Sethuraman, L., Zahle, F., Anderson, B., Barter, G.,
+Abbas, N., Meng, F., Bortolotti, P., Skrzypinski, W., Scott, G., Feil, R.,
+Bredmose, H., Dykes, K., Shields, M., Allen, C., & Viselli, A. (2020).
+Definition of the IEA Wind 15-Megawatt Offshore Reference Wind Turbine.
+NREL/TP-75698. https://www.nrel.gov/docs/fy20osti/75698.pdf
+
+IEA Wind 15MW UMaine VolturnUS-S Floating Platform (IEA-15-240-RWT UMaine)
+Copyright 2020 National Renewable Energy Laboratory / University of Maine
+Licensed under Creative Commons Attribution 4.0 (CC BY 4.0)
+Allen, C., Viselli, A., Dagher, H., Goupee, A., Gaertner, E., Abbas, N.,
+Hall, M., & Barter, G. (2020). Definition of the UMaine VolturnUS-S Reference
+Platform Developed for the IEA Wind 15-Megawatt Offshore Reference Wind Turbine.
+NREL/TP-76773. https://www.nrel.gov/docs/fy20osti/76773.pdf
+
+IEA Wind 22MW Reference Wind Turbine (IEA-22-280-RWT)
+Copyright 2024 Technical University of Denmark / International Energy Agency
+Licensed under Creative Commons Attribution 4.0 (CC BY 4.0)
+https://github.com/IEAWindSystems/IEA-22-280-RWT
+Zahle, F., Barlas, A., Lønbæk, K., Bortolotti, P., Zalkind, D., Wang, L.,
+Labuschagne, C., Sethuraman, L., & Barter, G. (2024). Definition of the
+IEA Wind 22-Megawatt Offshore Reference Wind Turbine.
+DTU Wind Report E-0243. https://doi.org/10.11581/DTU.00000317
+
+──────────────────────────────────────────────────────────────────────────────
+DISCLAIMER: The National Renewable Energy Laboratory and the IEA Wind Task
+organisations do not endorse FlowWake Studio or its developer.

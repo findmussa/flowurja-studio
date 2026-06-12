@@ -1,0 +1,18 @@
+{
+  "id": "IEA-22MW-Mono",
+  "name": "IEA 22MW Monopile",
+  "subtitle": "Fixed-bottom · 34 m depth · 22 MW",
+  "description": "IEA 22-280-RWT reference turbine on a monopile substructure in 34 m water depth. Rotor diameter 280 m, hub height ~169 m above MSL. Full offshore simulation: SeaState (JONSWAP, Hs=7.6 m, Tp=13 s), HydroDyn Morison strip theory (D=10 m), SubDyn flexible monopile. ROSCO controller (v2.10.1).",
+  "configType": "fixed",
+  "badge": "Offshore",
+  "fstFile": "IEA-22-280-RWT-Monopile.fst",
+  "modelDir": "IEA-22-280-RWT-Monopile",
+  "siblingDirs": ["IEA-22-280-RWT"],
+  "hubHeight": 169,
+  "rotorDiameter": 280,
+  "ratedPower": 22000,
+  "available": true,
+  "turbineClass": "IEC Class IB",
+  "windDefault": "wind/default.inp",
+  "notes": "Fixed-bottom offshore: CompSeaSt=1, CompHydro=1, CompSub=1, CompMooring=0, CompElast=1 (ElastoDyn). ElastoDyn platform DOFs all False (SubDyn handles platform dynamics). HydroDyn and SubDyn files sourced directly from IEA-22-280-RWT-main GitHub repo (already OpenFAST 4.x format). ROSCO 2.10.1 DISCON.IN bundled."
+}

@@ -1,0 +1,47 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "productName": "FlowWake Studio",
+  "identifier": "com.flowwake.studio",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "macOS": {
+      "license": "../installer-license.txt"
+    },
+    "windows": {
+      "nsis": {
+        "license": "../installer-license.txt"
+      }
+    },
+    "resources": {
+      "sidecar/*": "sidecar",
+      "resources/bin/*": "bin",
+      "resources/lib/*": "lib",
+      "resources/turbines/NREL-5MW": "turbines/NREL-5MW",
+      "resources/turbines/IEA-10MW": "turbines/IEA-10MW",
+      "resources/turbines/IEA-15MW-Mono": "turbines/IEA-15MW-Mono",
+      "resources/turbines/IEA-15MW-UMaine": "turbines/IEA-15MW-UMaine",
+      "resources/turbines/IEA-15MW-OLAF": "turbines/IEA-15MW-OLAF",
+      "resources/turbines/IEA-22MW-Mono": "turbines/IEA-22MW-Mono",
+      "resources/turbines/IEA-22MW-Semi": "turbines/IEA-22MW-Semi"
+    },
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

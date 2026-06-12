@@ -1,0 +1,539 @@
+/* ── Shell ──────────────────────────────────────────────────── */
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.headerIcon { color: #378ADD; flex-shrink: 0; -webkit-app-region: no-drag; }
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx-1);
+  letter-spacing: -0.02em;
+  -webkit-app-region: no-drag;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--tx-5);
+  -webkit-app-region: no-drag;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: rgba(55,138,221,0.14);
+  color: #378ADD;
+  letter-spacing: 0.02em;
+  -webkit-app-region: no-drag;
+}
+
+/* ── Header buttons ─────────────────────────────────────────── */
+.headerBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  transition: background 0.12s;
+  -webkit-app-region: no-drag;
+}
+
+.headerBtnPrimary {
+  background: rgba(55,138,221,0.12);
+  border: 0.5px solid rgba(55,138,221,0.35);
+  color: #378ADD;
+}
+.headerBtnPrimary:hover { background: rgba(55,138,221,0.20); }
+
+/* Eye / preview button */
+.eyeBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: var(--bg-hover);
+  border: 0.5px solid var(--bd);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: var(--tx-3);
+  transition: background 0.12s;
+  -webkit-app-region: no-drag;
+}
+.eyeBtn:hover { background: var(--bg-hover-md); }
+
+/* ── File bar ───────────────────────────────────────────────── */
+.fileBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  background: var(--bg-muted);
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.fileBarLoaded {
+  background: rgba(55,138,221,0.05);
+  border-bottom-color: rgba(55,138,221,0.20);
+}
+
+.filePath {
+  flex: 1;
+  font-size: 11.5px;
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  color: var(--tx-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filePathSet { color: var(--tx-2); }
+
+.dirtyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #D97706;
+  flex-shrink: 0;
+  /* No transition: instant snap — prevents dot lingering during load flips */
+}
+
+.saveBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  background: #378ADD;
+  border: none;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: opacity 0.12s;
+}
+.saveBtn:hover:not(.saveBtnInactive) { opacity: 0.85; }
+.saveBtnInactive { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Content layout ─────────────────────────────────────────── */
+.contentRow {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Scroll / form area ─────────────────────────────────────── */
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.form {
+  padding: 18px 20px 32px;
+}
+
+/* ── Section header ─────────────────────────────────────────── */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(55,138,221,0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 11px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sectionHead { color: rgba(90,165,240,0.88); }
+}
+:root[data-theme="dark"] .sectionHead { color: rgba(90,165,240,0.88); }
+
+/* ── Wind type selector ─────────────────────────────────────── */
+.typeBar {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.typeBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 13px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--tx-2);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.typeBtn:hover { background: var(--bg-surface-hov); }
+
+.typeBtnActive {
+  background: rgba(55,138,221,0.14) !important;
+  border-color: rgba(55,138,221,0.45) !important;
+  color: #378ADD !important;
+  font-weight: 600;
+}
+
+.typeDesc {
+  font-size: 12px;
+  color: var(--tx-4);
+  margin: 0 0 4px;
+}
+
+/* ── Grid ───────────────────────────────────────────────────── */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-bottom: 22px;
+}
+
+/* ── Field ──────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tx-2);
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--tx-5);
+  line-height: 1.4;
+}
+
+/* ── Inputs ─────────────────────────────────────────────────── */
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.inp {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--tx-1);
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.inp:focus {
+  border-color: rgba(55,138,221,0.55);
+  box-shadow: 0 0 0 2.5px rgba(55,138,221,0.12);
+}
+
+.unit {
+  font-size: 12px;
+  color: var(--tx-4);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── File row ───────────────────────────────────────────────── */
+.fileRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.browseBtn {
+  height: 30px;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--tx-3);
+  transition: background 0.12s;
+}
+.browseBtn:hover { background: var(--bg-surface-hov); }
+
+/* ── BTS scanner ────────────────────────────────────────────── */
+.scanRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.scanBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--tx-3);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.scanBtn:hover:not(:disabled) { background: var(--bg-surface-hov); }
+.scanBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spinning { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btsPickerWrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.btsPicker {
+  width: 100%;
+  height: 26px;
+  padding: 0 26px 0 8px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--tx-1);
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+}
+.btsPicker:focus {
+  border-color: rgba(55,138,221,0.55);
+  box-shadow: 0 0 0 2.5px rgba(55,138,221,0.12);
+}
+
+.btsChevron {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--tx-4);
+  pointer-events: none;
+}
+
+.noBts {
+  font-size: 11.5px;
+  color: var(--tx-5);
+  font-style: italic;
+}
+
+/* ── Toggle ─────────────────────────────────────────────────── */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.toggle {
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--bd-input);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.toggle.on { background: #378ADD; }
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+  transition: left 0.15s;
+  pointer-events: none;
+}
+
+.toggle.on .toggleThumb { left: 18px; }
+
+.toggleLabel {
+  font-size: 13px;
+  color: var(--tx-2);
+  cursor: default;
+}
+
+/* ── Auto-name output display ───────────────────────────────── */
+.outputRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.autoNameBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: rgba(55,138,221,0.07);
+  border: 0.5px solid rgba(55,138,221,0.22);
+  border-radius: 7px;
+}
+
+.autoNameLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #378ADD;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.autoNameVal {
+  font-size: 12.5px;
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  color: #378ADD;
+  font-weight: 500;
+}
+
+/* ── Actions ────────────────────────────────────────────────── */
+.actionRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.writeBtn {
+  height: 32px;
+  padding: 0 16px;
+  background: #378ADD;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.writeBtn:hover:not(:disabled) { background: #2563EB; }
+.writeBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Stats sidebar ──────────────────────────────────────────── */
+.statsPanel {
+  width: 250px;
+  min-width: 250px;
+  flex-shrink: 0;
+  border-left: 0.5px solid var(--bd-subtle);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  background: var(--bg-muted);
+}
+
+.statsLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--tx-5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.turbineWrap {
+  width: 100%;
+  height: 180px;
+  flex-shrink: 0;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 9px;
+}
+
+.statKey {
+  font-size: 10.5px;
+  color: var(--tx-4);
+}
+
+.statVal {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tx-1);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}

@@ -1,0 +1,16 @@
+{
+  "id": "NREL-5MW",
+  "name": "NREL 5MW",
+  "subtitle": "Land-based · Class A · 5 MW",
+  "description": "NREL offshore baseline 5 MW reference turbine configured for onshore operation. Hub height 90 m, rotor diameter 126 m. Industry-standard benchmark used in hundreds of publications.",
+  "configType": "onshore",
+  "badge": "Good first run",
+  "fstFile": "NREL-5MW.fst",
+  "hubHeight": 90,
+  "rotorDiameter": 126,
+  "ratedPower": 5000,
+  "available": true,
+  "turbineClass": "IEC Class A",
+  "windDefault": "wind/default.inp",
+  "notes": "CompServo=0 (open-loop). To enable closed-loop ROSCO control: set CompServo=1 in NREL-5MW.fst — libdiscon.dylib, DISCON.IN, and Cp_Ct_Cq.NREL5MW.txt are already bundled in the model directory."
+}
