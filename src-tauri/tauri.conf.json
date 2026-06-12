@@ -26,6 +26,7 @@
     "windows": {
       "nsis": {
         "installerIcon":   "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
         "installerHooks":  "nsis/license_hook.nsh"
       }
     },
