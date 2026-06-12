@@ -1,4 +1,5 @@
 use tauri::Manager;
+#[cfg(target_os = "macos")]
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 
 // ── macOS Cmd+Q interception ──────────────────────────────────────────────────
