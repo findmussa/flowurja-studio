@@ -101,33 +101,6 @@ jobs:
             chmod +x "$dst/openfast" "$dst/turbsim"
           fi
 
-      # ── ROSCO libdiscon for Windows ────────────────────────────────────────────
-      # libdiscon.dylib is committed; libdiscon.dll must be fetched for Windows.
-      # micromamba --no-deps grabs only the ROSCO package itself (~10 MB)
-      # instead of the full dependency tree (wisdem, statsmodels, etc.).
-      - name: Get libdiscon.dll (Windows only)
-        if: matrix.os-dir == 'windows'
-        uses: mamba-org/setup-micromamba@v2
-        with:
-          micromamba-version: latest
-          environment-name: rosco
-          create-args: -c conda-forge rosco=2.10.1 --no-deps
-          init-shell: bash
-          cache-environment: true
-          cache-environment-key: rosco-2.10.1-win64
-
-      - name: Copy libdiscon.dll into turbine templates
-        if: matrix.os-dir == 'windows'
-        shell: bash -el {0}
-        run: |
-          dll=$(find "$MAMBA_ROOT_PREFIX/envs/rosco" -name "libdiscon.dll" | head -1)
-          echo "Found: $dll"
-          find src-tauri/resources/turbines \
-            \( -name "libdiscon.dylib" -o -name "libdiscon.dll" -o -name "libdiscon.so" \) | \
-            xargs -I{} dirname {} | sort -u | while read d; do
-              cp "$dll" "$d/libdiscon.dll"
-            done
-
       # ── Strip unused libdiscon variants ───────────────────────────────────────
       # Keep only the variant matching this platform; remove the rest.
       - name: Remove unused libdiscon variants
