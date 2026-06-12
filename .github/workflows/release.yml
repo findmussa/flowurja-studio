@@ -5,17 +5,8 @@ on:
   push:
     tags:
       - 'v*'
-  # Manual trigger for testing a single platform without tagging
+  # Manual trigger — builds all platforms (macOS + Windows)
   workflow_dispatch:
-    inputs:
-      platform:
-        description: 'Platform to build'
-        required: true
-        default: 'windows-latest'
-        type: choice
-        options:
-          - macos-latest
-          - windows-latest
 
 env:
   ROSCO_VERSION: "2.10.1"
@@ -51,8 +42,6 @@ jobs:
           #   libdiscon-name: libdiscon.so
           #   libdiscon-keep: "*.so"
 
-    # On manual dispatch: only run the platform the user selected
-    if: github.event_name == 'push' || matrix.platform == inputs.platform
     runs-on: ${{ matrix.platform }}
     name: Build (${{ matrix.label }})
 
