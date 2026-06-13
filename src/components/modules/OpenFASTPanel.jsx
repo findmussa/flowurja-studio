@@ -689,8 +689,12 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   // Fires when the path changes (initial load / .fst switch) AND when the user
   // navigates back to this panel (isActive: false→true) so edits made in the
   // InflowWind panel are always reflected here.
+  // Only reads when panel is becoming ACTIVE — skipping the false→inactive
+  // transition prevents a race where the file read returns the pre-patch value
+  // after the user changed a setting but before patchInputFileKey completed.
   useEffect(() => {
     if (!inflowwindPath) { setWindType(1); return; }
+    if (!isActive) return;
     invoke("read_text_file", { path: inflowwindPath })
       .then(content => {
         const kv = parseFstLines(content);
@@ -702,7 +706,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
         }
       })
       .catch(() => setWindType(1));
-  }, [inflowwindPath, isActive]); // isActive: re-reads every time panel becomes visible
+  }, [inflowwindPath, isActive]);
 
   // ── Live sync from InflowWind panel (no save required) ───────────────────────
   // When the user changes WindType / HWindSpeed / FileName_BTS in the InflowWind
@@ -831,18 +835,14 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   const handleWindTypeChange = async (newWt) => {
     setWindType(newWt);
     if (!inflowwindPath) return;
-    try {
-      await patchInputFileKey(inflowwindPath, "WindType", String(newWt));
-      onInflowPatch?.();
-    } catch {}
+    try { await patchInputFileKey(inflowwindPath, "WindType", String(newWt)); } catch {}
+    onInflowPatch?.();
   };
 
   const handleHWindSpeedBlur = async () => {
     if (windType !== 1 || !inflowwindPath || !hWindSpeed) return;
-    try {
-      await patchInputFileKey(inflowwindPath, "HWindSpeed", hWindSpeed);
-      onInflowPatch?.();
-    } catch {}
+    try { await patchInputFileKey(inflowwindPath, "HWindSpeed", hWindSpeed); } catch {}
+    onInflowPatch?.();
   };
 
   // Key is "FileName_BTS" (capital N) — matches what InflowWind buildContent writes.
@@ -854,10 +854,8 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
       ? opt.path
       : `${project.windDir ?? `${project.workingDir}/wind`}/${newFile}`
     ).replace(/\\/g, "/");
-    try {
-      await patchInputFileKey(inflowwindPath, "FileName_BTS", `"${btsPath}"`);
-      onInflowPatch?.();
-    } catch {}
+    try { await patchInputFileKey(inflowwindPath, "FileName_BTS", `"${btsPath}"`); } catch {}
+    onInflowPatch?.();
   };
 
   // ── View / Save .fst ──────────────────────────────────────────────────────────
@@ -1474,7 +1472,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                       <span className={s.heroPct}>{runPct}%</span>
                     </div>
                     <div className={s.heroBarTrack}>
-                      <div className={s.heroBarFill} style={{ width: `${runPct}%` }} />
+                      <div className={s.heroBarFill} style={{ transform: `scaleX(${runPct / 100})` }} />
                     </div>
                   </div>
                 ) : modelMeta ? (

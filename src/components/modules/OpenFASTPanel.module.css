@@ -391,8 +391,10 @@
   height: 100%;
   border-radius: 99px;
   background: #0891B2;
-  transition: width 0.5s linear;
-  min-width: 0;
+  /* scaleX runs on the compositor — no layout reflow on every progress tick */
+  width: 100%;
+  transform-origin: 0 0;
+  transition: transform 0.5s linear;
 }
 
 /* ── Zone 2: Module strip ─────────────────────────────── */
@@ -1346,6 +1348,10 @@
   aspect-ratio: 100 / 140;
   color: var(--tx-3);
   transition: color 0.6s;
+  /* Own compositor layer so the blade-spin animation is isolated from layout
+     changes (progress bar updates) in the rest of the card — fixes WKWebView jitter */
+  isolation: isolate;
+  will-change: transform;
 }
 /* Running state: higher specificity (two classes) so it wins over .turbineScalable */
 .turbineScalable.heroTurbineRunning { color: #0891B2; }

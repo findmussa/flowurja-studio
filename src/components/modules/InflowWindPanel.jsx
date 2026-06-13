@@ -607,13 +607,15 @@ export default function InflowWindPanel({
 
   // Broadcast live wind params to the OpenFAST run panel whenever the user
   // changes WindType, wind speed, or BTS file — no save required.
+  // filePath is included so this also fires once the file is first loaded,
+  // even when the on-disk values happen to match the component defaults.
   useEffect(() => {
     if (!filePath || !onWindParamsChange) return;
     const btsBasename = p.FileName_BTS
       ? p.FileName_BTS.replace(/\\/g, "/").split("/").pop()
       : "";
     onWindParamsChange(p.WindType, String(p.HWindSpeed), btsBasename);
-  }, [p.WindType, p.HWindSpeed, p.FileName_BTS]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.WindType, p.HWindSpeed, p.FileName_BTS, filePath]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── BTS scanning ───────────────────────────────────────────────────────────
   const scanBts = useCallback(async () => {
