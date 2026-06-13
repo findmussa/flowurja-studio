@@ -78,5 +78,5 @@
   background: var(--bg-base);  /* solid card — no compositor blur on Windows */
 }
 :global([data-platform="windows"]) .resizeHandle {
-  width: 4px;
+  width: 8px;   /* match macOS gap */
 }

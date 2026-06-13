@@ -42,9 +42,10 @@
   flex-shrink: 0;
   -webkit-app-region: drag;
 }
-/* No traffic lights on Windows — collapse the reserved space entirely */
+/* No traffic lights on Windows — keep a small top spacer for breathing room */
 :global([data-platform="windows"]) .titleArea {
-  display: none;
+  height: 14px;
+  -webkit-app-region: no-drag;
 }
 
 /* ── Rest ── */
