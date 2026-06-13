@@ -75,6 +75,7 @@
 .body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 5px 14px 8px;
   user-select: text;
 }
@@ -92,5 +93,5 @@
 .lvOk    { color: #1D9E75; }
 .lvWarn  { color: #BA7517; }
 .lvError { color: #C0392B; }
-.msg  { color: var(--tx-2); flex: 1; word-break: break-all; user-select: text; cursor: text; }
+.msg  { color: var(--tx-2); flex: 1; min-width: 0; word-break: break-word; overflow-wrap: anywhere; user-select: text; cursor: text; }
 .empty { font-size: 12px; color: var(--tx-6); padding: 8px 0; font-style: italic; }

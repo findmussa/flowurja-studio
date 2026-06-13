@@ -311,6 +311,7 @@
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: rgba(8,145,178,0.18);
+  will-change: transform, opacity;
   animation: heroPulseAnim 1.6s ease-out infinite;
   pointer-events: none;
 }
@@ -1176,6 +1177,7 @@
    consistently — inline style strings are never transformed by the bundler. */
 .turbineBladesSpinning {
   transform-origin: 0px 0px; /* hub is at translate(50,69) origin */
+  will-change: transform;
   animation: turbineSpin 1.8s linear infinite;
 }
 
