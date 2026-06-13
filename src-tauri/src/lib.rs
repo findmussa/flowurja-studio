@@ -837,7 +837,7 @@ async fn list_turbine_templates(app: tauri::AppHandle) -> Vec<serde_json::Value>
                 if let Ok(mut meta) = serde_json::from_str::<serde_json::Value>(&raw) {
                     // Inject the absolute template root so the frontend can copy it
                     meta["templatePath"] = serde_json::Value::String(
-                        path.to_string_lossy().to_string()
+                        path.to_string_lossy().replace('\\', "/")
                     );
                     templates.push(meta);
                 }

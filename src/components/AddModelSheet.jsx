@@ -98,11 +98,12 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
     try {
       const file = await openDialog({ multiple: false, filters: [{ name: "OpenFAST", extensions: ["fst"] }] });
       if (!file) return;
-      setSourceFst(file);
-      setSourceDir(file.split("/").slice(0, -1).join("/"));
+      const file2 = file.replace(/\\/g, "/");
+      setSourceFst(file2);
+      setSourceDir(file2.split("/").slice(0, -1).join("/"));
       setSiblingDirs([]);
       setSiblingFiles([]);
-      const { siblingDirs: sibs, siblingFiles: sibFiles } = await scanModelDependencies(file);
+      const { siblingDirs: sibs, siblingFiles: sibFiles } = await scanModelDependencies(file2);
       setSiblingDirs(sibs);
       setSiblingFiles(sibFiles);
     } catch {}

@@ -440,8 +440,9 @@ export default function WelcomeScreen({
     try {
       const dir = await openDialog({ directory: true, multiple: false, title: "Choose project folder" });
       if (!dir) return;
-      setProjectDir(dir);
-      if (!projectName) setProjectName(dir.split("/").pop());
+      const normalized = dir.replace(/\\/g, "/");
+      setProjectDir(normalized);
+      if (!projectName) setProjectName(normalized.split("/").pop());
     } catch {}
   };
 
@@ -454,12 +455,13 @@ export default function WelcomeScreen({
         filters: [{ name: "OpenFAST main file", extensions: ["fst"] }],
       });
       if (!file) return;
-      setSourceFst(file);
-      setSourceDir(file.split("/").slice(0, -1).join("/"));
+      const file2 = file.replace(/\\/g, "/");
+      setSourceFst(file2);
+      setSourceDir(file2.split("/").slice(0, -1).join("/"));
       setFstModules(null);
       setSiblingDirs([]);
       setSiblingFiles([]);
-      const { fstModules: mods, siblingDirs: sibs, siblingFiles: sibling_files } = await scanModelDependencies(file);
+      const { fstModules: mods, siblingDirs: sibs, siblingFiles: sibling_files } = await scanModelDependencies(file2);
       setFstModules(mods);
       setSiblingDirs(sibs);
       setSiblingFiles(sibling_files);
