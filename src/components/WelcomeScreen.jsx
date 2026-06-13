@@ -409,6 +409,7 @@ export default function WelcomeScreen({
   const [fstModules,   setFstModules]   = useState(null);
   const [creating,     setCreating]     = useState(false);
   const [error,        setError]        = useState("");
+  const [dirHasProject, setDirHasProject] = useState("");
 
   // Template state
   const [templates,        setTemplates]        = useState([]);
@@ -443,6 +444,12 @@ export default function WelcomeScreen({
       const normalized = dir.replace(/\\/g, "/");
       setProjectDir(normalized);
       if (!projectName) setProjectName(normalized.split("/").pop());
+      // Check whether this folder already owns a .fws project file
+      const entries = await invoke("list_dir", { path: normalized }).catch(() => []);
+      const existing = entries
+        .map(e => e.replace(/\\/g, "/").split("/").pop())
+        .find(name => name.endsWith(".fws"));
+      setDirHasProject(existing ?? "");
     } catch {}
   };
 
@@ -478,6 +485,16 @@ export default function WelcomeScreen({
     setCreating(true);
     setError("");
     try {
+      // Prevent writing a second .fws into a folder that already has one
+      const existing = (await invoke("list_dir", { path: projectDir }).catch(() => []))
+        .map(e => e.replace(/\\/g, "/").split("/").pop())
+        .find(name => name.endsWith(".fws"));
+      if (existing) {
+        setError(`Folder already contains a project (${existing}). Choose a different folder or create a subfolder.`);
+        setCreating(false);
+        return;
+      }
+
       const modelDir   = `${projectDir}/model`;
       const windDir    = `${projectDir}/wind`;
       const resultsDir = `${projectDir}/results`;
@@ -619,7 +636,7 @@ export default function WelcomeScreen({
     }
   };
 
-  const canStep1 = projectName.trim().length > 0 && projectDir.length > 0;
+  const canStep1 = projectName.trim().length > 0 && projectDir.length > 0 && !dirHasProject;
   const canCreate =
     modelMode === "fresh" ||
     (modelMode === "import"   && sourceFst.length > 0) ||
@@ -745,6 +762,11 @@ export default function WelcomeScreen({
                 Browse
               </button>
             </div>
+            {dirHasProject && (
+              <p style={{ fontSize: 11, color: "var(--c-aerodyn)", marginTop: 4, lineHeight: 1.4 }}>
+                This folder already contains a project ({dirHasProject}). Choose a different folder or create a subfolder.
+              </p>
+            )}
           </div>
 
           <button
