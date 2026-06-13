@@ -2052,8 +2052,11 @@ async fn open_in_finder(path: String) -> Result<(), String> {
         }
         #[cfg(target_os = "windows")]
         {
+            // Windows Explorer does not reliably handle forward-slash paths; normalise
+            // to backslashes so it always opens the intended folder/file.
+            let win_path = path.replace('/', "\\");
             std::process::Command::new("explorer")
-                .arg(&path)
+                .arg(&win_path)
                 .spawn()
                 .map_err(|e| e.to_string())?;
         }
