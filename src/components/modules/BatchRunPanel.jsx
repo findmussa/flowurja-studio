@@ -241,20 +241,23 @@ async function exportBatchCSV(cases, batchStatus, batchRootDir, batchName, onLog
 // ── Spinning turbine SVG ──────────────────────────────────────────────────────
 
 function TurbineIcon({ spinning, className }) {
-  const bladeClass = [s.turbineBlades, spinning ? s.turbineBladesSpinning : ""].join(" ");
   return (
-    <svg className={className} viewBox="0 0 100 140" fill="none" aria-hidden="true">
-      <path d="M44 70 L56 70 L60 134 L40 134 Z" fill="currentColor" opacity="0.18" />
-      <rect x="32" y="63" width="36" height="12" rx="4.5" fill="currentColor" opacity="0.28" />
-      <g transform="translate(50 69)">
-        <g className={bladeClass}>
-          <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" />
-          <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" transform="rotate(120)" />
-          <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" transform="rotate(240)" />
-        </g>
-        <circle cx="0" cy="0" r="6.5" fill="currentColor" />
-      </g>
-    </svg>
+    <div className={[s.batchTurbineWrapper, className].join(" ")}>
+      <div className={spinning ? s.batchTurbineBladeWrapperSpin : s.batchTurbineBladeWrapper}>
+        <svg className={s.batchTurbineLayer} viewBox="0 0 100 140" fill="none" aria-hidden="true">
+          <g transform="translate(50 69)">
+            <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" />
+            <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" transform="rotate(120)" />
+            <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" transform="rotate(240)" />
+          </g>
+        </svg>
+      </div>
+      <svg className={s.batchTurbineLayer} viewBox="0 0 100 140" fill="none" aria-hidden="true">
+        <path d="M44 70 L56 70 L60 134 L40 134 Z" fill="currentColor" opacity="0.18" />
+        <rect x="32" y="63" width="36" height="12" rx="4.5" fill="currentColor" opacity="0.28" />
+        <circle cx="50" cy="69" r="6.5" fill="currentColor" />
+      </svg>
+    </div>
   );
 }
 

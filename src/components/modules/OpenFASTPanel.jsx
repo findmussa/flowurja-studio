@@ -464,28 +464,27 @@ function EditableParam({ label, unit, value, onChange, step, min, isString = fal
 // memo: props only change at simulation start/stop, so this never re-renders
 // while running. Prevents macOS WKWebView main-thread SVG animation jitter.
 const TurbineIcon = memo(function TurbineIcon({ spinning, className }) {
-  // Blade CSS class is resolved by CSS Modules — both the @keyframes name
-  // and the animation: reference inside the class get the same hashed name,
-  // unlike an inline style string which stays un-hashed and never matches.
-  const bladeClass = [s.turbineBlades, spinning ? s.turbineBladesSpinning : ""].join(" ");
+  // Blades spin inside an HTML <div> so WKWebView promotes the animation to the
+  // compositor thread — eliminating the jitter caused by SVG <g> transform animations
+  // which run on the main thread and get interrupted by React renders / layout work.
   return (
-    <svg className={className} viewBox="0 0 100 140" fill="none" aria-hidden="true">
-      {/* Tower — widens toward base */}
-      <path d="M44 70 L56 70 L60 134 L40 134 Z" fill="currentColor" opacity="0.18" />
-      {/* Nacelle */}
-      <rect x="32" y="63" width="36" height="12" rx="4.5" fill="currentColor" opacity="0.28" />
-      {/* Rotor — translate so hub is at (0,0); rotate around that origin */}
-      <g transform="translate(50 69)">
-        <g className={bladeClass}>
-          {/* Tapered blade with arc-rounded tip — same path on all three blades */}
-          <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" />
-          <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" transform="rotate(120)" />
-          <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" transform="rotate(240)" />
-        </g>
-        {/* Hub */}
-        <circle cx="0" cy="0" r="6.5" fill="currentColor" />
-      </g>
-    </svg>
+    <div className={[s.turbineWrapper, className].join(" ")}>
+      <div className={spinning ? s.turbineBladeWrapperSpin : s.turbineBladeWrapper}>
+        <svg className={s.turbineLayer} viewBox="0 0 100 140" fill="none" aria-hidden="true">
+          <g transform="translate(50 69)">
+            <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" />
+            <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" transform="rotate(120)" />
+            <path d="M-3 -1 C-4.5 -14 -4 -36 -2.5 -49 A2.5 2.5 0 0 1 2.5 -49 C4 -36 4.5 -14 3 -1 Z" fill="currentColor" opacity="0.82" transform="rotate(240)" />
+          </g>
+        </svg>
+      </div>
+      {/* Tower + nacelle + hub — static layer rendered on top of the spinning blades */}
+      <svg className={s.turbineLayer} viewBox="0 0 100 140" fill="none" aria-hidden="true">
+        <path d="M44 70 L56 70 L60 134 L40 134 Z" fill="currentColor" opacity="0.18" />
+        <rect x="32" y="63" width="36" height="12" rx="4.5" fill="currentColor" opacity="0.28" />
+        <circle cx="50" cy="69" r="6.5" fill="currentColor" />
+      </svg>
+    </div>
   );
 });
 

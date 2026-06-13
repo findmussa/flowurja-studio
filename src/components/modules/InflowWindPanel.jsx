@@ -500,8 +500,22 @@ export default function InflowWindPanel({
       _setP(newState);
       setIsDirtyFlag(false);
       onLog?.("ok", `Loaded ${path.split("/").pop()}`);
-    } catch (err) {
-      onLog?.("error", `Could not read ${path}: ${String(err)}`);
+    } catch {
+      // File is missing — auto-generate it from defaults so that subsequent
+      // patchInputFileKey calls from the OpenFAST run card have a valid file
+      // to read-and-patch (on Windows the file often doesn't exist until it is
+      // explicitly saved, which caused the one-way sync problem).
+      const fallback = { ...DEFAULT, WindType: 1 }; // Steady matches the run-card default
+      const content  = buildInflowWindContent(fallback);
+      try {
+        await invoke("write_text_file", { path, content });
+        originalContentRef.current = content;
+        originalRef.current = JSON.stringify(fallback);
+        _setP(fallback);
+        onLog?.("info", `${path.split("/").pop()} not found — created with Steady defaults`);
+      } catch {
+        // Model directory may not exist yet (project not fully configured) — stay silent
+      }
     }
   };
 
@@ -607,15 +621,13 @@ export default function InflowWindPanel({
 
   // Broadcast live wind params to the OpenFAST run panel whenever the user
   // changes WindType, wind speed, or BTS file — no save required.
-  // filePath is included so this also fires once the file is first loaded,
-  // even when the on-disk values happen to match the component defaults.
   useEffect(() => {
     if (!filePath || !onWindParamsChange) return;
     const btsBasename = p.FileName_BTS
       ? p.FileName_BTS.replace(/\\/g, "/").split("/").pop()
       : "";
     onWindParamsChange(p.WindType, String(p.HWindSpeed), btsBasename);
-  }, [p.WindType, p.HWindSpeed, p.FileName_BTS, filePath]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.WindType, p.HWindSpeed, p.FileName_BTS]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── BTS scanning ───────────────────────────────────────────────────────────
   const scanBts = useCallback(async () => {

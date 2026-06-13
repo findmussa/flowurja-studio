@@ -1149,6 +1149,38 @@
   to   { transform: rotate(360deg); }
 }
 
+/* Wrapper div receives the className that carries size (turbineScalable, etc.).
+   Children are absolutely positioned so only the wrapper's dimensions matter. */
+.turbineWrapper {
+  position: relative;
+}
+
+/* Fills the turbineWrapper — shared by the blade layer and the static layer */
+.turbineLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Blade div — idle (no animation) */
+.turbineBladeWrapper {
+  position: absolute;
+  inset: 0;
+  /* Hub sits at SVG (50, 69) inside a 100×140 viewBox → 50% x, 49.3% y */
+  transform-origin: 50% 49.3%;
+}
+
+/* Blade div — spinning; <div> CSS animation runs on the GPU compositor in WKWebView,
+   eliminating the main-thread jitter that SVG <g> animations suffer from. */
+.turbineBladeWrapperSpin {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 49.3%;
+  animation: turbineSpin 1.8s linear infinite;
+  will-change: transform;
+}
+
 .turbineWrap {
   display: flex;
   flex-direction: column;
@@ -1348,10 +1380,6 @@
   aspect-ratio: 100 / 140;
   color: var(--tx-3);
   transition: color 0.6s;
-  /* Own compositor layer so the blade-spin animation is isolated from layout
-     changes (progress bar updates) in the rest of the card — fixes WKWebView jitter */
-  isolation: isolate;
-  will-change: transform;
 }
 /* Running state: higher specificity (two classes) so it wins over .turbineScalable */
 .turbineScalable.heroTurbineRunning { color: #0891B2; }
