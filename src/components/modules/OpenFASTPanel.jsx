@@ -43,6 +43,10 @@ function resolveRelPath(fstDir, rel) {
   if (!rel) return "";
   const trimmed = rel.trim().replace(/\\/g, "/");
   if (!trimmed || /^(unused|none)$/i.test(trimmed)) return "";
+  // Windows absolute path (e.g. "C:/..." or previously-mangled "/C:/...")
+  const winAbs = trimmed.match(/^\/?([A-Za-z]:\/.+)/);
+  if (winAbs) return winAbs[1];
+  // Unix absolute path
   if (trimmed.startsWith("/")) return trimmed;
   const combined = fstDir + "/" + trimmed;
   const parts    = combined.split("/");
@@ -51,7 +55,9 @@ function resolveRelPath(fstDir, rel) {
     if (part === "..") { if (stack.length > 0) stack.pop(); }
     else if (part !== "." && part !== "") stack.push(part);
   }
-  return "/" + stack.join("/");
+  // Don't prepend "/" for Windows drive-letter paths ("C:" as first segment)
+  const hasDrive = stack.length > 0 && /^[A-Za-z]:$/.test(stack[0]);
+  return (hasDrive ? "" : "/") + stack.join("/");
 }
 
 /** Compute the relative path from one directory to another */
@@ -114,7 +120,7 @@ function buildRunFst(fstContent, fstDir, casedIfwPath) {
     if (!m) return line;
     const [, , val, , key] = m;
     if (key === "InflowFile") return line.replace(`"${val}"`, `"${casedIfwPath}"`);
-    if (FILE_KEYS.has(key) && !val.startsWith("/") &&
+    if (FILE_KEYS.has(key) && !val.startsWith("/") && !/^[A-Za-z]:/.test(val) &&
         val.toLowerCase() !== "default" && val.toLowerCase() !== "none") {
       return line.replace(`"${val}"`, `"${fstDir}/${val}"`);
     }
