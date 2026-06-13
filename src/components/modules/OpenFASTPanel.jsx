@@ -839,9 +839,10 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     setBtsFile(newFile);
     if (!inflowwindPath || !newFile || !project) return;
     const opt     = btsOptions.find(o => o.name === newFile);
-    const btsPath = opt
+    const btsPath = (opt
       ? opt.path
-      : `${project.windDir ?? `${project.workingDir}/wind`}/${newFile}`;
+      : `${project.windDir ?? `${project.workingDir}/wind`}/${newFile}`
+    ).replace(/\\/g, "/");
     try {
       await patchInputFileKey(inflowwindPath, "FileName_BTS", `"${btsPath}"`);
     } catch {}
@@ -973,10 +974,11 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           onLog?.("ok", `Wind: steady ${hWindSpeed} m/s`);
         } else if (windType === 3 && btsFile) {
           const opt     = btsOptions.find(o => o.name === btsFile);
-          const btsPath = opt
+          const btsPath = (opt
             ? opt.path
-            : `${project.windDir ?? `${project.workingDir}/wind`}/${btsFile}`;
-          ifwContent = patchContentKey(ifwContent, "Filename_BTS", `"${btsPath}"`);
+            : `${project.windDir ?? `${project.workingDir}/wind`}/${btsFile}`
+          ).replace(/\\/g, "/");
+          ifwContent = patchContentKey(ifwContent, "FileName_BTS", `"${btsPath}"`);
           onLog?.("ok", `Wind: BTS → ${btsFile}`);
         }
       }
