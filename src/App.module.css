@@ -58,19 +58,25 @@
   overflow: hidden;
 }
 
-/* ── Windows overrides ────────────────────────────────────────────────────────
-   On Windows the OS provides native title bar + decorations, so the floating
-   transparent layout used on macOS is replaced with a standard flat layout.   */
+/* ── Windows overrides ─────────────────────────────────────────────────────────
+   Native title bar handles window chrome. The two floating cards (sidebar +
+   mainCol) sit on a solid canvas tray — same rounded, layered aesthetic as
+   macOS but without the compositor blur.                                       */
 :global([data-platform="windows"]) .shell {
-  background: var(--bg-app);   /* solid — no compositor transparency on Windows */
-}
-:global([data-platform="windows"]) .body {
-  padding: 0;                  /* no floating gap — content fills the full frame */
+  background: var(--bg-canvas-win);
 }
 :global([data-platform="windows"]) .mainCol {
-  border-radius: 0;
-  box-shadow: none;
+  -webkit-app-region: no-drag;          /* no drag region — native title bar does this */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:                           /* lift shadow on solid canvas */
+    0 8px 32px rgba(0,0,0,0.14),
+    0 2px 8px  rgba(0,0,0,0.07),
+    0 0 0 0.5px var(--bd);
+}
+:global([data-platform="windows"]) .main {
+  background: var(--bg-base);  /* solid card — no compositor blur on Windows */
 }
 :global([data-platform="windows"]) .resizeHandle {
-  width: 4px;                  /* thinner divider looks better without the gap */
+  width: 4px;
 }

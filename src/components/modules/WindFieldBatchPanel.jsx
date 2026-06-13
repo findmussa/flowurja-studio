@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { invoke }  from "@tauri-apps/api/core";
+import { useBinarySettings } from "../../hooks/useBinarySettings";
 import { listen }  from "@tauri-apps/api/event";
 import {
   Wind, Layers, Play, Square, ChevronDown, ChevronUp,
@@ -193,7 +194,7 @@ export default function WindFieldBatchPanel({
   const [cases,        setCases]        = useState([]);
   const [status,       setStatus]       = useState({});
   const [running,      setRunning]      = useState(false);
-  const [turbsimBin,   setTurbsimBin]   = useState(null);
+  const { resolvedPath: turbsimBin } = useBinarySettings("turbsim");
   const [showAll,      setShowAll]      = useState(false);
 
   // Turbine hints
@@ -206,9 +207,6 @@ export default function WindFieldBatchPanel({
 
   // ── Init ─────────────────────────────────────────────────────────────────
   useEffect(() => {
-    invoke("detect_binary", { name: "turbsim" })
-      .then(p => { if (p) setTurbsimBin(p); })
-      .catch(() => {});
     invoke("detect_cpu_cores")
       .then(n => setCpuCores(n))
       .catch(() => {});

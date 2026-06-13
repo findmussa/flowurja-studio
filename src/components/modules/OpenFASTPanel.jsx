@@ -506,7 +506,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   const [ofVersion,  setOfVersion]  = useState(null);   // e.g. "4.2.0" | null | "unknown"
 
   // ── Wind + run state ─────────────────────────────────────────────────────────
-  const [windType,      setWindType]      = useState(null);   // 1|2|3|null
+  const [windType,      setWindType]      = useState(1);      // 1|2|3 (Steady|BTS|Uniform)
   const [hWindSpeed,    setHWindSpeed]    = useState("10.0");
   const [btsFile,       setBtsFile]       = useState("");
   const [btsOptions,    setBtsOptions]    = useState([]);
@@ -682,7 +682,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   // navigates back to this panel (isActive: false→true) so edits made in the
   // InflowWind panel are always reflected here.
   useEffect(() => {
-    if (!inflowwindPath) { setWindType(null); return; }
+    if (!inflowwindPath) { setWindType(1); return; }
     invoke("read_text_file", { path: inflowwindPath })
       .then(content => {
         const kv = parseFstLines(content);
@@ -693,7 +693,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           setBtsFile(kv.Filename_BTS.replace(/"/g, "").replace(/\\/g, "/").split("/").pop());
         }
       })
-      .catch(() => setWindType(null));
+      .catch(() => setWindType(1));
   }, [inflowwindPath, isActive]); // isActive: re-reads every time panel becomes visible
 
   // ── Live sync from InflowWind panel (no save required) ───────────────────────
