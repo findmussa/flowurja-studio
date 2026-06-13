@@ -505,14 +505,14 @@ export default function InflowWindPanel({
       // patchInputFileKey calls from the OpenFAST run card have a valid file
       // to read-and-patch (on Windows the file often doesn't exist until it is
       // explicitly saved, which caused the one-way sync problem).
-      const fallback = { ...DEFAULT, WindType: 1 }; // Steady matches the run-card default
+      const fallback = { ...DEFAULT };
       const content  = buildInflowWindContent(fallback);
       try {
         await invoke("write_text_file", { path, content });
         originalContentRef.current = content;
         originalRef.current = JSON.stringify(fallback);
         _setP(fallback);
-        onLog?.("info", `${path.split("/").pop()} not found — created with Steady defaults`);
+        onLog?.("info", `${path.split("/").pop()} not found — created with defaults`);
       } catch {
         // Model directory may not exist yet (project not fully configured) — stay silent
       }
