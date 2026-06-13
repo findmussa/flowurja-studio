@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -461,7 +461,9 @@ function EditableParam({ label, unit, value, onChange, step, min, isString = fal
 }
 
 // ── Turbine icon (spins while running) ───────────────────────────────────────
-function TurbineIcon({ spinning, className }) {
+// memo: props only change at simulation start/stop, so this never re-renders
+// while running. Prevents macOS WKWebView main-thread SVG animation jitter.
+const TurbineIcon = memo(function TurbineIcon({ spinning, className }) {
   // Blade CSS class is resolved by CSS Modules — both the @keyframes name
   // and the animation: reference inside the class get the same hashed name,
   // unlike an inline style string which stays un-hashed and never matches.
@@ -485,7 +487,7 @@ function TurbineIcon({ spinning, className }) {
       </g>
     </svg>
   );
-}
+});
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFilesDetected, onModuleActiveChange, onDirtyChange, onRegisterSave, discardSeq = 0, onModuleSelect, isActive = false, inflowWindParams = null, onSimRunningChange, onPidChange, onInflowPatch }) {

@@ -86,7 +86,11 @@ export default function App() {
     if (!project?.modelFst) return;
     invoke("read_text_file", { path: project.modelFst })
       .then(content => {
-        const dir = project.modelDir || project.modelFst.split("/").slice(0, -1).join("/");
+        // Normalise to forward slashes so dir computation is correct on Windows
+        // (Tauri may return native backslash paths on Windows)
+        const normFst = project.modelFst.replace(/\\/g, "/");
+        const normDir = (project.modelDir || "").replace(/\\/g, "/");
+        const dir = normDir || normFst.split("/").slice(0, -1).join("/");
         const kv  = {};
         for (const line of content.split("\n")) {
           const m = line.match(/^\s*"([^"]+)"\s+(\w+)/);
@@ -165,11 +169,12 @@ export default function App() {
       if (!prev?.models) return prev;
       const m = prev.models.find(x => x.id === modelId);
       if (!m) return prev;
+      const normFst = m.fstPath.replace(/\\/g, "/");
       return {
         ...prev,
         activeModelId: modelId,
-        modelFst:  m.fstPath,
-        modelDir:  m.fstPath.split("/").slice(0, -1).join("/"),
+        modelFst:  normFst,
+        modelDir:  normFst.split("/").slice(0, -1).join("/"),
       };
     });
     // Persist activeModelId to .fws

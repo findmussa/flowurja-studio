@@ -1,6 +1,6 @@
 [package]
 name = "flowwake-studio"
-version = "0.1.5"
+version = "0.1.6"
 description = "OpenFAST & TurbSim desktop workflow environment"
 authors = ["Nur M. M. Kalimullah"]
 edition = "2021"
