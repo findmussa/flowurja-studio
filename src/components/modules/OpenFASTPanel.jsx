@@ -695,8 +695,8 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
         const wt = Number(kv.WindType ?? kv.NWindInpFile ?? 1);
         setWindType(wt);
         if (kv.HWindSpeed) setHWindSpeed(String(kv.HWindSpeed));
-        if (kv.Filename_BTS) {
-          setBtsFile(kv.Filename_BTS.replace(/"/g, "").replace(/\\/g, "/").split("/").pop());
+        if (kv.FileName_BTS) {
+          setBtsFile(kv.FileName_BTS.replace(/"/g, "").replace(/\\/g, "/").split("/").pop());
         }
       })
       .catch(() => setWindType(1));
@@ -720,6 +720,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   // Re-scans when the panel becomes active so newly generated files appear
   // without needing a project reload.
   useEffect(() => {
+    if (!isActive) return; // only scan when panel is visible
     const windDir = project?.windDir ?? (project ? `${project.workingDir}/wind` : null);
     if (!windDir) { setBtsOptions([]); return; }
     invoke("sidecar_call", {
@@ -727,7 +728,6 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     })
       .then(raw => {
         const res = JSON.parse(raw);
-        // res.files = [{ path, rel, name }, …]
         setBtsOptions(res.ok ? res.files : []);
       })
       .catch(() => setBtsOptions([]));
@@ -831,6 +831,14 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     if (!inflowwindPath) return;
     try {
       await patchInputFileKey(inflowwindPath, "WindType", String(newWt));
+      onInflowPatch?.();
+    } catch {}
+  };
+
+  const handleHWindSpeedBlur = async () => {
+    if (windType !== 1 || !inflowwindPath || !hWindSpeed) return;
+    try {
+      await patchInputFileKey(inflowwindPath, "HWindSpeed", hWindSpeed);
       onInflowPatch?.();
     } catch {}
   };
@@ -1511,6 +1519,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                       value={hWindSpeed}
                       style={{ flex: 1 }}
                       onChange={e => setHWindSpeed(e.target.value)}
+                      onBlur={handleHWindSpeedBlur}
                     />
                     <span className={s.windUnit}>m/s steady</span>
                   </div>

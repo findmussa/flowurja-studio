@@ -889,18 +889,31 @@ fn sidecar_call(payload: String, state: tauri::State<SidecarState>) -> Result<St
 
     let sc = guard.live.as_mut().unwrap();
     let mut line = String::new();
-    match sc.stdout.read_line(&mut line) {
-        // EOF (0 bytes) or I/O error means sidecar died after write succeeded
-        Ok(0) => {
-            guard.live = None;
-            return Err("sidecar exited unexpectedly after write; retry the operation".into());
+    let read_ok = match sc.stdout.read_line(&mut line) {
+        Ok(0) | Err(_) => false,
+        Ok(_)          => true,
+    };
+
+    if !read_ok {
+        // Sidecar died after write succeeded — respawn and retry the full call once
+        guard.live = None;
+        if guard.exe.is_empty() { return Err("sidecar exited; no respawn info".into()); }
+        guard.live = Some(
+            spawn_sidecar(&guard.exe, &guard.script)
+                .map_err(|e| format!("sidecar respawn after exit: {e}"))?,
+        );
+        let sc2 = guard.live.as_mut().unwrap();
+        sc2.stdin.write_all(format!("{payload}\n").as_bytes()).map_err(|e| e.to_string())?;
+        sc2.stdin.flush().map_err(|e| e.to_string())?;
+        let mut line2 = String::new();
+        match sc2.stdout.read_line(&mut line2) {
+            Ok(0) => { guard.live = None; return Err("sidecar failed twice; check installation".into()); }
+            Err(e) => { guard.live = None; return Err(format!("sidecar failed twice: {e}")); }
+            Ok(_)  => {}
         }
-        Err(e) => {
-            guard.live = None;
-            return Err(e.to_string());
-        }
-        Ok(_) => {}
+        return Ok(line2.trim().to_string());
     }
+
     Ok(line.trim().to_string())
 }
 
