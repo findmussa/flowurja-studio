@@ -932,6 +932,18 @@ struct SidecarInner {
 
 type SidecarState = std::sync::Arc<std::sync::Mutex<SidecarInner>>;
 
+/// Send {"cmd":"ping"} and verify the sidecar responds. Used at startup to
+/// detect unsigned/broken compiled binaries before they fail mid-session.
+fn ping_sidecar(sc: &mut Sidecar) -> bool {
+    use std::io::{Write, BufRead};
+    let ok = sc.stdin.write_all(b"{\"cmd\":\"ping\"}\n")
+        .and_then(|_| sc.stdin.flush())
+        .is_ok();
+    if !ok { return false; }
+    let mut line = String::new();
+    matches!(sc.stdout.read_line(&mut line), Ok(n) if n > 0)
+}
+
 fn spawn_sidecar(exe: &str, script: &str) -> Result<Sidecar, String> {
     let mut cmd = std::process::Command::new(exe);
     if !script.is_empty() { cmd.arg(script); }
@@ -2164,43 +2176,57 @@ pub fn run() {
                 }
             }
 
-            // Spawn Python sidecar.
+            // Spawn Python sidecar in a background thread so setup() returns immediately.
             // Production: compiled binary (fws_io / fws_io.exe) produced by PyInstaller in CI.
-            // Development: fall back to running fws_io.py directly with the system Python.
+            // Fallback: fws_io.py via system Python — also bundled in sidecar/ by tauri.conf.json
+            //   so it is always available alongside the compiled binary.
+            // On macOS CI without a signing identity the compiled binary is unsigned and macOS
+            //   kills it on first exec; we detect this with a startup ping and fall back to Python.
             let resource_dir = app.path().resource_dir().unwrap_or_default();
             let compiled = resource_dir.join("sidecar").join(
                 if cfg!(windows) { "fws_io.exe" } else { "fws_io" }
             );
             let script = resource_dir.join("sidecar").join("fws_io.py");
 
-            if compiled.exists() {
-                let exe = compiled.to_str().unwrap_or("").to_string();
-                match spawn_sidecar(&exe, "") {
-                    Ok(sc) => {
-                        let mut g = state_clone.lock().unwrap();
-                        g.exe    = exe;
-                        g.script = String::new();
-                        g.live   = Some(sc);
+            std::thread::spawn(move || {
+                let mut started = false;
+
+                if compiled.exists() {
+                    let exe = compiled.to_str().unwrap_or("").to_string();
+                    match spawn_sidecar(&exe, "") {
+                        Ok(mut sc) => {
+                            if ping_sidecar(&mut sc) {
+                                let mut g = state_clone.lock().unwrap();
+                                g.exe    = exe;
+                                g.script = String::new();
+                                g.live   = Some(sc);
+                                started  = true;
+                            } else {
+                                eprintln!("[sidecar] compiled binary ping failed — falling back to Python");
+                            }
+                        }
+                        Err(e) => eprintln!("[sidecar] compiled spawn failed: {e}"),
                     }
-                    Err(e) => eprintln!("[sidecar] compiled spawn failed: {e}"),
                 }
-            } else if script.exists() {
-                let python = ["python3", "python"]
-                    .iter()
-                    .find(|p| std::process::Command::new(p).arg("--version").output().is_ok())
-                    .map(|s| s.to_string())
-                    .unwrap_or("python3".to_string());
-                let script_str = script.to_str().unwrap_or("").to_string();
-                match spawn_sidecar(&python, &script_str) {
-                    Ok(sc) => {
-                        let mut g = state_clone.lock().unwrap();
-                        g.exe    = python;
-                        g.script = script_str;
-                        g.live   = Some(sc);
+
+                if !started && script.exists() {
+                    let python = ["python3", "python"]
+                        .iter()
+                        .find(|p| std::process::Command::new(p).arg("--version").output().is_ok())
+                        .map(|s| s.to_string())
+                        .unwrap_or("python3".to_string());
+                    let script_str = script.to_str().unwrap_or("").to_string();
+                    match spawn_sidecar(&python, &script_str) {
+                        Ok(sc) => {
+                            let mut g = state_clone.lock().unwrap();
+                            g.exe    = python;
+                            g.script = script_str;
+                            g.live   = Some(sc);
+                        }
+                        Err(e) => eprintln!("[sidecar] python spawn failed: {e}"),
                     }
-                    Err(e) => eprintln!("[sidecar] python spawn failed: {e}"),
                 }
-            }
+            });
 
             Ok(())
         })

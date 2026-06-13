@@ -716,14 +716,20 @@ export default function App() {
                 externalSweep={wfbExport}
               />
             </div>
-            {activeModule === "inflowwind" && !!project && <InflowWindPanel  onLog={addLog} project={project}
-              filePathFromProject={moduleFiles.inflowwind}
-              reloadKey={inflowReloadKey}
-              onDirtyChange={ifwOnDirtyChange}
-              onRegisterSave={ifwOnRegisterSave}
-              onWindParamsChange={ifwOnWindParamsChange}
-              simRunning={simRunning}
-            />}
+            {/* InflowWind stays mounted so OpenFAST run card changes sync immediately via reloadKey */}
+            <div style={activeModule === "inflowwind" && !!project
+              ? { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }
+              : { display: "none" }
+            }>
+              {!!project && <InflowWindPanel onLog={addLog} project={project}
+                filePathFromProject={moduleFiles.inflowwind}
+                reloadKey={inflowReloadKey}
+                onDirtyChange={ifwOnDirtyChange}
+                onRegisterSave={ifwOnRegisterSave}
+                onWindParamsChange={ifwOnWindParamsChange}
+                simRunning={simRunning}
+              />}
+            </div>
             {activeModule === "elastodyn"  && !!project && <ElastoDynPanel  onLog={addLog} project={project}
               filePathFromProject={moduleFiles.elastodyn}
               onDirtyChange={edOnDirtyChange}
