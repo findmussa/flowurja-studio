@@ -211,7 +211,8 @@ async function prepareCase(bc, batchName, moduleFiles, project) {
 
 // ── CSV export ────────────────────────────────────────────────────────────────
 // Tauri WebView does not support blob-URL file downloads, so we write directly
-// to disk via write_text_file and then open the file with the default application.
+// to disk. After saving, open the batch FOLDER (not the CSV file itself) —
+// opening the file directly fails on Windows when no spreadsheet app is installed.
 
 async function exportBatchCSV(cases, batchStatus, batchRootDir, batchName, onLog) {
   const rows = [["#", "Name", "Status", "Duration (s)", "BTS Path", "Details"]];
@@ -230,8 +231,9 @@ async function exportBatchCSV(cases, batchStatus, batchRootDir, batchName, onLog
   const path = `${batchRootDir}/${name}`;
   try {
     await invoke("write_text_file", { path, content: csv });
-    // Open with default app (Numbers / Excel / LibreOffice Calc)
-    await invoke("open_in_finder", { path });
+    // Open the folder so the user can find and open the CSV with any tool —
+    // avoids "no app associated" errors on Windows.
+    await invoke("open_in_finder", { path: batchRootDir });
     onLog?.("ok", `CSV saved → ${path}`);
   } catch (err) {
     onLog?.("error", `CSV export failed: ${err}`);
