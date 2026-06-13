@@ -98,12 +98,44 @@ jobs:
             \( -name "libdiscon.dylib" -o -name "libdiscon.dll" -o -name "libdiscon.so" \) \
             ! -name "$keep" -delete
 
+      # ── macOS: import Developer ID certificate into a temporary keychain ───────
+      # Gracefully skips when APPLE_CERTIFICATE secret is not yet configured.
+      # To enable signing: export your Developer ID Application cert as a .p12,
+      # base64-encode it (base64 -i cert.p12 | tr -d '\n'), and add the secrets
+      # listed below in repo Settings → Secrets and variables → Actions.
+      - name: Import Apple Developer ID certificate
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE:          ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD:          ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "APPLE_CERTIFICATE not set — building unsigned (add secret to enable signing)"
+            exit 0
+          fi
+          echo "$APPLE_CERTIFICATE" | base64 --decode > /tmp/cert.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain  -p "$KEYCHAIN_PASSWORD" build.keychain
+          security import /tmp/cert.p12 \
+            -k build.keychain \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          rm /tmp/cert.p12
+
       # ── Build ──────────────────────────────────────────────────────────────────
       # macOS: build .app only — dmgbuild (below) creates the styled DMG headless.
       # Tauri's own DMG creator uses AppleScript/Finder which fails on CI runners.
       # Windows: build both MSI and NSIS installers as before.
       - name: Build Tauri app
         shell: bash
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
           if [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
             npm run tauri build -- --target ${{ matrix.target }} --bundles app
@@ -118,6 +150,7 @@ jobs:
         shell: bash
         run: |
           pip install dmgbuild
+          VERSION=$(node -p "require('./package.json').version")
           APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowWake Studio.app"
           BG="src-tauri/assets/dmg_background.png"
           SETTINGS="src-tauri/assets/dmg_settings.py"
@@ -128,7 +161,43 @@ jobs:
             -D "app=$APP" \
             -D "bg=$BG" \
             "FlowWake Studio" \
-            "$OUT_DIR/FlowWake Studio_0.1.0_aarch64.dmg"
+            "$OUT_DIR/FlowWake Studio_${VERSION}_aarch64.dmg"
+
+      # ── macOS: sign, notarize, and staple the DMG ─────────────────────────────
+      # Gracefully skips when Apple ID credentials are not yet configured.
+      # Requires: APPLE_SIGNING_IDENTITY, APPLE_ID, APPLE_PASSWORD (app-specific),
+      #           APPLE_TEAM_ID — all as repo secrets.
+      - name: Notarize and staple DMG
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID:               ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD:         ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID:          ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$APPLE_ID" ]; then
+            echo "APPLE_ID not set — skipping notarization (add secrets to enable)"
+            exit 0
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          DMG="src-tauri/target/${{ matrix.target }}/release/bundle/dmg/FlowWake Studio_${VERSION}_aarch64.dmg"
+          # Sign the DMG container itself (the .app inside is already signed by Tauri)
+          codesign --force --sign "$APPLE_SIGNING_IDENTITY" "$DMG"
+          # Submit to Apple notary service and wait for approval
+          xcrun notarytool submit "$DMG" \
+            --apple-id  "$APPLE_ID"       \
+            --password  "$APPLE_PASSWORD" \
+            --team-id   "$APPLE_TEAM_ID"  \
+            --wait
+          # Staple the notarization ticket so users don't need internet at install time
+          xcrun stapler staple "$DMG"
+
+      # ── macOS: clean up temporary build keychain ───────────────────────────────
+      - name: Remove build keychain
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        run: security delete-keychain build.keychain 2>/dev/null || true
 
       # ── Upload artifact (all runs) ─────────────────────────────────────────────
       - name: Upload installer artifact
