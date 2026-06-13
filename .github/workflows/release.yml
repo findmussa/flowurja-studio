@@ -148,6 +148,48 @@ jobs:
             npm run tauri build -- --target ${{ matrix.target }}
           fi
 
+      # ── macOS: sign every bundled binary and dylib individually ───────────────
+      # Apple's notarization requires each Mach-O inside the bundle to be signed
+      # with a Developer ID cert + secure timestamp. Tauri's --deep flag signs
+      # everything with the same cert, but does NOT propagate --options runtime to
+      # nested executables. We sign from inner-out: dylibs first, then executables
+      # in Resources/bin and Resources/sidecar, then re-sign the outer .app last.
+      - name: Sign bundled binaries and dylibs
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          if [ -z "$APPLE_SIGNING_IDENTITY" ]; then
+            echo "APPLE_SIGNING_IDENTITY not set — skipping"
+            exit 0
+          fi
+          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowWake Studio.app"
+
+          echo "=== Signing dylibs (.dylib / .so) ==="
+          find "$APP" \( -name "*.dylib" -o -name "*.so" \) | while read -r f; do
+            echo "  $f"
+            codesign --force --sign "$APPLE_SIGNING_IDENTITY" --timestamp "$f"
+          done
+
+          echo "=== Signing executables in Resources/bin and Resources/sidecar ==="
+          for dir in "$APP/Contents/Resources/bin" "$APP/Contents/Resources/sidecar"; do
+            [ -d "$dir" ] || continue
+            find "$dir" -type f | while read -r f; do
+              if file "$f" | grep -q "Mach-O"; then
+                echo "  $f"
+                codesign --force --sign "$APPLE_SIGNING_IDENTITY" --timestamp \
+                  --options runtime "$f"
+              fi
+            done
+          done
+
+          echo "=== Re-signing .app bundle (must be last — inner-out order) ==="
+          codesign --force --sign "$APPLE_SIGNING_IDENTITY" --timestamp \
+            --options runtime \
+            --entitlements "src-tauri/entitlements.plist" \
+            "$APP"
+
       # ── macOS: verify the .app is properly signed before packaging ────────────
       - name: Verify app code signature
         if: matrix.platform == 'macos-latest'
