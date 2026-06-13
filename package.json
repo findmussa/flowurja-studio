@@ -1,6 +1,6 @@
 {
   "name": "flowwake-studio",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "OpenFAST & TurbSim desktop workflow environment",
   "type": "module",
   "scripts": {

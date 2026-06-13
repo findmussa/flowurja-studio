@@ -86,7 +86,7 @@ function parseFastKV(content) {
 
 /** Patch a single key's value in an OpenFAST-format text file.
  *  Format:  <value>  KeyName  - comment  */
-async function patchInputFileKey(path, key, newValue) {
+async function patchInputFileKey(path, key, newValue, onLog) {
   const content = await invoke("read_text_file", { path });
   let matched = false;
   const lines   = content.split("\n").map(line => {
@@ -95,7 +95,16 @@ async function patchInputFileKey(path, key, newValue) {
     if (m) { matched = true; return `${m[1]}${newValue}${m[2]}`; }
     return line;
   });
-  if (!matched) throw new Error(`key "${key}" not found in ${path.split("/").pop()}`);
+  if (!matched) {
+    // Log the raw line that mentions the key so we can see exactly what the file contains
+    const candidate = content.split("\n").find(l => l.includes(key) && !l.trimStart().startsWith("!") && !l.trimStart().startsWith("-") && !l.trimStart().startsWith("="));
+    onLog?.("warn", `key "${key}" not found. Nearest line (hex): ${
+      candidate != null
+        ? JSON.stringify(candidate.slice(0, 80))
+        : "(no line contains key)"
+    }`);
+    throw new Error(`key "${key}" not found in ${path.split("/").pop()}`);
+  }
   await invoke("write_text_file", { path, content: lines.join("\n") });
 }
 
@@ -842,7 +851,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
       return;
     }
     try {
-      await patchInputFileKey(inflowwindPath, "WindType", String(newWt));
+      await patchInputFileKey(inflowwindPath, "WindType", String(newWt), onLog);
       onLog?.("info", `InflowWind patch ok: WindType=${newWt} written to ${inflowwindPath.split("/").pop()}`);
     } catch (e) {
       onLog?.("warn", `InflowWind patch failed (${inflowwindPath.split("/").pop()}): ${String(e)}`);
@@ -852,7 +861,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
 
   const handleHWindSpeedBlur = async () => {
     if (windType !== 1 || !inflowwindPath || !hWindSpeed) return;
-    try { await patchInputFileKey(inflowwindPath, "HWindSpeed", hWindSpeed); } catch {}
+    try { await patchInputFileKey(inflowwindPath, "HWindSpeed", hWindSpeed, onLog); } catch {}
     onInflowPatch?.();
   };
 
@@ -865,7 +874,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
       ? opt.path
       : `${project.windDir ?? `${project.workingDir}/wind`}/${newFile}`
     ).replace(/\\/g, "/");
-    try { await patchInputFileKey(inflowwindPath, "FileName_BTS", `"${btsPath}"`); } catch {}
+    try { await patchInputFileKey(inflowwindPath, "FileName_BTS", `"${btsPath}"`, onLog); } catch {}
     onInflowPatch?.();
   };
 
