@@ -88,11 +88,14 @@ function parseFastKV(content) {
  *  Format:  <value>  KeyName  - comment  */
 async function patchInputFileKey(path, key, newValue) {
   const content = await invoke("read_text_file", { path });
+  let matched = false;
   const lines   = content.split("\n").map(line => {
     const re = new RegExp(`^([ \\t]*)(?:"[^"]*"|\\S+)([ \\t]+${key}(?:[ \\t]|$).*)$`);
     const m  = line.match(re);
-    return m ? `${m[1]}${newValue}${m[2]}` : line;
+    if (m) { matched = true; return `${m[1]}${newValue}${m[2]}`; }
+    return line;
   });
+  if (!matched) throw new Error(`key "${key}" not found in ${path.split("/").pop()}`);
   await invoke("write_text_file", { path, content: lines.join("\n") });
 }
 
@@ -840,9 +843,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     }
     try {
       await patchInputFileKey(inflowwindPath, "WindType", String(newWt));
-      onLog?.("info", `InflowWind patched WindType=${newWt} → ${inflowwindPath.split("/").pop()}`);
+      onLog?.("info", `InflowWind patch ok: WindType=${newWt} written to ${inflowwindPath.split("/").pop()}`);
     } catch (e) {
-      onLog?.("warn", `InflowWind patch failed: ${String(e)}`);
+      onLog?.("warn", `InflowWind patch failed (${inflowwindPath.split("/").pop()}): ${String(e)}`);
     }
     onInflowPatch?.();
   };
