@@ -88,21 +88,14 @@ function parseFastKV(content) {
  *  Format:  <value>  KeyName  - comment  */
 async function patchInputFileKey(path, key, newValue, onLog) {
   const content = await invoke("read_text_file", { path });
-  let matched = false;
+  let matched   = false;
+  const re      = new RegExp(`^([ \\t]*)(?:"[^"]*"|\\S+)([ \\t]+${key}(?:[ \\t]|$).*?)\\r?$`);
   const lines   = content.split("\n").map(line => {
-    const re = new RegExp(`^([ \\t]*)(?:"[^"]*"|\\S+)([ \\t]+${key}(?:[ \\t]|$).*)$`);
-    const m  = line.match(re);
+    const m = line.match(re);
     if (m) { matched = true; return `${m[1]}${newValue}${m[2]}`; }
     return line;
   });
   if (!matched) {
-    // Log the raw line that mentions the key so we can see exactly what the file contains
-    const candidate = content.split("\n").find(l => l.includes(key) && !l.trimStart().startsWith("!") && !l.trimStart().startsWith("-") && !l.trimStart().startsWith("="));
-    onLog?.("warn", `key "${key}" not found. Nearest line (hex): ${
-      candidate != null
-        ? JSON.stringify(candidate.slice(0, 80))
-        : "(no line contains key)"
-    }`);
     throw new Error(`key "${key}" not found in ${path.split("/").pop()}`);
   }
   await invoke("write_text_file", { path, content: lines.join("\n") });
@@ -110,9 +103,9 @@ async function patchInputFileKey(path, key, newValue, onLog) {
 
 /** In-memory version — returns the patched string without touching the file. */
 function patchContentKey(content, key, newValue) {
+  const re = new RegExp(`^([ \\t]*)(?:"[^"]*"|\\S+)([ \\t]+${key}(?:[ \\t]|$).*?)\\r?$`);
   return content.split("\n").map(line => {
-    const re = new RegExp(`^([ \\t]*)(?:"[^"]*"|\\S+)([ \\t]+${key}(?:[ \\t]|$).*)$`);
-    const m  = line.match(re);
+    const m = line.match(re);
     return m ? `${m[1]}${newValue}${m[2]}` : line;
   }).join("\n");
 }
