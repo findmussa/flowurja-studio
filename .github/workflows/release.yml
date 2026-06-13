@@ -127,6 +127,11 @@ jobs:
             -S apple-tool:,apple:,codesign: \
             -s -k "$KEYCHAIN_PASSWORD" build.keychain
           rm /tmp/cert.p12
+          # Add build.keychain to the search list so codesign can find the cert
+          EXISTING=$(security list-keychains -d user | sed 's/"//g' | tr '\n' ' ')
+          security list-keychains -d user -s build.keychain $EXISTING
+          echo "Keychain search list:"
+          security list-keychains -d user
 
       # ── Build ──────────────────────────────────────────────────────────────────
       # macOS: build .app only — dmgbuild (below) creates the styled DMG headless.
@@ -142,6 +147,19 @@ jobs:
           else
             npm run tauri build -- --target ${{ matrix.target }}
           fi
+
+      # ── macOS: verify the .app is properly signed before packaging ────────────
+      - name: Verify app code signature
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowWake Studio.app"
+          echo "=== Signature info ==="
+          codesign --display --verbose=4 "$APP" 2>&1 || echo "WARNING: codesign --display failed"
+          echo "=== Signature verification ==="
+          codesign --verify --deep --strict "$APP" \
+            && echo "Signature OK" \
+            || echo "WARNING: signature invalid — notarization will likely fail"
 
       # ── macOS: create styled DMG with dmgbuild ─────────────────────────────────
       # dmgbuild writes the .DS_Store directly — no AppleScript, no Finder needed.
@@ -183,13 +201,30 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           DMG="src-tauri/target/${{ matrix.target }}/release/bundle/dmg/FlowWake Studio_${VERSION}_aarch64.dmg"
           # Sign the DMG container itself (the .app inside is already signed by Tauri)
-          codesign --force --sign "$APPLE_SIGNING_IDENTITY" "$DMG"
-          # Submit to Apple notary service and wait for approval
-          xcrun notarytool submit "$DMG" \
+          codesign --force --sign "$APPLE_SIGNING_IDENTITY" --timestamp "$DMG"
+          # Submit to Apple notary service; capture JSON so we can fetch the log
+          NOTARY_JSON=$(xcrun notarytool submit "$DMG" \
             --apple-id  "$APPLE_ID"       \
             --password  "$APPLE_PASSWORD" \
             --team-id   "$APPLE_TEAM_ID"  \
-            --wait
+            --wait --output-format json 2>&1)
+          echo "$NOTARY_JSON"
+          SUB_ID=$(echo "$NOTARY_JSON" | python3 -c \
+            "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)
+          STATUS=$(echo "$NOTARY_JSON" | python3 -c \
+            "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null || true)
+          # Always print the full Apple notarization log (shows exact rejection reasons)
+          if [ -n "$SUB_ID" ]; then
+            echo "=== Notarization log (id: $SUB_ID) ==="
+            xcrun notarytool log "$SUB_ID" \
+              --apple-id  "$APPLE_ID"       \
+              --password  "$APPLE_PASSWORD" \
+              --team-id   "$APPLE_TEAM_ID" 2>&1 || true
+          fi
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "Notarization rejected (status=$STATUS) — see log above for issues"
+            exit 1
+          fi
           # Staple the notarization ticket so users don't need internet at install time
           xcrun stapler staple "$DMG"
 
