@@ -889,7 +889,18 @@ fn sidecar_call(payload: String, state: tauri::State<SidecarState>) -> Result<St
 
     let sc = guard.live.as_mut().unwrap();
     let mut line = String::new();
-    sc.stdout.read_line(&mut line).map_err(|e| e.to_string())?;
+    match sc.stdout.read_line(&mut line) {
+        // EOF (0 bytes) or I/O error means sidecar died after write succeeded
+        Ok(0) => {
+            guard.live = None;
+            return Err("sidecar exited unexpectedly after write; retry the operation".into());
+        }
+        Err(e) => {
+            guard.live = None;
+            return Err(e.to_string());
+        }
+        Ok(_) => {}
+    }
     Ok(line.trim().to_string())
 }
 
@@ -912,10 +923,17 @@ fn spawn_sidecar(exe: &str, script: &str) -> Result<Sidecar, String> {
     let mut cmd = std::process::Command::new(exe);
     if !script.is_empty() { cmd.arg(script); }
     no_window(&mut cmd);
+    // In dev builds pipe stderr to the parent so Python crash tracebacks are visible.
+    // In release builds discard to avoid clutter.
+    let stderr = if cfg!(debug_assertions) {
+        std::process::Stdio::inherit()
+    } else {
+        std::process::Stdio::null()
+    };
     let mut child = cmd
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
+        .stderr(stderr)
         .spawn()
         .map_err(|e| format!("spawn failed: {e}"))?;
     let stdin  = child.stdin.take().ok_or("no stdin")?;

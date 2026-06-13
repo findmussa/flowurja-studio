@@ -7,6 +7,12 @@ import sys
 import json
 import os
 import math
+import signal
+
+# Ignore SIGPIPE so that a closed stdout/stdin pipe does not kill the process;
+# instead it raises BrokenPipeError which the main loop catches and handles.
+if hasattr(signal, "SIGPIPE"):
+    signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
 
 def compute_ti_profile(z_grid, hub_ht, ti_hub, gti):
