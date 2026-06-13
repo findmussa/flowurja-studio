@@ -488,7 +488,7 @@ function TurbineIcon({ spinning, className }) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFilesDetected, onModuleActiveChange, onDirtyChange, onRegisterSave, discardSeq = 0, onModuleSelect, isActive = false, inflowWindParams = null, onSimRunningChange, onPidChange }) {
+export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFilesDetected, onModuleActiveChange, onDirtyChange, onRegisterSave, discardSeq = 0, onModuleSelect, isActive = false, inflowWindParams = null, onSimRunningChange, onPidChange, onInflowPatch }) {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [tab,            setTab]            = useState("run");
   const [p,              setP]              = useState(DEFAULT);
@@ -831,6 +831,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     if (!inflowwindPath) return;
     try {
       await patchInputFileKey(inflowwindPath, "WindType", String(newWt));
+      onInflowPatch?.();
     } catch {}
   };
 
@@ -845,6 +846,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     ).replace(/\\/g, "/");
     try {
       await patchInputFileKey(inflowwindPath, "FileName_BTS", `"${btsPath}"`);
+      onInflowPatch?.();
     } catch {}
   };
 

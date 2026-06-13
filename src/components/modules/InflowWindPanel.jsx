@@ -439,7 +439,7 @@ function Toggle({ value, onChange, label }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function InflowWindPanel({
   onLog, project,
-  filePathFromProject, onDirtyChange, onRegisterSave,
+  filePathFromProject, reloadKey, onDirtyChange, onRegisterSave,
   onWindParamsChange,
   simRunning = false,
 }) {
@@ -595,6 +595,12 @@ export default function InflowWindPanel({
     setFilePath(filePathFromProject);
     loadFile(filePathFromProject);
   }, [filePathFromProject]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reload from disk when OpenFASTPanel patches the inflowwind file externally
+  useEffect(() => {
+    if (!reloadKey || !filePathFromProject) return;
+    loadFile(filePathFromProject);
+  }, [reloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { onRegisterSave?.(handleSave); }, [handleSave]); // eslint-disable-line react-hooks/exhaustive-deps

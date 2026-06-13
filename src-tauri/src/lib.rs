@@ -857,9 +857,37 @@ async fn list_turbine_templates(app: tauri::AppHandle) -> Vec<serde_json::Value>
 fn sidecar_call(payload: String, state: tauri::State<SidecarState>) -> Result<String, String> {
     use std::io::{Write, BufRead};
     let mut guard = state.lock().map_err(|e| e.to_string())?;
-    let sc = guard.as_mut().ok_or("sidecar not running")?;
-    sc.stdin.write_all(format!("{payload}\n").as_bytes()).map_err(|e| e.to_string())?;
-    sc.stdin.flush().map_err(|e| e.to_string())?;
+
+    // Respawn if the sidecar died since last call
+    if guard.live.is_none() {
+        if guard.exe.is_empty() { return Err("sidecar not initialized".into()); }
+        guard.live = Some(
+            spawn_sidecar(&guard.exe, &guard.script)
+                .map_err(|e| format!("sidecar respawn: {e}"))?,
+        );
+    }
+
+    // Write payload — detect broken pipe and respawn once
+    let write_ok = {
+        let sc = guard.live.as_mut().unwrap();
+        sc.stdin.write_all(format!("{payload}\n").as_bytes())
+            .and_then(|_| sc.stdin.flush())
+            .is_ok()
+    };
+
+    if !write_ok {
+        guard.live = None;
+        if guard.exe.is_empty() { return Err("sidecar pipe broken; no respawn info".into()); }
+        guard.live = Some(
+            spawn_sidecar(&guard.exe, &guard.script)
+                .map_err(|e| format!("sidecar respawn after broken pipe: {e}"))?,
+        );
+        let sc = guard.live.as_mut().unwrap();
+        sc.stdin.write_all(format!("{payload}\n").as_bytes()).map_err(|e| e.to_string())?;
+        sc.stdin.flush().map_err(|e| e.to_string())?;
+    }
+
+    let sc = guard.live.as_mut().unwrap();
     let mut line = String::new();
     sc.stdout.read_line(&mut line).map_err(|e| e.to_string())?;
     Ok(line.trim().to_string())
@@ -872,7 +900,13 @@ struct Sidecar {
     _child: std::process::Child,
 }
 
-type SidecarState = std::sync::Arc<std::sync::Mutex<Option<Sidecar>>>;
+struct SidecarInner {
+    exe:    String,
+    script: String,
+    live:   Option<Sidecar>,
+}
+
+type SidecarState = std::sync::Arc<std::sync::Mutex<SidecarInner>>;
 
 fn spawn_sidecar(exe: &str, script: &str) -> Result<Sidecar, String> {
     let mut cmd = std::process::Command::new(exe);
@@ -1996,7 +2030,9 @@ async fn open_in_finder(path: String) -> Result<(), String> {
 // ── Entry point ───────────────────────────────────────────────────────────────
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let sidecar_state: SidecarState = std::sync::Arc::new(std::sync::Mutex::new(None));
+    let sidecar_state: SidecarState = std::sync::Arc::new(std::sync::Mutex::new(SidecarInner {
+        exe: String::new(), script: String::new(), live: None,
+    }));
     let state_clone = sidecar_state.clone();
 
     tauri::Builder::default()
@@ -2107,8 +2143,14 @@ pub fn run() {
             let script = resource_dir.join("sidecar").join("fws_io.py");
 
             if compiled.exists() {
-                match spawn_sidecar(compiled.to_str().unwrap_or(""), "") {
-                    Ok(sc) => { *state_clone.lock().unwrap() = Some(sc); }
+                let exe = compiled.to_str().unwrap_or("").to_string();
+                match spawn_sidecar(&exe, "") {
+                    Ok(sc) => {
+                        let mut g = state_clone.lock().unwrap();
+                        g.exe    = exe;
+                        g.script = String::new();
+                        g.live   = Some(sc);
+                    }
                     Err(e) => eprintln!("[sidecar] compiled spawn failed: {e}"),
                 }
             } else if script.exists() {
@@ -2117,8 +2159,14 @@ pub fn run() {
                     .find(|p| std::process::Command::new(p).arg("--version").output().is_ok())
                     .map(|s| s.to_string())
                     .unwrap_or("python3".to_string());
-                match spawn_sidecar(&python, script.to_str().unwrap_or("")) {
-                    Ok(sc) => { *state_clone.lock().unwrap() = Some(sc); }
+                let script_str = script.to_str().unwrap_or("").to_string();
+                match spawn_sidecar(&python, &script_str) {
+                    Ok(sc) => {
+                        let mut g = state_clone.lock().unwrap();
+                        g.exe    = python;
+                        g.script = script_str;
+                        g.live   = Some(sc);
+                    }
                     Err(e) => eprintln!("[sidecar] python spawn failed: {e}"),
                 }
             }

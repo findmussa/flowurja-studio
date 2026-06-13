@@ -373,6 +373,11 @@ export default function App() {
     setSharedInflowParams({ windType, hWindSpeed, btsFile });
   }, []);
 
+  // Incremented by OpenFASTPanel after it patches inflowwind.dat so InflowWindPanel
+  // reloads from disk and shows the updated WindType / FileName_BTS values.
+  const [inflowReloadKey, setInflowReloadKey] = useState(0);
+  const onInflowPatch = useCallback(() => setInflowReloadKey(k => k + 1), []);
+
   // Whether OpenFAST binary is actively running.
   // Propagated to all module panels so they can block saves that would corrupt
   // the input files of the in-progress simulation.
@@ -681,7 +686,7 @@ export default function App() {
               ? { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }
               : { display: "none" }
             }>
-              <OpenFASTPanel onLog={addLog} project={project} tabRequest={ofTabReq} onModuleFilesDetected={handleModuleFilesDetected} onModuleActiveChange={handleModuleActiveChange} onDirtyChange={ofOnDirtyChange} onRegisterSave={ofOnRegisterSave} discardSeq={ofDiscardSeq} onModuleSelect={handleModuleSelect} isActive={activeModule === "openfast"} inflowWindParams={sharedInflowParams} onSimRunningChange={handleSimRunningChange} onPidChange={handlePidChange} />
+              <OpenFASTPanel onLog={addLog} project={project} tabRequest={ofTabReq} onModuleFilesDetected={handleModuleFilesDetected} onModuleActiveChange={handleModuleActiveChange} onDirtyChange={ofOnDirtyChange} onRegisterSave={ofOnRegisterSave} discardSeq={ofDiscardSeq} onModuleSelect={handleModuleSelect} isActive={activeModule === "openfast"} inflowWindParams={sharedInflowParams} onSimRunningChange={handleSimRunningChange} onPidChange={handlePidChange} onInflowPatch={onInflowPatch} />
             </div>
 
             {activeModule === "turbsim"    && !!project && <TurbSimPanel    onLog={addLog} project={project} moduleFiles={moduleFiles} />}
@@ -713,6 +718,7 @@ export default function App() {
             </div>
             {activeModule === "inflowwind" && !!project && <InflowWindPanel  onLog={addLog} project={project}
               filePathFromProject={moduleFiles.inflowwind}
+              reloadKey={inflowReloadKey}
               onDirtyChange={ifwOnDirtyChange}
               onRegisterSave={ifwOnRegisterSave}
               onWindParamsChange={ifwOnWindParamsChange}

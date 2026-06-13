@@ -1000,7 +1000,10 @@ def main():
             result = {"ok": False, "error": f"JSON parse error: {e}"}
         except Exception as e:
             result = {"ok": False, "error": str(e)}
-        print(json.dumps(result), flush=True)
+        try:
+            print(json.dumps(result), flush=True)
+        except Exception as e:
+            print(json.dumps({"ok": False, "error": f"serialize error: {e}"}), flush=True)
 
 
 if __name__ == "__main__":
