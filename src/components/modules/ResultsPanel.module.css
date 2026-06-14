@@ -1,5 +1,5 @@
 /* ── Root ─────────────────────────────────────────────────────────────────── */
-.root { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+.root { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; position:relative; }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 .header {
@@ -385,7 +385,7 @@
 /* --bg-surface is rgba(…,0.82) which lets the Tauri transparent window show  */
 /* through. Modals use hard-coded opaque colours keyed to the theme.          */
 .overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000;
+  position:absolute; inset:0; background:rgba(0,0,0,0.45); z-index:1000;
   display:flex; align-items:center; justify-content:center; padding:24px;
   -webkit-backdrop-filter:blur(2px);
   backdrop-filter:blur(2px);
