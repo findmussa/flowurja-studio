@@ -127,6 +127,12 @@ FlowWake Studio is an independent open-source project and is not affiliated with
 
 ---
 
+## AI-assisted development disclosure
+
+AI-assisted tools were used during development to support code drafting, debugging, refactoring, documentation, and language editing. All code included in this release was reviewed, tested, and accepted by the authors. The authors take full responsibility for the design, correctness, and integrity of the released software.
+
+---
+
 ## License
 
 FlowWake Studio is released under the [Apache License 2.0](LICENSE).
