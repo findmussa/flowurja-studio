@@ -609,8 +609,8 @@ export default function WelcomeScreen({
     try {
       const file = await openDialog({
         multiple: false,
-        title: "Open FlowWake project",
-        filters: [{ name: "FlowWake Studio Project", extensions: ["fws"] }],
+        title: "Open FlowUrja project",
+        filters: [{ name: "FlowUrja Studio Project", extensions: ["fws"] }],
       });
       if (!file) return;
       const content = await invoke("read_text_file", { path: file });
@@ -668,10 +668,10 @@ export default function WelcomeScreen({
       {/* ── HOME view ─────────────────────────────────────────────────────── */}
       {view === "home" && (
         <div className={s.card} data-tauri-drag-region="false">
-          <img src={logo} className={s.logo} alt="FlowWake Studio" draggable={false} />
+          <img src={logo} className={s.logo} alt="FlowUrja Studio" draggable={false} />
 
           <div className={s.nameRow}>
-            <h1 className={s.appName}>FlowWake Studio</h1>
+            <h1 className={s.appName}>FlowUrja Studio</h1>
             <span className={s.version}>v0.1.0</span>
           </div>
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-FlowWake Studio I/O sidecar — stdin/stdout JSON protocol.
+FlowUrja Studio I/O sidecar — stdin/stdout JSON protocol.
 Generates TurbSim .inp and user profile files in the exact OpenFAST v4.2.0 format.
 """
 import sys
@@ -119,7 +119,7 @@ def write_user_profiles(path: str, p: dict) -> None:
     lines = []
 
     # 3 ReadCom header lines (GetUSRProfiles loops ReadCom 3 times before NumUSRz)
-    lines.append("---------TurbSim Profile File (FlowWake Studio)-----------")
+    lines.append("---------TurbSim Profile File (FlowUrja Studio)-----------")
     lines.append(f"gTI={gti:.3f}  Iref={iref:.3f}  URef={u_ref} m/s  HubHt={hub_ht} m")
     lines.append("---- User-Defined Profiles (USR wind profile / USRVKM spectral model) ----")
 
@@ -274,7 +274,7 @@ def build_turbsim_inp_lines(p: dict) -> list:
     def ln(s=""): lines.append(s)
 
     ln("---------TurbSim v2 (OpenFAST) Input File------------------")
-    ln(f"FlowWake Studio — {turb_model} | {iec_turbc} | {u_ref} m/s | {hub_ht} m hub | gTI={gti}")
+    ln(f"FlowUrja Studio — {turb_model} | {iec_turbc} | {u_ref} m/s | {hub_ht} m hub | gTI={gti}")
     ln("---------Runtime Options-----------------------------------")
     ln(f'{echo:<13} Echo            - Echo input data to <RootName>.ech (flag)')
     ln(f'{rand_seed1:<13} RandSeed1       - First random seed  (-2147483648 to 2147483647)')
@@ -875,7 +875,7 @@ def write_inflowwind_dat(p: dict, path: str) -> None:
 
     lines = [
         "------- InflowWind v3.01.* INPUT FILE ----------------------------------------",
-        f"FlowWake Studio — InflowWind | WindType={wind_type} ({type_label})",
+        f"FlowUrja Studio — InflowWind | WindType={wind_type} ({type_label})",
         "-------     Flow Field Type         ------------------------------------------",
         f"{f(wind_type)}WindType        - switch for wind file type (1=steady; 2=uniform; 3=binary TurbSim FF; 4=binary Bladed-style FF; 5=HAWC format; 6=User-defined; 7=native Bladed FF)",
         f"{f(prop_dir)}PropagationDir  - direction of wind propagation, meteorological convention (degrees)",

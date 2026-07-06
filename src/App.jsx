@@ -264,7 +264,7 @@ export default function App() {
       const fwsPath = await openDialog({
         directory: false,
         multiple:  false,
-        filters:   [{ name: "FlowWake Studio Project", extensions: ["fws"] }],
+        filters:   [{ name: "FlowUrja Studio Project", extensions: ["fws"] }],
       });
       if (!fwsPath) return;
 
@@ -405,7 +405,7 @@ export default function App() {
   const [isFullscreen,  setIsFullscreen]  = useState(false);
   // Start with empty logs — modules add their own on mount
   const [consoleLogs, setConsoleLogs] = useState([
-    { ts: "00:00:00", level: "info", text: "FlowWake Studio v0.1.0 — ready." },
+    { ts: "00:00:00", level: "info", text: "FlowUrja Studio v0.1.0 — ready." },
   ]);
 
   const consoleHeightRef = useRef(CONSOLE_DEFAULT);
@@ -441,14 +441,14 @@ export default function App() {
         if (simRunningRef.current) {
           return await ask(
             "A simulation is currently running. Closing now will abort it.\n\nClose anyway?",
-            { title: "FlowWake Studio", kind: "warning", okLabel: "Close Anyway", cancelLabel: "Cancel" }
+            { title: "FlowUrja Studio", kind: "warning", okLabel: "Close Anyway", cancelLabel: "Cancel" }
           );
         }
         const anyDirty = Object.values(moduleDirtyRef.current).some(Boolean);
         if (anyDirty) {
           return await ask(
             "You have unsaved changes that will be lost.\n\nClose without saving?",
-            { title: "FlowWake Studio", kind: "warning", okLabel: "Close Anyway", cancelLabel: "Cancel" }
+            { title: "FlowUrja Studio", kind: "warning", okLabel: "Close Anyway", cancelLabel: "Cancel" }
           );
         }
         return true; // nothing to confirm — proceed immediately

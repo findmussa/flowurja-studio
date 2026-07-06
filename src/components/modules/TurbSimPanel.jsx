@@ -356,7 +356,7 @@ function buildInpContent(p, effectivePrefix) {
 
   const lines = [
     `---------TurbSim v2 (OpenFAST) Input File------------------`,
-    `FlowWake Studio — ${effectivePrefix}  [${turbModel} | ${iecCls} | ${p.URef} m/s | ${p.HubHt} m hub | gTI=${p.gTI}]`,
+    `FlowUrja Studio — ${effectivePrefix}  [${turbModel} | ${iecCls} | ${p.URef} m/s | ${p.HubHt} m hub | gTI=${p.gTI}]`,
     `---------Runtime Options-----------------------------------`,
     `${pad(b(p.Echo))} Echo            - Echo input data to <RootName>.ech (flag)`,
     `${pad(p.RandSeed1)} RandSeed1       - First random seed  (-2147483648 to 2147483647)`,

@@ -1,18 +1,18 @@
-# FlowWake Studio
+# FlowUrja Studio
 
 **An open-source desktop GUI for OpenFAST and TurbSim wind turbine aeroelastic simulation.**
 
-FlowWake Studio brings OpenFAST and TurbSim into a unified native application — from turbulent wind field generation and parametric batch sweeps to aeroelastic simulation execution and results analysis — without requiring command-line expertise or scripting.
+FlowUrja Studio brings OpenFAST and TurbSim into a unified native application — from turbulent wind field generation and parametric batch sweeps to aeroelastic simulation execution and results analysis — without requiring command-line expertise or scripting.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)](#installation)
-[![GitHub release](https://img.shields.io/github/v/release/findmussa/flowwake-studio)](https://github.com/findmussa/flowwake-studio/releases/latest)
-[![Build](https://github.com/findmussa/flowwake-studio/actions/workflows/release.yml/badge.svg)](https://github.com/findmussa/flowwake-studio/actions/workflows/release.yml)
+[![GitHub release](https://img.shields.io/github/v/release/findmussa/flowurja-studio)](https://github.com/findmussa/flowurja-studio/releases/latest)
+[![Build](https://github.com/findmussa/flowurja-studio/actions/workflows/release.yml/badge.svg)](https://github.com/findmussa/flowurja-studio/actions/workflows/release.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
 
-**Website & documentation**: [www.flowwakestudio.com](https://www.flowwakestudio.com)
+**Website & documentation**: [www.flowurejastudio.com](https://www.flowurejastudio.com)
 
-![FlowWake Studio — OpenFAST Dashboard](docs/assets/app-hero.png)
+![FlowUrja Studio — OpenFAST Dashboard](docs/assets/app-hero.png)
 
 ---
 
@@ -32,32 +32,32 @@ FlowWake Studio brings OpenFAST and TurbSim into a unified native application �
 
 ## Installation
 
-Download the installer for your platform from the [Releases](https://github.com/findmussa/flowwake-studio/releases/latest) page.
+Download the installer for your platform from the [Releases](https://github.com/findmussa/flowurja-studio/releases/latest) page.
 
 | Platform | Requirement | File |
 |----------|------------|------|
 | macOS | macOS 13 Ventura or later (Apple Silicon or Intel) | `.dmg` |
 | Windows | Windows 10/11 (64-bit) | `_x64-setup.exe` |
 
-**macOS:** Open the `.dmg`, drag FlowWake Studio to Applications. On first launch, go to **System Settings → Privacy & Security → Open Anyway** if prompted.
+**macOS:** Open the `.dmg`, drag FlowUrja Studio to Applications. On first launch, go to **System Settings → Privacy & Security → Open Anyway** if prompted.
 
 **Windows:** Run the installer and follow the setup wizard. Click **More info → Run anyway** if Windows Defender SmartScreen appears.
 
 No additional software (Python, OpenFAST, TurbSim) is required — everything is bundled.
 
-For full installation instructions see [docs: Installation](https://www.flowwakestudio.com/getting-started/installation/).
+For full installation instructions see [docs: Installation](https://www.flowurejastudio.com/getting-started/installation/).
 
 ---
 
 ## Quick start
 
-1. Launch FlowWake Studio and create a new project.
+1. Launch FlowUrja Studio and create a new project.
 2. Select a reference turbine model (e.g. IEA 15MW Monopile).
 3. Go to **TurbSim**, configure wind parameters, and click **Run TurbSim**.
 4. Go to **OpenFAST**, set Wind Type to BTS, and click **Run simulation**.
 5. Go to **Results**, scan for output files, and select channels to plot.
 
-Full walkthrough: [docs: Quick Start](https://www.flowwakestudio.com/getting-started/quick-start/).
+Full walkthrough: [docs: Quick Start](https://www.flowurejastudio.com/getting-started/quick-start/).
 
 ---
 
@@ -66,8 +66,8 @@ Full walkthrough: [docs: Quick Start](https://www.flowwakestudio.com/getting-sta
 Requirements: [Node.js 20+](https://nodejs.org) · [Rust stable](https://rustup.rs) · [Python 3.11+](https://python.org)
 
 ```bash
-git clone https://github.com/findmussa/flowwake-studio.git
-cd flowwake-studio
+git clone https://github.com/findmussa/flowurja-studio.git
+cd flowurja-studio
 npm install
 npm run tauri dev        # development
 npm run tauri build      # production build
@@ -80,27 +80,27 @@ The Python sidecar (`fws_io.py`) runs directly in development; CI compiles it wi
 
 ## Citation
 
-If you use FlowWake Studio in your research, please cite both the paper and the software:
+If you use FlowUrja Studio in your research, please cite both the paper and the software:
 
 **Paper** *(SoftwareX, in preparation)*
 ```
-Kalimullah, N. M. M. (2026). FlowWake Studio: An open-source desktop application for
+Kalimullah, N. M. M. (2026). FlowUrja Studio: An open-source desktop application for
 wind turbine aeroelastic simulation using OpenFAST. SoftwareX.
 ```
 
 **Software** *(cite the specific version used)*
 ```
-Kalimullah, N. M. M. (2026). FlowWake Studio [Software].
+Kalimullah, N. M. M. (2026). FlowUrja Studio [Software].
 Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
 ```
 
-BibTeX entries are available at [docs: Citation](https://www.flowwakestudio.com/reference/citation/).
+BibTeX entries are available at [docs: Citation](https://www.flowurejastudio.com/reference/citation/).
 
 ---
 
 ## Third-party components
 
-FlowWake Studio bundles the following open-source software and reference turbine data:
+FlowUrja Studio bundles the following open-source software and reference turbine data:
 
 | Component | Version | Reference | License |
 |-----------|---------|-----------|---------|
@@ -114,7 +114,7 @@ FlowWake Studio bundles the following open-source software and reference turbine
 
 Full attribution and license texts are in [NOTICE](NOTICE) and [LICENSES/](LICENSES/).
 
-FlowWake Studio is an independent open-source project and is not affiliated with or endorsed by NREL or IEA Wind.
+FlowUrja Studio is an independent open-source project and is not affiliated with or endorsed by NREL or IEA Wind.
 
 ### Key references
 
@@ -135,7 +135,7 @@ AI-assisted tools were used during development to support code drafting, debuggi
 
 ## License
 
-FlowWake Studio is released under the [Apache License 2.0](LICENSE).
+FlowUrja Studio is released under the [Apache License 2.0](LICENSE).
 
 Copyright 2026 Nur Mahammad Mussa Kalimullah, Trinity College Dublin.
 
@@ -145,4 +145,4 @@ Copyright 2026 Nur Mahammad Mussa Kalimullah, Trinity College Dublin.
 
 **Nur Mahammad Mussa Kalimullah, PhD**  
 Research Fellow · Trinity College Dublin  
-[www.flowwakestudio.com](https://www.flowwakestudio.com) · [findmussa.github.io](https://findmussa.github.io) · [ORCID 0000-0003-0447-6527](https://orcid.org/0000-0003-0447-6527)
+[www.flowurejastudio.com](https://www.flowurejastudio.com) · [findmussa.github.io](https://findmussa.github.io) · [ORCID 0000-0003-0447-6527](https://orcid.org/0000-0003-0447-6527)

@@ -1,6 +1,6 @@
 """
-dmgbuild settings for FlowWake Studio.
-Called from CI: dmgbuild -s dmg_settings.py -D app=<path> -D bg=<path> "FlowWake Studio" out.dmg
+dmgbuild settings for FlowUrja Studio.
+Called from CI: dmgbuild -s dmg_settings.py -D app=<path> -D bg=<path> "FlowUrja Studio" out.dmg
 """
 import os
 

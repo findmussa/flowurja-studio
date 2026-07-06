@@ -1851,7 +1851,7 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
       // Auto-save to Downloads with a timestamped filename
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       const dlDir = await downloadDir();
-      const outPath = `${dlDir}/flowwake_${chartMode}_${ts}.png`;
+      const outPath = `${dlDir}/flowurja_${chartMode}_${ts}.png`;
       await invoke('write_binary_file', { path: outPath, dataB64: b64 });
       onLog?.('ok', `Chart saved → ${outPath}`);
     } catch (e) {

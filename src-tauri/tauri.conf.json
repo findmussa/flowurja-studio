@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
-  "productName": "FlowWake Studio",
-  "identifier": "com.flowwake.studio",
+  "productName": "FlowUrja Studio",
+  "identifier": "com.flowurja.studio",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",

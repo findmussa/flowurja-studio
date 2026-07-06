@@ -1,5 +1,5 @@
 [package]
-name = "flowwake-studio"
+name = "flowurja-studio"
 version = "0.1.15"
 description = "OpenFAST & TurbSim desktop workflow environment"
 authors = ["Nur M. M. Kalimullah"]

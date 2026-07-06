@@ -12,9 +12,9 @@ const DEVELOPER = {
   role:        "Research Fellow",
   institution: "Trinity College Dublin",
   email:       "findmussa@gmail.com",
-  website:     "www.flowwakestudio.com",
+  website:     "www.flowurejastudio.com",
   web:         "findmussa.github.io",
-  github:      "github.com/findmussa/flowwake-studio",
+  github:      "github.com/findmussa/flowurja-studio",
   orcid:       "0000-0003-0447-6527",
 };
 
@@ -23,8 +23,8 @@ const ZENODO_DOI     = "10.5281/zenodo.XXXXXXX";   // ← replace after first Ze
 const ZENODO_URL     = `https://doi.org/${ZENODO_DOI}`;
 const SOFTWAREX_DOI  = null;   // ← set once SoftwareX paper is published
 
-const SOFTWARE_CITATION = `Kalimullah, N. M. M. (2026). FlowWake Studio: A desktop GUI for OpenFAST and TurbSim (v${APP_VERSION}). Zenodo. https://doi.org/${ZENODO_DOI}`;
-const PAPER_CITATION    = `Kalimullah, N. M. M. (2026). FlowWake Studio: An open-source desktop application for wind turbine aeroelastic simulation using OpenFAST. SoftwareX. [in preparation]`;
+const SOFTWARE_CITATION = `Kalimullah, N. M. M. (2026). FlowUrja Studio: A desktop GUI for OpenFAST and TurbSim (v${APP_VERSION}). Zenodo. https://doi.org/${ZENODO_DOI}`;
+const PAPER_CITATION    = `Kalimullah, N. M. M. (2026). FlowUrja Studio: An open-source desktop application for wind turbine aeroelastic simulation using OpenFAST. SoftwareX. [in preparation]`;
 
 // ── Section card ──────────────────────────────────────────────────────────────
 function Card({ title, icon: Icon, children }) {
@@ -256,7 +256,7 @@ export default function SettingsPanel({ onLog }) {
         {/* ── Binaries ── */}
         <Card title="Binaries" icon={Cpu}>
           <p style={{ fontSize: 12, color: "var(--tx-4)", marginBottom: 14, lineHeight: 1.6 }}>
-            FlowWake Studio ships with bundled versions of OpenFAST and TurbSim.
+            FlowUrja Studio ships with bundled versions of OpenFAST and TurbSim.
             Override to use a different build — useful for custom patches or newer releases.
           </p>
 
@@ -297,7 +297,7 @@ export default function SettingsPanel({ onLog }) {
 
           {/* App info */}
           <div style={{ marginBottom: 20 }}>
-            <AboutRow label="FlowWake Studio"   value={`v${APP_VERSION}`} />
+            <AboutRow label="FlowUrja Studio"   value={`v${APP_VERSION}`} />
             <AboutRow label="Bundled OpenFAST"  value={`v${OF_COMPAT}`}  mono />
             <AboutRow label="Bundled TurbSim"   value={`v${TS_COMPAT}`}  mono />
             <AboutRow label="Platform"          value="macOS 13+ · Windows 10/11" />
@@ -339,7 +339,7 @@ export default function SettingsPanel({ onLog }) {
 
           {/* Citations */}
           <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--tx-5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>
-            If you use FlowWake Studio in your research, please cite
+            If you use FlowUrja Studio in your research, please cite
           </p>
           <p style={{ fontSize: 11.5, color: "var(--tx-4)", marginBottom: 12, lineHeight: 1.5 }}>
             Both citations help track adoption and support continued development.
@@ -377,7 +377,7 @@ export default function SettingsPanel({ onLog }) {
             <div><strong style={{ color: "var(--tx-4)" }}>IEA 15MW</strong> — Gaertner et al. (2020) NREL/TP-75698 · CC BY 4.0</div>
             <div><strong style={{ color: "var(--tx-4)" }}>IEA 22MW</strong> — Zahle et al. (2024) DTU E-0243 · CC BY 4.0</div>
             <div style={{ marginTop: 6, color: "var(--tx-6)" }}>
-              FlowWake Studio is an independent open-source project and is not
+              FlowUrja Studio is an independent open-source project and is not
               affiliated with or endorsed by NREL or IEA Wind.
             </div>
           </div>
