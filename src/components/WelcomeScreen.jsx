@@ -672,7 +672,7 @@ export default function WelcomeScreen({
 
           <div className={s.nameRow}>
             <h1 className={s.appName}>FlowUrja Studio</h1>
-            <span className={s.version}>v0.1.0</span>
+            <span className={s.version}>v1.0.0</span>
           </div>
 
           <p className={s.tagline}>
