@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Settings, Cpu, Info, RefreshCw, Copy, Check as CheckIcon, ExternalLink } from "lucide-react";
+import { Settings, Cpu, Info, RefreshCw, ExternalLink } from "lucide-react";
 import BinaryRow from "../BinaryRow";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
 
@@ -17,14 +17,6 @@ const DEVELOPER = {
   github:      "github.com/findmussa/flowurja-studio",
   orcid:       "0000-0003-0447-6527",
 };
-
-// Zenodo DOI — update this once the repository is registered on zenodo.org
-const ZENODO_DOI     = "10.5281/zenodo.XXXXXXX";   // ← replace after first Zenodo release
-const ZENODO_URL     = `https://doi.org/${ZENODO_DOI}`;
-const SOFTWAREX_DOI  = null;   // ← set once SoftwareX paper is published
-
-const SOFTWARE_CITATION = `Kalimullah, N. M. M. (2026). FlowUrja Studio: A desktop GUI for OpenFAST and TurbSim (v${APP_VERSION}). Zenodo. https://doi.org/${ZENODO_DOI}`;
-const PAPER_CITATION    = `Kalimullah, N. M. M. (2026). FlowUrja Studio: An open-source desktop application for wind turbine aeroelastic simulation using OpenFAST. SoftwareX. [in preparation]`;
 
 // ── Section card ──────────────────────────────────────────────────────────────
 function Card({ title, icon: Icon, children }) {
@@ -98,66 +90,6 @@ function AboutRow({ label, value, mono, href }) {
   );
 }
 
-function CopyButton({ text }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {});
-  };
-  return (
-    <button onClick={copy} title="Copy to clipboard" style={{
-      display: "inline-flex", alignItems: "center", gap: 4,
-      padding: "3px 8px", borderRadius: 5, fontSize: 11,
-      border: "0.5px solid var(--bd)", cursor: "pointer",
-      background: copied ? "rgba(16,185,129,0.10)" : "var(--bg-hover)",
-      color: copied ? "#10B981" : "var(--tx-4)",
-      fontFamily: "inherit", flexShrink: 0,
-      transition: "background 0.15s, color 0.15s",
-    }}>
-      {copied
-        ? <><CheckIcon size={10} strokeWidth={2.5} /> Copied</>
-        : <><Copy size={10} strokeWidth={1.8} /> Copy</>
-      }
-    </button>
-  );
-}
-
-function CitationBlock({ label, text, doi, doiUrl }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--tx-4)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-          {label}
-        </span>
-        <CopyButton text={text} />
-      </div>
-      <div style={{
-        background: "var(--bg-muted)",
-        border: "0.5px solid var(--bd-subtle)",
-        borderRadius: 8,
-        padding: "10px 12px",
-        fontSize: 11.5,
-        color: "var(--tx-2)",
-        lineHeight: 1.7,
-        fontFamily: "'SF Mono', ui-monospace, monospace",
-        wordBreak: "break-word",
-      }}>
-        {text}
-      </div>
-      {doi && doiUrl && (
-        <a href={doiUrl} target="_blank" rel="noreferrer" style={{
-          display: "inline-flex", alignItems: "center", gap: 4,
-          marginTop: 5, fontSize: 11, color: "#0891B2", textDecoration: "none",
-        }}>
-          <ExternalLink size={10} strokeWidth={2} />
-          {doi}
-        </a>
-      )}
-    </div>
-  );
-}
 
 // ── Workers default ───────────────────────────────────────────────────────────
 const WORKERS_KEY = "fws-default-workers";
@@ -336,28 +268,6 @@ export default function SettingsPanel({ onLog }) {
               ))}
             </div>
           </div>
-
-          {/* Citations */}
-          <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--tx-5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>
-            If you use FlowUrja Studio in your research, please cite
-          </p>
-          <p style={{ fontSize: 11.5, color: "var(--tx-4)", marginBottom: 12, lineHeight: 1.5 }}>
-            Both citations help track adoption and support continued development.
-          </p>
-
-          <CitationBlock
-            label="Software (Zenodo)"
-            text={SOFTWARE_CITATION}
-            doi={ZENODO_DOI}
-            doiUrl={ZENODO_URL}
-          />
-
-          <CitationBlock
-            label="Paper (SoftwareX)"
-            text={PAPER_CITATION}
-            doi={SOFTWAREX_DOI ? `doi:${SOFTWAREX_DOI}` : null}
-            doiUrl={SOFTWAREX_DOI ? `https://doi.org/${SOFTWAREX_DOI}` : null}
-          />
 
           {/* Third-party attribution */}
           <div style={{
