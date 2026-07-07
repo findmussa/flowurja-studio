@@ -448,7 +448,7 @@ export default function WelcomeScreen({
       const entries = await invoke("list_dir", { path: normalized }).catch(() => []);
       const existing = entries
         .map(e => e.replace(/\\/g, "/").split("/").pop())
-        .find(name => name.endsWith(".fws"));
+        .find(name => name.endsWith(".fus"));
       setDirHasProject(existing ?? "");
     } catch {}
   };
@@ -485,10 +485,10 @@ export default function WelcomeScreen({
     setCreating(true);
     setError("");
     try {
-      // Prevent writing a second .fws into a folder that already has one
+      // Prevent writing a second .fus into a folder that already has one
       const existing = (await invoke("list_dir", { path: projectDir }).catch(() => []))
         .map(e => e.replace(/\\/g, "/").split("/").pop())
-        .find(name => name.endsWith(".fws"));
+        .find(name => name.endsWith(".fus"));
       if (existing) {
         setError(`Folder already contains a project (${existing}). Choose a different folder or create a subfolder.`);
         setCreating(false);
@@ -569,11 +569,11 @@ export default function WelcomeScreen({
         activeModelId: modelId,
         ui: { activeModule: "openfast", lastRunName: "", lastBTS: "" },
       };
-      // Name the file after the project (e.g. "IEA Study.fws") so it's
+      // Name the file after the project (e.g. "IEA Study.fus") so it's
       // identifiable in the OS file picker without opening it.
       // Strip the handful of characters macOS/Windows forbid in filenames.
       const safeName = projectName.trim().replace(/[/\\:*?"<>|]+/g, "_");
-      const fwsPath = `${projectDir}/${safeName}.fws`;
+      const fwsPath = `${projectDir}/${safeName}.fus`;
       await invoke("write_text_file", { path: fwsPath, content: JSON.stringify(fws, null, 2) });
 
       const activeModelDir = modelFst
@@ -604,13 +604,13 @@ export default function WelcomeScreen({
     }
   };
 
-  // ── Open existing .fws ────────────────────────────────────────────────────
+  // ── Open existing .fus ────────────────────────────────────────────────────
   const handleOpenFws = async () => {
     try {
       const file = await openDialog({
         multiple: false,
         title: "Open FlowUrja project",
-        filters: [{ name: "FlowUrja Studio Project", extensions: ["fws"] }],
+        filters: [{ name: "FlowUrja Studio Project", extensions: ["fus"] }],
       });
       if (!file) return;
       const content = await invoke("read_text_file", { path: file });

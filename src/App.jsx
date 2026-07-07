@@ -177,7 +177,7 @@ export default function App() {
         modelDir:  normFst.split("/").slice(0, -1).join("/"),
       };
     });
-    // Persist activeModelId to .fws
+    // Persist activeModelId to .fus
     setProject(prev => {
       if (prev?.fwsPath) {
         invoke("read_text_file", { path: prev.fwsPath })
@@ -208,7 +208,7 @@ export default function App() {
     if (!removeModelConfirm || !project) return;
     const { id, dir } = removeModelConfirm;
     try {
-      // 1. Update .fws
+      // 1. Update .fus
       const raw  = await invoke("read_text_file", { path: project.fwsPath });
       const fws  = JSON.parse(raw);
       fws.models = (fws.models || []).filter(m => m.id !== id);
@@ -238,7 +238,7 @@ export default function App() {
     }
   }, [removeModelConfirm, deleteFiles, project]);
 
-  // Called by AddModelSheet when a model has been copied + .fws updated
+  // Called by AddModelSheet when a model has been copied + .fus updated
   const handleModelAdded = useCallback((modelEntry) => {
     setProject(prev => {
       if (!prev) return prev;
@@ -264,7 +264,7 @@ export default function App() {
       const fwsPath = await openDialog({
         directory: false,
         multiple:  false,
-        filters:   [{ name: "FlowUrja Studio Project", extensions: ["fws"] }],
+        filters:   [{ name: "FlowUrja Studio Project", extensions: ["fus"] }],
       });
       if (!fwsPath) return;
 
@@ -307,6 +307,47 @@ export default function App() {
       setWelcomeDismissed(true);
     } catch {}
   };
+
+  // Open a project directly from a .fus file path (no dialog).
+  // Used by double-click file association and startup file argument.
+  const openProjectFromPath = useCallback(async (fusPath) => {
+    try {
+      const fwsPath = fusPath.replace(/\\/g, "/");
+      const dir = fwsPath.split("/").slice(0, -1).join("/");
+      const raw = await invoke("read_text_file", { path: fwsPath });
+      const fws = JSON.parse(raw);
+      const models = fws.models
+        ? fws.models.map(m => ({ ...m, fstPath: `${dir}/${m.fstPath}` }))
+        : fws.modelFst
+          ? [{ id: fws.modelFst.split("/")[1] || "model", label: fws.name || "Model", fstPath: `${dir}/${fws.modelFst}` }]
+          : [];
+      const activeModelId = fws.activeModelId || models[0]?.id || null;
+      const active = models.find(m => m.id === activeModelId) || models[0] || null;
+      const projectData = {
+        name:       fws.name || dir.split("/").pop(),
+        dir, fwsPath, models, activeModelId,
+        modelFst:   active?.fstPath ?? null,
+        modelDir:   active?.fstPath ? active.fstPath.split("/").slice(0, -1).join("/") : `${dir}/model`,
+        windDir:    `${dir}/wind`,
+        resultsDir: `${dir}/results`,
+        workingDir: dir,
+        ui:         fws.ui || {},
+      };
+      saveToRecent(projectData);
+      setProject(projectData);
+      setWelcomeDismissed(true);
+    } catch {}
+  }, []);
+
+  // On startup: open a .fus file passed as CLI arg (Windows) or macOS double-click
+  // (emitted as "open-fus-file" by the Rust RunEvent::Opened handler).
+  useEffect(() => {
+    invoke("get_startup_file").then(path => { if (path) openProjectFromPath(path); });
+    let unlisten;
+    listen("open-fus-file", e => { if (e.payload) openProjectFromPath(e.payload); })
+      .then(fn => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, [openProjectFromPath]);
 
   // Callback for OpenFASTPanel: receives resolved absolute paths after .fst import
   const handleModuleFilesDetected = useCallback((files) => {
@@ -405,7 +446,7 @@ export default function App() {
   const [isFullscreen,  setIsFullscreen]  = useState(false);
   // Start with empty logs — modules add their own on mount
   const [consoleLogs, setConsoleLogs] = useState([
-    { ts: "00:00:00", level: "info", text: "FlowUrja Studio v0.1.0 — ready." },
+    { ts: "00:00:00", level: "info", text: "FlowUrja Studio v1.0.0 — ready." },
   ]);
 
   const consoleHeightRef = useRef(CONSOLE_DEFAULT);

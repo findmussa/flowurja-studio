@@ -27,6 +27,15 @@ fn no_window(cmd: &mut std::process::Command) -> &mut std::process::Command { cm
 static QUIT_APP_HANDLE: std::sync::OnceLock<tauri::AppHandle<tauri::Wry>> =
     std::sync::OnceLock::new();
 
+/// On Windows, a .fus file opened via double-click is passed as argv[1].
+/// Stored once at startup so the frontend can retrieve it via get_startup_file.
+static STARTUP_FILE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+
+#[tauri::command]
+fn get_startup_file() -> Option<String> {
+    STARTUP_FILE.get().and_then(|v| v.clone())
+}
+
 /// Original NSApplication.terminate: IMP saved before we replace it.
 #[cfg(target_os = "macos")]
 static ORIG_TERMINATE: std::sync::OnceLock<
@@ -611,7 +620,7 @@ async fn run_binary_tagged(
 // ── Global app settings ───────────────────────────────────────────────────────
 //
 // Stored in the platform app-config directory (e.g. ~/Library/Application Support/
-// FlowWake Studio/settings.json on macOS).  Contains user binary overrides and any
+// FlowUrja Studio/settings.json on macOS).  Contains user binary overrides and any
 // other machine-level preferences.
 
 /// Read the global settings JSON string.
@@ -2102,8 +2111,15 @@ pub fn run() {
             read_bts_duration,
             open_in_finder, kill_pid,
             quit_app,
+            get_startup_file,
         ])
         .setup(move |app| {
+            // Store any .fus file path passed as a CLI argument (Windows double-click).
+            // On macOS, file opens arrive via RunEvent::Opened instead.
+            STARTUP_FILE.get_or_init(|| {
+                std::env::args().nth(1).filter(|a| a.ends_with(".fus"))
+            });
+
             // Create the main window programmatically so we can call
             // traffic_light_position() — a builder-only API with no runtime setter.
             use tauri::{WebviewWindowBuilder, WebviewUrl};
@@ -2111,7 +2127,7 @@ pub fn run() {
             let builder = WebviewWindowBuilder::new(
                     app, "main", WebviewUrl::App("index.html".into()),
                 )
-                .title("FlowWake Studio")
+                .title("FlowUrja Studio")
                 .inner_size(1280.0, 760.0)
                 .min_inner_size(720.0, 480.0)
                 .resizable(true);
@@ -2233,6 +2249,23 @@ pub fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Nurja");
+        .build(tauri::generate_context!())
+        .expect("error while building Nurja")
+        .run(|app_handle, event| {
+            // macOS: handle .fus files opened via double-click (both cold-start and
+            // when the app is already running — OS sends openFile: in both cases).
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = &event {
+                use tauri::Emitter;
+                for url in urls {
+                    if let Ok(path) = url.to_file_path() {
+                        let p = path.to_string_lossy().to_string();
+                        if p.ends_with(".fus") {
+                            let _ = app_handle.emit("open-fus-file", &p);
+                            break;
+                        }
+                    }
+                }
+            }
+        });
 }
