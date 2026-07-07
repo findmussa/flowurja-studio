@@ -3,7 +3,7 @@ import { Settings, Cpu, Info, RefreshCw, Copy, Check as CheckIcon, ExternalLink 
 import BinaryRow from "../BinaryRow";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
 
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "1.0.0";
 const OF_COMPAT   = "4.2.0";
 const TS_COMPAT   = "4.2.0";
 

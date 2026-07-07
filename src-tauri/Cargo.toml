@@ -1,6 +1,6 @@
 [package]
 name = "flowurja-studio"
-version = "0.1.15"
+version = "1.0.0"
 description = "OpenFAST & TurbSim desktop workflow environment"
 authors = ["Nur M. M. Kalimullah"]
 edition = "2021"
