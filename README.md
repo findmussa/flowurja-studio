@@ -10,7 +10,7 @@ FlowUrja Studio brings OpenFAST and TurbSim into a unified native application �
 [![Build](https://github.com/findmussa/flowurja-studio/actions/workflows/release.yml/badge.svg)](https://github.com/findmussa/flowurja-studio/actions/workflows/release.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
 
-**Website & documentation**: [www.flowurejastudio.com](https://www.flowurejastudio.com)
+**Website & documentation**: [www.flowurjastudio.com](https://www.flowurjastudio.com)
 
 ![FlowUrja Studio — OpenFAST Dashboard](docs/assets/app-hero.png)
 
@@ -45,7 +45,7 @@ Download the installer for your platform from the [Releases](https://github.com/
 
 No additional software (Python, OpenFAST, TurbSim) is required — everything is bundled.
 
-For full installation instructions see [docs: Installation](https://www.flowurejastudio.com/getting-started/installation/).
+For full installation instructions see [docs: Installation](https://www.flowurjastudio.com/getting-started/installation/).
 
 ---
 
@@ -57,7 +57,7 @@ For full installation instructions see [docs: Installation](https://www.flowurej
 4. Go to **OpenFAST**, set Wind Type to BTS, and click **Run simulation**.
 5. Go to **Results**, scan for output files, and select channels to plot.
 
-Full walkthrough: [docs: Quick Start](https://www.flowurejastudio.com/getting-started/quick-start/).
+Full walkthrough: [docs: Quick Start](https://www.flowurjastudio.com/getting-started/quick-start/).
 
 ---
 
@@ -94,7 +94,7 @@ Kalimullah, N. M. M. (2026). FlowUrja Studio [Software].
 Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
 ```
 
-BibTeX entries are available at [docs: Citation](https://www.flowurejastudio.com/reference/citation/).
+BibTeX entries are available at [docs: Citation](https://www.flowurjastudio.com/reference/citation/).
 
 ---
 
@@ -145,4 +145,4 @@ Copyright 2026 Nur Mahammad Mussa Kalimullah, Trinity College Dublin.
 
 **Nur Mahammad Mussa Kalimullah, PhD**  
 Research Fellow · Trinity College Dublin  
-[www.flowurejastudio.com](https://www.flowurejastudio.com) · [findmussa.github.io](https://findmussa.github.io) · [ORCID 0000-0003-0447-6527](https://orcid.org/0000-0003-0447-6527)
+[www.flowurjastudio.com](https://www.flowurjastudio.com) · [findmussa.github.io](https://findmussa.github.io) · [ORCID 0000-0003-0447-6527](https://orcid.org/0000-0003-0447-6527)

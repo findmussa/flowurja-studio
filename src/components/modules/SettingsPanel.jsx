@@ -12,7 +12,7 @@ const DEVELOPER = {
   role:        "Research Fellow",
   institution: "Trinity College Dublin",
   email:       "findmussa@gmail.com",
-  website:     "www.flowurejastudio.com",
+  website:     "www.flowurjastudio.com",
   web:         "findmussa.github.io",
   github:      "github.com/findmussa/flowurja-studio",
   orcid:       "0000-0003-0447-6527",
