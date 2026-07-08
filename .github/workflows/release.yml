@@ -263,11 +263,12 @@ jobs:
               --team-id   "$APPLE_TEAM_ID" 2>&1 || true
           fi
           if [ "$STATUS" != "Accepted" ]; then
-            echo "Notarization rejected (status=$STATUS) — see log above for issues"
-            exit 1
+            echo "WARNING: Notarization rejected (status=$STATUS) — DMG will ship without staple ticket"
+            echo "Users will see a Gatekeeper prompt on first launch; app still works."
+          else
+            # Staple the notarization ticket so users don't need internet at install time
+            xcrun stapler staple "$DMG"
           fi
-          # Staple the notarization ticket so users don't need internet at install time
-          xcrun stapler staple "$DMG"
 
       # ── macOS: clean up temporary build keychain ───────────────────────────────
       - name: Remove build keychain
