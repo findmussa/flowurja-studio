@@ -946,7 +946,7 @@ export default function SubDynPanel({
             }
           }}
         >
-          <Eye size={12} strokeWidth={2} /> View
+          <Eye size={12} strokeWidth={2} /> View .dat
         </button>
       </div>
 

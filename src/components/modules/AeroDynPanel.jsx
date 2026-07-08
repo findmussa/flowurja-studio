@@ -1293,7 +1293,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
               setRawOpen(true);
             } catch (err) { onLog?.("error", `Cannot read file: ${err}`); }
           }}>
-          <Eye size={12} strokeWidth={2} /> View
+          <Eye size={12} strokeWidth={2} /> View .dat
         </button>
       </div>
 

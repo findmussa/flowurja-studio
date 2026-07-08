@@ -208,6 +208,14 @@ const DEFAULT = {
   FilePrefix: "", BinPath: "",
 };
 
+// DT_Out must be "default" or a positive finite number; anything else → "default"
+const normalizeDtOut = raw => {
+  const s = String(raw ?? "").trim();
+  if (!s || s.toLowerCase() === "default") return "default";
+  const n = Number(s);
+  return isFinite(n) && n > 0 ? s : "default";
+};
+
 function fstParsedToState(kv) {
   const state = { ...DEFAULT };
   const bool = v => typeof v === "string" && v.toLowerCase() === "true";
@@ -235,7 +243,7 @@ function fstParsedToState(kv) {
   // v4 renamed parameter
   if (kv.NumCrctn !== undefined) { const v = num(kv.NumCrctn); if (v !== undefined) state.NumCorrSteps = v; }
 
-  if (kv.DT_Out !== undefined) state.DT_Out = kv.DT_Out.toLowerCase() === "default" ? "default" : kv.DT_Out;
+  if (kv.DT_Out !== undefined) state.DT_Out = normalizeDtOut(kv.DT_Out);
   if (kv.OutFmt)     state.OutFmt = kv.OutFmt;
   if (kv.AbortLevel) { const idx = ABORT_LEVELS.indexOf(kv.AbortLevel.toUpperCase()); if (idx >= 0) state.AbortLevel = idx; }
 
@@ -1186,7 +1194,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                   <input type="number" value={p.DT} min={0.0001} step={0.001} onChange={setN("DT")} />
                 </Field>
                 <Field label="Output time step (DT_Out)" info={{ param: "DT_Out", desc: "Output write interval. 'default' uses DT; specify a value to downsample output.", default: '"default"', note: "When a number, must be a whole-number multiple of DT." }}>
-                  <input type="text" value={p.DT_Out} onChange={e => setP(prev => ({ ...prev, DT_Out: e.target.value }))} placeholder="default" />
+                  <input type="text" value={p.DT_Out} onChange={e => setP(prev => ({ ...prev, DT_Out: e.target.value }))} onBlur={e => setP(prev => ({ ...prev, DT_Out: normalizeDtOut(e.target.value) }))} placeholder="default" />
                   <p className={s.hint}>"default" uses DT; enter a value (s) for coarser output</p>
                 </Field>
                 <Field label="Output start time (TStart)" unit="s" info={{ param: "TStart", desc: "Time at which output recording begins. Data before TStart is computed but not written to disk.", range: "≥ 0", unit: "s", default: "0.0" }}>
@@ -1442,7 +1450,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                 <EditableParam label="TMax"   unit="s" value={p.TMax}   step={10}    min={1}      onChange={v => setP(prev => ({ ...prev, TMax:   v }))} />
                 <EditableParam label="DT"     unit="s" value={p.DT}     step={0.001} min={0.0001} onChange={v => setP(prev => ({ ...prev, DT:     v }))} />
                 <EditableParam label="TStart" unit="s" value={p.TStart} step={1}     min={0}      onChange={v => setP(prev => ({ ...prev, TStart: v }))} />
-                <EditableParam label="DT_Out"           value={p.DT_Out} isString                 onChange={v => setP(prev => ({ ...prev, DT_Out: v }))} />
+                <EditableParam label="DT_Out"           value={p.DT_Out} isString                 onChange={v => setP(prev => ({ ...prev, DT_Out: normalizeDtOut(v) }))} />
               </div>
             </div>
 

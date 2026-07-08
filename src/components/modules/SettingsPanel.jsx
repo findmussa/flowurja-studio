@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Settings, Cpu, Info, RefreshCw, ExternalLink } from "lucide-react";
 import BinaryRow from "../BinaryRow";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
@@ -99,6 +100,21 @@ function WorkersPicker() {
     try { return Number(localStorage.getItem(WORKERS_KEY)) || 2; }
     catch { return 2; }
   });
+  const [cpuCores, setCpuCores] = useState(null);
+
+  useEffect(() => {
+    invoke("detect_cpu_cores")
+      .then(n => {
+        setCpuCores(n);
+        const stored = localStorage.getItem(WORKERS_KEY);
+        if (!stored) {
+          const def = Math.max(1, Math.floor(n / 2));
+          setVal(def);
+          try { localStorage.setItem(WORKERS_KEY, String(def)); } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const pick = n => {
     setVal(n);
@@ -108,29 +124,28 @@ function WorkersPicker() {
   return (
     <div>
       <FieldLabel>Default parallel workers</FieldLabel>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ display: "flex", gap: 4 }}>
-          {[1, 2, 3, 4].map(n => (
-            <button
-              key={n}
-              onClick={() => pick(n)}
-              style={{
-                width: 32, height: 32, borderRadius: 7, fontSize: 13,
-                fontWeight: val === n ? 700 : 400,
-                border: "0.5px solid",
-                borderColor: val === n ? "rgba(124,58,237,0.4)" : "var(--bd)",
-                background: val === n ? "rgba(124,58,237,0.12)" : "var(--bg-surface)",
-                color: val === n ? "#7C3AED" : "var(--tx-3)",
-                cursor: "pointer", fontFamily: "inherit",
-                transition: "all 0.1s",
-              }}
-            >
-              {n}
-            </button>
-          ))}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+          <button
+            onClick={() => pick(Math.max(1, val - 1))}
+            disabled={val <= 1}
+            style={{ width: 28, height: 28, borderRadius: "7px 0 0 7px", border: "0.5px solid var(--bd)", background: "var(--bg-surface)", color: "var(--tx-2)", cursor: "pointer", fontSize: 16, lineHeight: 1, fontFamily: "inherit", opacity: val <= 1 ? 0.35 : 1 }}
+          >−</button>
+          <div style={{ width: 36, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderTop: "0.5px solid var(--bd)", borderBottom: "0.5px solid var(--bd)", background: "rgba(124,58,237,0.08)", fontSize: 13, fontWeight: 700, color: "#7C3AED" }}>{val}</div>
+          <button
+            onClick={() => pick(Math.min(cpuCores ?? 64, val + 1))}
+            disabled={cpuCores !== null && val >= cpuCores}
+            style={{ width: 28, height: 28, borderRadius: "0 7px 7px 0", border: "0.5px solid var(--bd)", background: "var(--bg-surface)", color: "var(--tx-2)", cursor: "pointer", fontSize: 16, lineHeight: 1, fontFamily: "inherit", opacity: (cpuCores !== null && val >= cpuCores) ? 0.35 : 1 }}
+          >+</button>
         </div>
         <span style={{ fontSize: 11.5, color: "var(--tx-5)" }}>
           {val === 1 ? "sequential — one case at a time" : `${val} simultaneous OpenFAST processes`}
+          {cpuCores !== null && (
+            <span style={{ marginLeft: 6, opacity: 0.7 }}>
+              <Cpu size={10} style={{ verticalAlign: "middle", marginRight: 2 }} />
+              {cpuCores} cores detected
+            </span>
+          )}
         </span>
       </div>
       <p style={{ fontSize: 11, color: "var(--tx-5)", marginTop: 6 }}>

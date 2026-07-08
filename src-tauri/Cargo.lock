@@ -789,8 +789,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "flowwake-studio"
-version = "0.1.8"
+name = "flowurja-studio"
+version = "1.0.0"
 dependencies = [
  "objc",
  "serde",

@@ -6,7 +6,7 @@ import {
   Play, Square, Layers, AlertCircle, CheckCircle2,
   XCircle, Loader2, Trash2, Wind, FolderOpen, RefreshCw,
   ChevronDown, ChevronRight, Download, RotateCcw, FileText,
-  Zap, Waves,
+  Zap, Waves, Cpu,
 } from "lucide-react";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
 import s from "./BatchRunPanel.module.css";
@@ -296,6 +296,7 @@ export default function BatchRunPanel({
     try { return Number(localStorage.getItem("fws-default-workers")) || 2; }
     catch { return 2; }
   });
+  const [cpuCores,      setCpuCores]      = useState(null);
   const [batchLabel,    setBatchLabel]    = useState("");
   const [queueFilter,   setQueueFilter]   = useState("all");
   const [expandedLogId, setExpandedLogId] = useState(null);
@@ -326,6 +327,17 @@ export default function BatchRunPanel({
   useEffect(() => () => {
     listenersRef.current.forEach(fn => fn?.());
     listenersRef.current = [];
+  }, []);
+
+  // Detect CPU cores and set sensible worker default if no saved preference
+  useEffect(() => {
+    invoke("detect_cpu_cores")
+      .then(n => {
+        setCpuCores(n);
+        const stored = localStorage.getItem("fws-default-workers");
+        if (!stored) setWorkers(Math.max(1, Math.floor(n / 2)));
+      })
+      .catch(() => {});
   }, []);
 
   // ── Sweep scanner ──────────────────────────────────────────────────────────
@@ -1107,21 +1119,27 @@ export default function BatchRunPanel({
                 {/* Workers */}
                 <div className={s.defineConfigCol}>
                   <p className={s.defineFieldLabel}>Parallel workers</p>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div className={s.workersBtns}>
-                      {[1, 2, 3, 4].map(n => (
-                        <button
-                          key={n}
-                          className={[s.workerBtn, workers === n ? s.workerBtnActive : ""].join(" ")}
-                          onClick={() => setWorkers(n)}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                    <button
+                      onClick={() => setWorkers(w => Math.max(1, w - 1))}
+                      disabled={workers <= 1}
+                      style={{ width: 28, height: 28, borderRadius: "7px 0 0 7px", border: "0.5px solid var(--bd)", background: "var(--bg-surface)", color: "var(--tx-2)", cursor: "pointer", fontSize: 16, lineHeight: 1, fontFamily: "inherit", opacity: workers <= 1 ? 0.35 : 1 }}
+                    >−</button>
+                    <div style={{ width: 36, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderTop: "0.5px solid var(--bd)", borderBottom: "0.5px solid var(--bd)", background: "rgba(124,58,237,0.08)", fontSize: 13, fontWeight: 700, color: "#7C3AED" }}>{workers}</div>
+                    <button
+                      onClick={() => setWorkers(w => Math.min(cpuCores ?? 64, w + 1))}
+                      disabled={cpuCores !== null && workers >= cpuCores}
+                      style={{ width: 28, height: 28, borderRadius: "0 7px 7px 0", border: "0.5px solid var(--bd)", background: "var(--bg-surface)", color: "var(--tx-2)", cursor: "pointer", fontSize: 16, lineHeight: 1, fontFamily: "inherit", opacity: (cpuCores !== null && workers >= cpuCores) ? 0.35 : 1 }}
+                    >+</button>
                   </div>
                   <p style={{ fontSize: 11.5, color: "var(--tx-4)", marginTop: 6 }}>
                     {workers === 1 ? "Sequential — one case at a time" : `${workers} simultaneous OpenFAST processes`}
+                    {cpuCores !== null && (
+                      <span style={{ marginLeft: 8, opacity: 0.65 }}>
+                        <Cpu size={10} style={{ verticalAlign: "middle", marginRight: 2 }} />
+                        {cpuCores} cores detected
+                      </span>
+                    )}
                   </p>
                 </div>
 

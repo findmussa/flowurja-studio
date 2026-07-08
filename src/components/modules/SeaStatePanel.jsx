@@ -1368,7 +1368,7 @@ export default function SeaStatePanel({
               onLog?.("error", `Cannot read file: ${err}`);
             }
           }}>
-          <Eye size={12} strokeWidth={2} /> View
+          <Eye size={12} strokeWidth={2} /> View .dat
         </button>
       </div>
 

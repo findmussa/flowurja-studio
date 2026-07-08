@@ -788,7 +788,7 @@ export default function MoorDynPanel({
             }
           }}
         >
-          <Eye size={12} strokeWidth={2} /> View
+          <Eye size={12} strokeWidth={2} /> View .dat
         </button>
       </div>
 

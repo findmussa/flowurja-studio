@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Wind, LayoutGrid, SlidersHorizontal, Square, ChevronDown, ChevronRight, Eye, Plus, Info, LayoutDashboard, Play } from "lucide-react";
+import { Wind, Square, ChevronDown, ChevronRight, Eye, Plus, Info, Play } from "lucide-react";
 import RawFileModal from "../RawFileModal";
 import InfoPopover from "../InfoPopover";
 // BinaryRow removed — binary config now lives in Settings (⚙)
@@ -10,11 +10,11 @@ import { IsolineHero, IsolineMini, _isoColor, _lerp } from "../IsolineAnimation"
 import s from "./TurbSimPanel.module.css";
 
 const TABS = [
-  { id: "dashboard", label: "Dashboard",      icon: LayoutDashboard  },
-  { id: "wind",      label: "Wind field",     icon: Wind             },
-  { id: "spectral",  label: "Spectral model", icon: Info             },
-  { id: "grid",      label: "Grid & time",    icon: LayoutGrid       },
-  { id: "runtime",   label: "Advanced",       icon: SlidersHorizontal },
+  { id: "dashboard", label: "Dashboard"      },
+  { id: "wind",      label: "Wind field"     },
+  { id: "spectral",  label: "Spectral model" },
+  { id: "grid",      label: "Grid & time"    },
+  { id: "runtime",   label: "Advanced"       },
 ];
 
 const TURB_MODELS    = ["IECKAI","IECVKM","GP_LLJ","NWTCUP","SMOOTH","WF_UPW","WF_07D","WF_14D","TIDAL","API","NONE"];
@@ -888,11 +888,11 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
       )}
 
       <div className={s.tabBar}>
-        {TABS.map(t => { const Icon = t.icon; return (
+        {TABS.map(t => (
           <button key={t.id} className={`${s.tab} ${tab===t.id?s.tabActive:""}`} onClick={() => setTab(t.id)}>
-            <Icon size={13} strokeWidth={1.8}/>{t.label}
+            {t.label}
           </button>
-        );})}
+        ))}
       </div>
 
       <div className={s.contentRow}>

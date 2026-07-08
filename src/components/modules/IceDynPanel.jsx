@@ -852,7 +852,7 @@ export default function IceDynPanel({ onLog, project, filePathFromProject, onDir
             }
           }}
         >
-          <Eye size={12} strokeWidth={2} /> View
+          <Eye size={12} strokeWidth={2} /> View .dat
         </button>
       </div>
 

@@ -949,7 +949,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
           <FolderOpen size={12} strokeWidth={1.8} /> Open .dat
         </button>
         <button className={`${s.headerBtn} ${s.headerBtnSecondary}`} onClick={handleViewRaw} type="button">
-          <Eye size={12} strokeWidth={1.8} /> View
+          <Eye size={12} strokeWidth={1.8} /> View .dat
         </button>
       </div>
 
