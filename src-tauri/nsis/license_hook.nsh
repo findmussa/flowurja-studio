@@ -1,4 +1,4 @@
-; FlowWake Studio — NSIS installer hook
+; FlowUrja Studio — NSIS installer hook
 ; Adds a license agreement page before installation begins.
 ;
 ; MUI2.nsh pre-defines MUI_ICON/MUI_UNICON with NSIS defaults before this
