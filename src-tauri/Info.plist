@@ -14,7 +14,7 @@
       <key>CFBundleTypeRole</key>
       <string>Editor</string>
       <key>CFBundleTypeIconFile</key>
-      <string>icon</string>
+      <string>document</string>
       <key>LSHandlerRank</key>
       <string>Owner</string>
     </dict>

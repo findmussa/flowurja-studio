@@ -35,6 +35,7 @@
       }
     },
     "resources": {
+      "icons/document.icns": "document.icns",
       "sidecar/*": "sidecar",
       "resources/bin/*": "bin",
       "resources/lib/*": "lib",
