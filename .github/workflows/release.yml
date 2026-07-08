@@ -163,7 +163,7 @@ jobs:
             echo "APPLE_SIGNING_IDENTITY not set — skipping"
             exit 0
           fi
-          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowWake Studio.app"
+          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowUrja Studio.app"
 
           echo "=== Signing dylibs (.dylib / .so) ==="
           find "$APP" \( -name "*.dylib" -o -name "*.so" \) | while read -r f; do
@@ -194,7 +194,7 @@ jobs:
         if: matrix.platform == 'macos-latest'
         shell: bash
         run: |
-          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowWake Studio.app"
+          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowUrja Studio.app"
           echo "=== Signature info ==="
           codesign --display --verbose=4 "$APP" 2>&1 || echo "WARNING: codesign --display failed"
           echo "=== Signature verification ==="
@@ -210,7 +210,7 @@ jobs:
         run: |
           pip install dmgbuild
           VERSION=$(node -p "require('./package.json').version")
-          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowWake Studio.app"
+          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/FlowUrja Studio.app"
           BG="src-tauri/assets/dmg_background.png"
           SETTINGS="src-tauri/assets/dmg_settings.py"
           OUT_DIR="src-tauri/target/${{ matrix.target }}/release/bundle/dmg"
@@ -219,8 +219,8 @@ jobs:
             -s "$SETTINGS" \
             -D "app=$APP" \
             -D "bg=$BG" \
-            "FlowWake Studio" \
-            "$OUT_DIR/FlowWake Studio_${VERSION}_aarch64.dmg"
+            "FlowUrja Studio" \
+            "$OUT_DIR/FlowUrja Studio_${VERSION}_aarch64.dmg"
 
       # ── macOS: sign, notarize, and staple the DMG ─────────────────────────────
       # Gracefully skips when Apple ID credentials are not yet configured.
@@ -240,7 +240,7 @@ jobs:
             exit 0
           fi
           VERSION=$(node -p "require('./package.json').version")
-          DMG="src-tauri/target/${{ matrix.target }}/release/bundle/dmg/FlowWake Studio_${VERSION}_aarch64.dmg"
+          DMG="src-tauri/target/${{ matrix.target }}/release/bundle/dmg/FlowUrja Studio_${VERSION}_aarch64.dmg"
           # Sign the DMG container itself (the .app inside is already signed by Tauri)
           codesign --force --sign "$APPLE_SIGNING_IDENTITY" --timestamp "$DMG"
           # Submit to Apple notary service; capture JSON so we can fetch the log
@@ -289,7 +289,7 @@ jobs:
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FlowWake-Studio-${{ matrix.label }}
+          name: FlowUrja-Studio-${{ matrix.label }}
           path: staging/
           retention-days: 7
 
@@ -299,9 +299,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          name: FlowWake Studio ${{ github.ref_name }}
+          name: FlowUrja Studio ${{ github.ref_name }}
           body: |
-            ## FlowWake Studio ${{ github.ref_name }}
+            ## FlowUrja Studio ${{ github.ref_name }}
 
             Desktop GUI for OpenFAST and TurbSim — wind turbine aeroelastic simulation workflows.
 
@@ -315,7 +315,7 @@ jobs:
 
             **Cite**
             ```
-            Kalimullah, N. M. M. (2026). FlowWake Studio (v0.1.0).
+            Kalimullah, N. M. M. (2026). FlowUrja Studio (v1.0.0).
             Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
             ```
           files: staging/*
