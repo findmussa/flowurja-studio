@@ -18,17 +18,7 @@
     "macOS": {
       "hardenedRuntime": true,
       "entitlements": "entitlements.plist",
-      "infoPlist": {
-        "CFBundleDocumentTypes": [
-          {
-            "CFBundleTypeExtensions": ["fus"],
-            "CFBundleTypeName": "FlowUrja Studio Project",
-            "CFBundleTypeRole": "Editor",
-            "CFBundleTypeIconFile": "icon",
-            "LSHandlerRank": "Owner"
-          }
-        ]
-      },
+      "infoPlist": "Info.plist",
       "dmg": {
         "background": "assets/dmg_background.png",
         "windowSize":  { "width": 660, "height": 400 },
