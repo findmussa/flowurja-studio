@@ -241,20 +241,41 @@ jobs:
           fi
           VERSION=$(node -p "require('./package.json').version")
           DMG="src-tauri/target/${{ matrix.target }}/release/bundle/dmg/FlowUrja Studio_${VERSION}_aarch64.dmg"
-          # Sign the DMG container itself (the .app inside is already signed by Tauri)
+
+          # Verify the DMG exists before attempting to sign/submit
+          if [ ! -f "$DMG" ]; then
+            echo "ERROR: DMG not found at: $DMG"
+            echo "Contents of bundle/dmg/:"
+            ls -lh "src-tauri/target/${{ matrix.target }}/release/bundle/dmg/" || true
+            exit 1
+          fi
+          echo "=== Notarizing: $DMG ($(du -sh "$DMG" | cut -f1)) ==="
+
+          # Sign the DMG container itself (the .app inside is already signed)
           codesign --force --sign "$APPLE_SIGNING_IDENTITY" --timestamp "$DMG"
-          # Submit to Apple notary service; capture JSON so we can fetch the log
+
+          # Submit to Apple notary service.
+          # Capture exit code manually so set -e doesn't kill the script before
+          # we can print diagnostic output on failure.
+          SUBMIT_EXIT=0
           NOTARY_JSON=$(xcrun notarytool submit "$DMG" \
             --apple-id  "$APPLE_ID"       \
             --password  "$APPLE_PASSWORD" \
             --team-id   "$APPLE_TEAM_ID"  \
-            --wait --output-format json 2>&1)
+            --wait --output-format json 2>&1) || SUBMIT_EXIT=$?
           echo "$NOTARY_JSON"
+          if [ "$SUBMIT_EXIT" -ne 0 ]; then
+            echo "ERROR: notarytool submit exited with code $SUBMIT_EXIT (credentials or network issue)"
+            exit 1
+          fi
+
           SUB_ID=$(echo "$NOTARY_JSON" | python3 -c \
             "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)
           STATUS=$(echo "$NOTARY_JSON" | python3 -c \
             "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null || true)
-          # Always print the full Apple notarization log (shows exact rejection reasons)
+          echo "=== Notarization status: '$STATUS' (submission id: '$SUB_ID') ==="
+
+          # Always fetch the full Apple log — it lists every rejected binary/entitlement
           if [ -n "$SUB_ID" ]; then
             echo "=== Notarization log (id: $SUB_ID) ==="
             xcrun notarytool log "$SUB_ID" \
@@ -262,13 +283,13 @@ jobs:
               --password  "$APPLE_PASSWORD" \
               --team-id   "$APPLE_TEAM_ID" 2>&1 || true
           fi
+
           if [ "$STATUS" != "Accepted" ]; then
-            echo "WARNING: Notarization rejected (status=$STATUS) — DMG will ship without staple ticket"
-            echo "Users will see a Gatekeeper prompt on first launch; app still works."
-          else
-            # Staple the notarization ticket so users don't need internet at install time
-            xcrun stapler staple "$DMG"
+            echo "Notarization rejected (status=$STATUS) — see log above for the exact issues"
+            exit 1
           fi
+          # Staple the notarization ticket so users don't need internet at install time
+          xcrun stapler staple "$DMG"
 
       # ── macOS: clean up temporary build keychain ───────────────────────────────
       - name: Remove build keychain
