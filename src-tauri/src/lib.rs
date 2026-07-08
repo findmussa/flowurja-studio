@@ -27,13 +27,15 @@ fn no_window(cmd: &mut std::process::Command) -> &mut std::process::Command { cm
 static QUIT_APP_HANDLE: std::sync::OnceLock<tauri::AppHandle<tauri::Wry>> =
     std::sync::OnceLock::new();
 
-/// On Windows, a .fus file opened via double-click is passed as argv[1].
-/// Stored once at startup so the frontend can retrieve it via get_startup_file.
-static STARTUP_FILE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+/// Path of a .fus file to open on startup.
+/// On Windows: set from argv[1] in setup.
+/// On macOS:   set from RunEvent::Opened (fires before React mounts on cold start).
+/// get_startup_file takes and clears the value so it is only consumed once.
+static STARTUP_FILE: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
 
 #[tauri::command]
 fn get_startup_file() -> Option<String> {
-    STARTUP_FILE.get().and_then(|v| v.clone())
+    STARTUP_FILE.lock().ok()?.take()
 }
 
 /// Original NSApplication.terminate: IMP saved before we replace it.
@@ -2114,11 +2116,12 @@ pub fn run() {
             get_startup_file,
         ])
         .setup(move |app| {
-            // Store any .fus file path passed as a CLI argument (Windows double-click).
-            // On macOS, file opens arrive via RunEvent::Opened instead.
-            STARTUP_FILE.get_or_init(|| {
-                std::env::args().nth(1).filter(|a| a.ends_with(".fus"))
-            });
+            // Windows: .fus file opened via double-click is passed as argv[1].
+            // macOS: file opens arrive via RunEvent::Opened instead (see below).
+            #[cfg(not(target_os = "macos"))]
+            if let Some(path) = std::env::args().nth(1).filter(|a| a.ends_with(".fus")) {
+                if let Ok(mut sf) = STARTUP_FILE.lock() { *sf = Some(path); }
+            }
 
             // Create the main window programmatically so we can call
             // traffic_light_position() — a builder-only API with no runtime setter.
@@ -2261,6 +2264,10 @@ pub fn run() {
                     if let Ok(path) = url.to_file_path() {
                         let p = path.to_string_lossy().to_string();
                         if p.ends_with(".fus") {
+                            // Store for cold-start: React calls get_startup_file() after
+                            // mounting and reads this value (emit fires too early on cold start).
+                            if let Ok(mut sf) = STARTUP_FILE.lock() { *sf = Some(p.clone()); }
+                            // Also emit for warm-launch: React listener picks it up immediately.
                             let _ = app_handle.emit("open-fus-file", &p);
                             break;
                         }
