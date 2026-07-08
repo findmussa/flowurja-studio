@@ -2097,6 +2097,21 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        // Windows: prevent a second instance when double-clicking a .fus file while
+        // the app is already running. The second-instance argv is forwarded to the
+        // first instance via this callback, which emits open-fus-file so the existing
+        // window opens the project. macOS handles this natively via RunEvent::Opened.
+        #[cfg(not(target_os = "macos"))]
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            use tauri::Emitter;
+            if let Some(path) = argv.iter().find(|a| a.ends_with(".fus")) {
+                let _ = app.emit("open-fus-file", path);
+            }
+            // Bring the existing window to the foreground
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.set_focus();
+            }
+        }))
         .invoke_handler(tauri::generate_handler![
             update_sidebar_width,
             detect_binary, query_binary, run_binary, run_binary_tagged,
