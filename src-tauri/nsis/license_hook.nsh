@@ -16,3 +16,15 @@
 !insertmacro MUI_PAGE_LICENSE "${__FILEDIR__}\license.txt"
 !undef MUI_ICON
 !undef MUI_UNICON
+
+; ── Document icon for .fus file associations ───────────────────────────────
+; Tauri registers "FlowUrja Studio.fus\DefaultIcon" pointing to exe,0.
+; These macros override it with our custom document.ico after the default
+; install runs, and clean it up on uninstall.
+!macro customInstall
+  WriteRegStr HKCR "FlowUrja Studio.fus\DefaultIcon" "" "$INSTDIR\document.ico,0"
+!macroend
+
+!macro customUnInstall
+  Delete "$INSTDIR\document.ico"
+!macroend
