@@ -336,8 +336,5 @@ jobs:
             **Bundled**: OpenFAST v4.2.0 · TurbSim v4.2.0 · ROSCO v2.10.1
 
             **Cite**
-            ```
-            Kalimullah, N. M. M. (2026). FlowUrja Studio (v1.0.0).
-            Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
-            ```
+            For citation information please visit [www.flowurjastudio.com](https://www.flowurjastudio.com).
           files: staging/*
