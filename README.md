@@ -80,21 +80,10 @@ The Python sidecar (`fws_io.py`) runs directly in development; CI compiles it wi
 
 ## Citation
 
-If you use FlowUrja Studio in your research, please cite both the paper and the software:
-
-**Paper** *(SoftwareX, in preparation)*
-```
-Kalimullah, N. M. M. (2026). FlowUrja Studio: An open-source desktop application for
-wind turbine aeroelastic simulation using OpenFAST. SoftwareX.
-```
-
-**Software** *(cite the specific version used)*
-```
-Kalimullah, N. M. M. (2026). FlowUrja Studio [Software].
-Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
-```
-
-BibTeX entries are available at [docs: Citation](https://www.flowurjastudio.com/reference/citation/).
+> **Citation details will be added here upon publication.**
+>
+> In the meantime, if you use FlowUrja Studio in your research, please visit
+> [www.flowurjastudio.com](https://www.flowurjastudio.com) for the most up-to-date citation information.
 
 ---
 
@@ -137,12 +126,11 @@ AI-assisted tools were used during development to support code drafting, debuggi
 
 FlowUrja Studio is released under the [Apache License 2.0](LICENSE).
 
-Copyright 2026 Nur Mahammad Mussa Kalimullah, Trinity College Dublin.
+Copyright 2026 The Author(s).
 
 ---
 
 ## Developer
 
 **Nur Mahammad Mussa Kalimullah, PhD**  
-Research Fellow · Trinity College Dublin  
-[www.flowurjastudio.com](https://www.flowurjastudio.com) · [findmussa.github.io](https://findmussa.github.io) · [ORCID 0000-0003-0447-6527](https://orcid.org/0000-0003-0447-6527)
+[www.flowurjastudio.com](https://www.flowurjastudio.com) · [findmussa.github.io](https://findmussa.github.io) · [LinkedIn](https://www.linkedin.com/in/findmussa/) · [ORCID 0000-0003-0447-6527](https://orcid.org/0000-0003-0447-6527)

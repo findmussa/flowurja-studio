@@ -1,9 +1,9 @@
-FLOWWAKE STUDIO — LICENSE AGREEMENT
-====================================
+FLOWURJA STUDIO — LICENSE AGREEMENT
+=====================================
 
-Copyright 2026 Nur Mahammad Mussa Kalimullah, Trinity College Dublin
+Copyright 2026 The Author(s)
 
-FlowWake Studio is licensed under the Apache License, Version 2.0.
+FlowUrja Studio is licensed under the Apache License, Version 2.0.
 You may not use this software except in compliance with the License.
 A copy of the License is available at:
 
@@ -17,7 +17,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 THIRD-PARTY COMPONENTS
 =======================
 
-FlowWake Studio bundles the following third-party software. Their licenses
+FlowUrja Studio bundles the following third-party software. Their licenses
 are reproduced in full in the LICENSES/ directory inside the application bundle.
 
 OpenFAST v4.2.0 and TurbSim v4.2.0
@@ -60,7 +60,7 @@ IEA Wind 22MW Reference Wind Turbine (IEA-22-280-RWT)
 DISCLAIMER
 ==========
 
-FlowWake Studio is an independent open-source project. It is not affiliated
+FlowUrja Studio is an independent open-source project. It is not affiliated
 with or endorsed by the National Renewable Energy Laboratory (NREL) or the
 International Energy Agency (IEA) Wind Technology Collaboration Programme.
 
@@ -68,7 +68,7 @@ International Energy Agency (IEA) Wind Technology Collaboration Programme.
 CITATION
 ========
 
-If you use FlowWake Studio in your research, please cite:
+If you use FlowUrja Studio in your research, please visit the project website
+for the most up-to-date citation information:
 
-  Kalimullah, N. M. M. (2026). FlowWake Studio: A desktop GUI for OpenFAST
-  and TurbSim (v0.1.0). Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
+    https://www.flowurjastudio.com
