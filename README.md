@@ -4,11 +4,6 @@
 
 FlowUrja Studio brings OpenFAST and TurbSim into a unified native application — from turbulent wind field generation and parametric batch sweeps to aeroelastic simulation execution and results analysis — without requiring command-line expertise or scripting.
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)](#installation)
-[![GitHub release](https://img.shields.io/github/v/release/findmussa/flowurja-studio?include_prereleases)](https://github.com/findmussa/flowurja-studio/releases/latest)
-[![Build](https://github.com/findmussa/flowurja-studio/actions/workflows/release.yml/badge.svg)](https://github.com/findmussa/flowurja-studio/actions/workflows/release.yml)
-
 **Website & documentation**: [www.flowurjastudio.com](https://www.flowurjastudio.com)
 
 **Download**
