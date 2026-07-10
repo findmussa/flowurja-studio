@@ -127,6 +127,8 @@ export default function App() {
   const [ofDiscardSeq, setOfDiscardSeq] = useState(0);
   // Pending navigation blocked by a dirty check
   const [navConfirm, setNavConfirm] = useState({ show: false, targetModule: null, tabHint: null });
+  // .fus file opened externally while another project is already mounted
+  const [pendingFusPath, setPendingFusPath] = useState(null);
 
   // ── Theme: "system" | "light" | "dark" ──────────────────────────────────
   const [theme, setTheme] = useState(() => localStorage.getItem("fws-theme") || "system");
@@ -344,8 +346,15 @@ export default function App() {
   useEffect(() => {
     invoke("get_startup_file").then(path => { if (path) openProjectFromPath(path); });
     let unlisten;
-    listen("open-fus-file", e => { if (e.payload) openProjectFromPath(e.payload); })
-      .then(fn => { unlisten = fn; });
+    listen("open-fus-file", e => {
+      if (!e.payload) return;
+      if (projectRef.current) {
+        // A project is already open — ask before replacing it
+        setPendingFusPath(e.payload);
+      } else {
+        openProjectFromPath(e.payload);
+      }
+    }).then(fn => { unlisten = fn; });
     return () => { unlisten?.(); };
   }, [openProjectFromPath]);
 
@@ -438,8 +447,10 @@ export default function App() {
   // Guard: prevents two simultaneous confirmation dialogs (React StrictMode
   // mounts effects twice in dev, which would register two listeners).
   const dialogOpenRef  = useRef(false);
+  const projectRef     = useRef(null); // always tracks live project for event listeners
   useEffect(() => { simRunningRef.current  = simRunning;   }, [simRunning]);
   useEffect(() => { moduleDirtyRef.current = moduleDirty;  }, [moduleDirty]);
+  useEffect(() => { projectRef.current     = project;      }, [project]);
 
   const [consoleOpen,   setConsoleOpen]   = useState(false);
   const [consoleHeight, setConsoleHeight] = useState(CONSOLE_DEFAULT);
@@ -897,6 +908,46 @@ export default function App() {
                 fontSize: 12.5, fontWeight: 600, fontFamily: "inherit",
               }}>
                 Save &amp; continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Open-file-while-project-mounted confirmation */}
+      {pendingFusPath && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.45)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          WebkitBackdropFilter: "blur(4px)", backdropFilter: "blur(4px)",
+        }}>
+          <div style={{
+            background: "var(--bg-surface-hov)", border: "0.5px solid var(--bd)",
+            borderRadius: 14, padding: "22px 24px", maxWidth: 380, width: "90%",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.30)",
+          }}>
+            <h3 style={{ margin: "0 0 8px", fontSize: 14, fontWeight: 600, color: "var(--tx-1)" }}>
+              A project is already open
+            </h3>
+            <p style={{ margin: "0 0 20px", fontSize: 12.5, color: "var(--tx-4)", lineHeight: 1.5 }}>
+              Close <strong style={{ color: "var(--tx-2)" }}>{project?.name ?? "the current project"}</strong> and
+              open <strong style={{ color: "var(--tx-2)" }}>{pendingFusPath.split("/").pop().split("\\").pop()}</strong>?
+            </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setPendingFusPath(null)} style={{
+                padding: "6px 14px", borderRadius: 7, border: "0.5px solid var(--bd)",
+                background: "var(--bg-hover)", color: "var(--tx-3)", cursor: "pointer",
+                fontSize: 12.5, fontFamily: "inherit",
+              }}>
+                Cancel
+              </button>
+              <button onClick={() => { const p = pendingFusPath; setPendingFusPath(null); openProjectFromPath(p); }} style={{
+                padding: "6px 14px", borderRadius: 7, border: "none",
+                background: "#0891B2", color: "#fff", cursor: "pointer",
+                fontSize: 12.5, fontWeight: 600, fontFamily: "inherit",
+              }}>
+                Open anyway
               </button>
             </div>
           </div>
