@@ -9,14 +9,13 @@ const OF_COMPAT   = "4.2.0";
 const TS_COMPAT   = "4.2.0";
 
 const DEVELOPER = {
-  name:        "Nur Mahammad Mussa Kalimullah, PhD",
-  role:        "Research Fellow",
-  institution: "Trinity College Dublin",
-  email:       "findmussa@gmail.com",
-  website:     "www.flowurjastudio.com",
-  web:         "findmussa.github.io",
-  github:      "github.com/findmussa/flowurja-studio",
-  orcid:       "0000-0003-0447-6527",
+  name:     "Nur Mahammad Mussa Kalimullah, PhD",
+  email:    "findmussa@gmail.com",
+  website:  "www.flowurjastudio.com",
+  web:      "findmussa.github.io",
+  github:   "github.com/findmussa/flowurja-studio",
+  linkedin: "linkedin.com/in/findmussa",
+  orcid:    "0000-0003-0447-6527",
 };
 
 // ── Section card ──────────────────────────────────────────────────────────────
@@ -259,18 +258,16 @@ export default function SettingsPanel({ onLog }) {
             background: "var(--bg-muted)", border: "0.5px solid var(--bd-subtle)",
             borderRadius: 10, padding: "12px 14px", marginBottom: 20,
           }}>
-            <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--tx-1)", marginBottom: 2 }}>
+            <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--tx-1)", marginBottom: 10 }}>
               {DEVELOPER.name}
-            </p>
-            <p style={{ fontSize: 12, color: "var(--tx-4)", marginBottom: 10 }}>
-              {DEVELOPER.role} · {DEVELOPER.institution}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
               {[
-                { label: DEVELOPER.website, href: `https://${DEVELOPER.website}` },
-                { label: DEVELOPER.email,   href: `mailto:${DEVELOPER.email}` },
-                { label: DEVELOPER.web,     href: `https://${DEVELOPER.web}` },
-                { label: DEVELOPER.github,  href: `https://${DEVELOPER.github}` },
+                { label: DEVELOPER.website,           href: `https://${DEVELOPER.website}` },
+                { label: DEVELOPER.email,             href: `mailto:${DEVELOPER.email}` },
+                { label: DEVELOPER.web,               href: `https://${DEVELOPER.web}` },
+                { label: DEVELOPER.github,            href: `https://${DEVELOPER.github}` },
+                { label: DEVELOPER.linkedin,          href: `https://${DEVELOPER.linkedin}` },
                 { label: `ORCID ${DEVELOPER.orcid}`, href: `https://orcid.org/${DEVELOPER.orcid}` },
               ].map(({ label, href }) => (
                 <a key={href} href={href} target="_blank" rel="noreferrer" style={{
