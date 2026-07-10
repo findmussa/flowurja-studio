@@ -3,7 +3,7 @@ import {
   Gauge, Wind, Cloud, Zap, Activity, Cpu,
   Droplets, LineChart,
   Layers, FolderOpen, ChevronDown, ChevronRight, Check,
-  Sun, Moon, Monitor, Plus, X, Waves, Anchor, Snowflake, Play,
+  Sun, Moon, Monitor, Plus, X, Waves, Anchor, Snowflake, FileStack,
   Settings,
 } from "lucide-react";
 import s from "./Sidebar.module.css";
@@ -36,7 +36,7 @@ const OFFSHORE_ITEMS = [
 // Batch runners
 const BATCH_ITEMS = [
   { id: "windbatch", label: "Wind Field Batch", color: "#1D9E75",           icon: Layers, enabled: true },
-  { id: "batchrun",  label: "Simulation Batch", color: "var(--c-batchrun)", icon: Play,   enabled: true },
+  { id: "batchrun",  label: "Simulation Batch", color: "var(--c-batchrun)", icon: FileStack, enabled: true },
 ];
 
 // Post-run inspection
