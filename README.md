@@ -6,11 +6,15 @@ FlowUrja Studio brings OpenFAST and TurbSim into a unified native application â€
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)](#installation)
-[![GitHub release](https://img.shields.io/github/v/release/findmussa/flowurja-studio)](https://github.com/findmussa/flowurja-studio/releases/latest)
+[![GitHub release](https://img.shields.io/github/v/release/findmussa/flowurja-studio?include_prereleases)](https://github.com/findmussa/flowurja-studio/releases/latest)
 [![Build](https://github.com/findmussa/flowurja-studio/actions/workflows/release.yml/badge.svg)](https://github.com/findmussa/flowurja-studio/actions/workflows/release.yml)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
 
 **Website & documentation**: [www.flowurjastudio.com](https://www.flowurjastudio.com)
+
+**Download**
+&nbsp;
+[![macOS (.dmg)](https://img.shields.io/badge/Download-macOS%20.dmg-0891B2?logo=apple&logoColor=white)](https://github.com/findmussa/flowurja-studio/releases/latest)
+[![Windows (.exe)](https://img.shields.io/badge/Download-Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://github.com/findmussa/flowurja-studio/releases/latest)
 
 ![FlowUrja Studio â€” OpenFAST Dashboard](docs/assets/app-hero.png)
 
