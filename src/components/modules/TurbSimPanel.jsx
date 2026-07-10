@@ -466,9 +466,10 @@ function autoPrefix(p) {
   const windType = ["NTM","ETM","ETM","ETM","EWM1","EWM50"][p.IEC_WindType] || "NTM";
   const uref     = String(p.URef).replace(".","p");
   const hub      = Math.round(p.HubHt);
+  const usable   = Math.round(p.UsableTime);
   const grid     = `${p.NumGrid_Z}x${p.NumGrid_Y}`;
   const gtiStr   = p.gTI!==1.0 ? `_TIr${String(p.gTI).replace(".","p")}` : "";
-  return `TurbSim_${model}_${cls}_${windType}_${uref}ms_${hub}m_${grid}${gtiStr}`;
+  return `TurbSim_${model}_${cls}_${windType}_${uref}ms_${hub}m_${usable}s_${grid}${gtiStr}`;
 }
 
 
@@ -726,6 +727,24 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
   }, [p]);
 
   const effectivePrefix = (p.FilePrefix ?? "").trim() || autoPrefix(p);
+
+  // Next available run sequence number — scans existing cases' prefixes for the highest trailing number
+  const nextSeq = useMemo(() => {
+    let max = 0;
+    for (const c of cases) {
+      const prefix = (c.params?.FilePrefix ?? "").trim() || autoPrefix(c.params ?? {});
+      const m = prefix.match(/(\d+)$/);
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    }
+    return String(max + 1).padStart(3, "0");
+  }, [cases]);
+
+  // Clickable name suggestions: descriptive auto-name + short sequence fallback
+  const suggestedNames = useMemo(() => {
+    const names = [autoPrefix(p), `ts_r${nextSeq}`];
+    return [...new Set(names)];
+  }, [p, nextSeq]);
+
   const useGTI = p.gTI !== 1.0;
   const windDirShort = project
     ? (project.windDir ?? `${project.workingDir}/turbsim`).replace(/\\/g, "/").split("/").pop()
@@ -1025,7 +1044,15 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
                   <div className={s.dashCard} style={{ display: "flex", flexDirection: "column" }}>
                     <span className={s.dashCardHead}>Output</span>
                     <Field label="File prefix">
-                      <input type="text" value={p.FilePrefix} placeholder={autoPrefix(p)} onChange={setS("FilePrefix")} />
+                      <input type="text" value={p.FilePrefix} placeholder={suggestedNames[0]} onChange={setS("FilePrefix")} />
+                      <div className={s.suggestions}>
+                        {suggestedNames.map(name => (
+                          <button key={name} className={s.suggestionChip}
+                            onClick={() => setP(prev => ({ ...prev, FilePrefix: name }))}>
+                            {name}
+                          </button>
+                        ))}
+                      </div>
                       <p className={s.hint}>→ {windDirShort}/{effectivePrefix}</p>
                     </Field>
                     {/* marginTop:auto pushes the run button to the card bottom as card grows */}
