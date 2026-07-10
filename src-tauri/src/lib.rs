@@ -2217,16 +2217,16 @@ pub fn run() {
             }
 
             // Spawn Python sidecar in a background thread so setup() returns immediately.
-            // Production: compiled binary (fws_io / fws_io.exe) produced by PyInstaller in CI.
-            // Fallback: fws_io.py via system Python — also bundled in sidecar/ by tauri.conf.json
+            // Production: compiled binary (fus_io / fus_io.exe) produced by PyInstaller in CI.
+            // Fallback: fus_io.py via system Python — also bundled in sidecar/ by tauri.conf.json
             //   so it is always available alongside the compiled binary.
             // On macOS CI without a signing identity the compiled binary is unsigned and macOS
             //   kills it on first exec; we detect this with a startup ping and fall back to Python.
             let resource_dir = app.path().resource_dir().unwrap_or_default();
             let compiled = resource_dir.join("sidecar").join(
-                if cfg!(windows) { "fws_io.exe" } else { "fws_io" }
+                if cfg!(windows) { "fus_io.exe" } else { "fus_io" }
             );
-            let script = resource_dir.join("sidecar").join("fws_io.py");
+            let script = resource_dir.join("sidecar").join("fus_io.py");
 
             std::thread::spawn(move || {
                 let mut started = false;

@@ -333,7 +333,7 @@ function TSEditableParam({ label, unit, value, onChange, step, min, max }) {
   );
 }
 
-// ── Build .inp preview client-side (mirrors fws_io.py exactly) ──────────────
+// ── Build .inp preview client-side (mirrors fus_io.py exactly) ──────────────
 function buildInpContent(p, effectivePrefix) {
   const TMODELS = ["IECKAI","IECVKM","GP_LLJ","NWTCUP","SMOOTH","WF_UPW","WF_07D","WF_14D","TIDAL","API","NONE"];
   const ISTDS   = ["1","2","3","1-Ed2","1-Ed3"];
@@ -435,7 +435,7 @@ function buildInpContent(p, effectivePrefix) {
 
 
 // buildProfileContent removed — profile generation is now fully handled by the Python sidecar
-// (write_user_profiles in fws_io.py) which writes the correct 3-column USRVKM format
+// (write_user_profiles in fus_io.py) which writes the correct 3-column USRVKM format
 // with sigma_u(z) TI gradient. No client-side profile writing needed.
 
 // ── Defaults ──────────────────────────────────────────────────────────────────

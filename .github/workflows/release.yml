@@ -66,16 +66,16 @@ jobs:
         run: npm ci
 
       # ── Python sidecar compilation ─────────────────────────────────────────────
-      - name: Compile fws_io sidecar
+      - name: Compile fus_io sidecar
         shell: bash
         run: |
           pip install pyinstaller
           pyinstaller \
             --onefile \
             --noconsole \
-            --name fws_io \
+            --name fus_io \
             --distpath src-tauri/sidecar \
-            src-tauri/sidecar/fws_io.py
+            src-tauri/sidecar/fus_io.py
 
       # ── Prepare OpenFAST + TurbSim binaries ────────────────────────────────────
       - name: Prepare OpenFAST + TurbSim binaries
