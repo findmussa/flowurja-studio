@@ -13,8 +13,8 @@ FlowUrja Studio brings OpenFAST and TurbSim into a unified native application â€
 
 **Download**
 &nbsp;
-[![macOS (.dmg)](https://img.shields.io/badge/Download-macOS%20.dmg-0891B2?logo=apple&logoColor=white)](https://github.com/findmussa/flowurja-studio/releases/latest)
-[![Windows (.exe)](https://img.shields.io/badge/Download-Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://github.com/findmussa/flowurja-studio/releases/latest)
+[![macOS (.dmg)](https://img.shields.io/badge/Download-macOS%20.dmg-0891B2?logo=apple&logoColor=white)](https://github.com/findmussa/flowurja-studio/releases/latest/download/FlowUrja-Studio-macOS.dmg)
+[![Windows (.exe)](https://img.shields.io/badge/Download-Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://github.com/findmussa/flowurja-studio/releases/latest/download/FlowUrja-Studio-Windows.exe)
 
 ![FlowUrja Studio â€” OpenFAST Dashboard](docs/assets/app-hero.png)
 

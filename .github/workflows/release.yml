@@ -305,6 +305,11 @@ jobs:
           find "src-tauri/target/${{ matrix.target }}/release/bundle" \
             \( -name "*.dmg" -o -name "*-setup.exe" \) \
             -exec cp {} staging/ \;
+          # Also copy with version-agnostic names for stable README download links
+          DMG=$(find staging -name "*.dmg" | head -1)
+          EXE=$(find staging -name "*-setup.exe" | head -1)
+          [ -n "$DMG" ] && cp "$DMG" staging/FlowUrja-Studio-macOS.dmg
+          [ -n "$EXE" ] && cp "$EXE" staging/FlowUrja-Studio-Windows.exe
           ls -lh staging/
 
       # ── Upload artifact (all runs) ─────────────────────────────────────────────
