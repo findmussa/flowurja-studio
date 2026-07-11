@@ -302,12 +302,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p staging
-          find "src-tauri/target/${{ matrix.target }}/release/bundle" \
-            \( -name "*.dmg" -o -name "*-setup.exe" \) \
-            -exec cp {} staging/ \;
-          # Also copy with version-agnostic names for stable README download links
-          DMG=$(find staging -name "*.dmg" | head -1)
-          EXE=$(find staging -name "*-setup.exe" | head -1)
+          # Copy with version-agnostic names only — keeps release assets clean
+          # and lets README download links use a stable URL across versions.
+          DMG=$(find "src-tauri/target/${{ matrix.target }}/release/bundle" -name "*.dmg" | head -1)
+          EXE=$(find "src-tauri/target/${{ matrix.target }}/release/bundle" -name "*-setup.exe" | head -1)
           [ -n "$DMG" ] && cp "$DMG" staging/FlowUrja-Studio-macOS.dmg
           [ -n "$EXE" ] && cp "$EXE" staging/FlowUrja-Studio-Windows.exe
           ls -lh staging/
@@ -326,6 +324,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
+          prerelease: false
           name: FlowUrja Studio ${{ github.ref_name }}
           body: |
             ## FlowUrja Studio ${{ github.ref_name }}
