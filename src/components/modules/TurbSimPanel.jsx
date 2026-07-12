@@ -728,12 +728,15 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
 
   const effectivePrefix = (p.FilePrefix ?? "").trim() || autoPrefix(p);
 
-  // Next available run sequence number — scans existing cases' prefixes for the highest trailing number
+  // Next available run sequence number — only scans explicitly typed FilePrefix values
+  // for a _rNNN suffix. Skips auto-named cases to avoid matching grid dimensions
+  // (e.g. autoPrefix ends in "_31x31" which would falsely yield sequence 32).
   const nextSeq = useMemo(() => {
     let max = 0;
     for (const c of cases) {
-      const prefix = (c.params?.FilePrefix ?? "").trim() || autoPrefix(c.params ?? {});
-      const m = prefix.match(/(\d+)$/);
+      const prefix = (c.params?.FilePrefix ?? "").trim();
+      if (!prefix) continue;
+      const m = prefix.match(/_r(\d+)$/i);
       if (m) max = Math.max(max, parseInt(m[1], 10));
     }
     return String(max + 1).padStart(3, "0");
