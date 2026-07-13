@@ -499,8 +499,8 @@ export default function WelcomeScreen({
       const windDir    = `${projectDir}/wind`;
       const resultsDir = `${projectDir}/results`;
 
-      await invoke("write_text_file", { path: `${windDir}/.keep`,    content: "" });
-      await invoke("write_text_file", { path: `${resultsDir}/.keep`, content: "" });
+      await invoke("create_dir", { path: windDir });
+      await invoke("create_dir", { path: resultsDir });
 
       let modelFst = null;
 
@@ -540,7 +540,7 @@ export default function WelcomeScreen({
         modelFst = `${modelDir}/${fstDirName}/${fstName}`;
 
       } else {
-        await invoke("write_text_file", { path: `${modelDir}/.keep`, content: "" });
+        await invoke("create_dir", { path: modelDir });
       }
 
       const fstRelative = modelFst ? modelFst.replace(`${projectDir}/`, "") : null;

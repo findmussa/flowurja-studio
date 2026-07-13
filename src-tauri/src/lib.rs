@@ -302,6 +302,15 @@ async fn write_text_file(path: String, content: String) -> Result<(), String> {
     .map_err(|e| e.to_string())?
 }
 
+#[tauri::command]
+async fn create_dir(path: String) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        std::fs::create_dir_all(&path).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 
 /// Run a binary, capture stdout+stderr, return combined output (capped at 4 KB).
 /// Used for lightweight version probing — NOT for long-running simulations.
@@ -2121,7 +2130,7 @@ pub fn run() {
             read_settings, write_settings, resolve_binary,
             list_turbine_templates, patch_libdiscon_paths,
             sidecar_call,
-            read_text_file, write_text_file, list_dir, copy_dir, rename_file, remove_dir,
+            read_text_file, write_text_file, create_dir, list_dir, copy_dir, rename_file, remove_dir,
             read_outb_file, dump_file_hex, diagnose_outb_file,
             scan_output_files,
             scan_bts_files,

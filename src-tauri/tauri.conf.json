@@ -60,7 +60,8 @@
       {
         "ext": ["fus"],
         "name": "FlowUrja Studio Project",
-        "description": "FlowUrja Studio Project File"
+        "description": "FlowUrja Studio Project File",
+        "icon": "icons/document.ico"
       }
     ]
   }
