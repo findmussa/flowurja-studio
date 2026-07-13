@@ -2233,37 +2233,35 @@ pub fn run() {
             //   kills it on first exec; we detect this with a startup ping and fall back to Python.
             let resource_dir = app.path().resource_dir().unwrap_or_default();
 
-            // Windows: write the custom .fus document icon to HKCU so File Explorer
-            // shows document.ico instead of the app icon. HKCU takes precedence over
-            // HKLM and never requires admin privileges.
+            // Windows: register the custom .fus document icon in HKCU.
+            // The icon bytes are embedded in the binary so no resource path search
+            // is needed. We write to %APPDATA%\FlowUrja Studio\document.ico and
+            // point both the ProgID and extension DefaultIcon keys at that file.
             #[cfg(target_os = "windows")]
             {
-                use winreg::enums::{HKEY_CURRENT_USER, KEY_WRITE};
+                use winreg::enums::HKEY_CURRENT_USER;
                 use winreg::RegKey;
 
-                // Try all likely locations for document.ico
-                let candidates: Vec<std::path::PathBuf> = vec![
-                    resource_dir.join("document.ico"),
-                    std::env::current_exe().ok()
-                        .and_then(|p| p.parent().map(|d| d.join("document.ico")))
-                        .unwrap_or_default(),
-                    resource_dir.join("resources").join("document.ico"),
-                ];
+                const ICON_BYTES: &[u8] = include_bytes!("../../icons/document.ico");
 
-                if let Some(icon_path) = candidates.iter().find(|p| p.exists()) {
-                    let icon_str = format!("{},0", icon_path.display());
-                    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-                    // Write on the ProgID key
-                    if let Ok((key, _)) = hkcu.create_subkey(
-                        r"Software\Classes\FlowUrja Studio Project\DefaultIcon"
-                    ) {
-                        let _ = key.set_value("", &icon_str);
-                    }
-                    // Write on the extension key directly as fallback
-                    if let Ok((key, _)) = hkcu.create_subkey(
-                        r"Software\Classes\.fus\DefaultIcon"
-                    ) {
-                        let _ = key.set_value("", &icon_str);
+                if let Some(appdata) = std::env::var_os("APPDATA") {
+                    let icon_dir = std::path::Path::new(&appdata).join("FlowUrja Studio");
+                    if std::fs::create_dir_all(&icon_dir).is_ok() {
+                        let icon_path = icon_dir.join("document.ico");
+                        if std::fs::write(&icon_path, ICON_BYTES).is_ok() {
+                            let icon_str = format!("{},0", icon_path.display());
+                            let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+                            if let Ok((key, _)) = hkcu.create_subkey(
+                                r"Software\Classes\FlowUrja Studio Project\DefaultIcon"
+                            ) {
+                                let _ = key.set_value("", &icon_str);
+                            }
+                            if let Ok((key, _)) = hkcu.create_subkey(
+                                r"Software\Classes\.fus\DefaultIcon"
+                            ) {
+                                let _ = key.set_value("", &icon_str);
+                            }
+                        }
                     }
                 }
             }
