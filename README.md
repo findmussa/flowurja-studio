@@ -79,10 +79,18 @@ The Python sidecar (`fws_io.py`) runs directly in development; CI compiles it wi
 
 ## Citation
 
-> **Citation details will be added here upon publication.**
->
-> In the meantime, if you use FlowUrja Studio in your research, please visit
-> [www.flowurjastudio.com](https://www.flowurjastudio.com) for the most up-to-date citation information.
+If FlowUrja Studio contributed to your research, a companion paper is currently under preparation for journal publication. Use the placeholder below and update it once the paper is published.
+
+```bibtex
+@article{kalimullah2026flowurja,
+  title   = {FlowUrja Studio: A desktop environment for managing
+             {OpenFAST}--{TurbSim} wind turbine simulation workflows},
+  author  = {Kalimullah, Nur M.M. and Fitzgerald, Breiffni},
+  journal = {Journal},
+  year    = {2026},
+  note    = {Manuscript under preparation}
+}
+```
 
 ---
 
