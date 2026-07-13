@@ -2242,7 +2242,7 @@ pub fn run() {
                 use winreg::enums::HKEY_CURRENT_USER;
                 use winreg::RegKey;
 
-                const ICON_BYTES: &[u8] = include_bytes!("../../icons/document.ico");
+                const ICON_BYTES: &[u8] = include_bytes!("../icons/document.ico");
 
                 if let Some(appdata) = std::env::var_os("APPDATA") {
                     let icon_dir = std::path::Path::new(&appdata).join("FlowUrja Studio");
