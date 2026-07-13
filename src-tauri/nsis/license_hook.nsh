@@ -18,25 +18,19 @@
 !undef MUI_UNICON
 
 ; ── Document icon for .fus file associations ───────────────────────────────
-; Explicitly bundle document.ico into the installer and extract it to $INSTDIR,
-; then point the .fus ProgID DefaultIcon at that file.
-; Using File here (rather than relying on Tauri's resource copy) guarantees
-; the .ico is present before the registry write.
+; Bundle document.ico into the installer and extract it to $INSTDIR, then
+; write DefaultIcon to both HKLM (machine-wide installs) and HKCU (per-user)
+; so it wins regardless of install mode.
+; ProgID confirmed from registry: "FlowUrja Studio Project"
 !macro customInstall
   SetOutPath $INSTDIR
   File "/oname=document.ico" "${__FILEDIR__}\..\icons\document.ico"
-  ; Read whichever ProgID Tauri registered for .fus and override DefaultIcon
-  ReadRegStr $R0 SHCTX "Software\Classes\.fus" ""
-  StrCmp $R0 "" +2 0
-    WriteRegStr SHCTX "Software\Classes\$R0\DefaultIcon" "" "$INSTDIR\document.ico,0"
-  ; Fallback: write on the extension key itself (Windows also checks here)
-  WriteRegStr SHCTX "Software\Classes\.fus\DefaultIcon" "" "$INSTDIR\document.ico,0"
+  WriteRegStr HKLM "SOFTWARE\Classes\FlowUrja Studio Project\DefaultIcon" "" "$INSTDIR\document.ico,0"
+  WriteRegStr HKCU "Software\Classes\FlowUrja Studio Project\DefaultIcon" "" "$INSTDIR\document.ico,0"
 !macroend
 
 !macro customUnInstall
-  ReadRegStr $R0 SHCTX "Software\Classes\.fus" ""
-  StrCmp $R0 "" +2 0
-    DeleteRegValue SHCTX "Software\Classes\$R0\DefaultIcon" ""
-  DeleteRegValue SHCTX "Software\Classes\.fus\DefaultIcon" ""
+  DeleteRegValue HKLM "SOFTWARE\Classes\FlowUrja Studio Project\DefaultIcon" ""
+  DeleteRegValue HKCU "Software\Classes\FlowUrja Studio Project\DefaultIcon" ""
   Delete "$INSTDIR\document.ico"
 !macroend
