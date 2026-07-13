@@ -2232,6 +2232,24 @@ pub fn run() {
             // On macOS CI without a signing identity the compiled binary is unsigned and macOS
             //   kills it on first exec; we detect this with a startup ping and fall back to Python.
             let resource_dir = app.path().resource_dir().unwrap_or_default();
+
+            // Windows: write the custom .fus document icon to the user registry so
+            // File Explorer uses document.ico instead of the app icon.
+            // HKCU takes precedence over HKLM and requires no admin privileges.
+            #[cfg(target_os = "windows")]
+            {
+                let icon_path = resource_dir.join("document.ico");
+                if icon_path.exists() {
+                    let icon_str = format!("{},0", icon_path.display());
+                    let mut cmd = std::process::Command::new("reg");
+                    cmd.args(["add",
+                        r"HKCU\Software\Classes\FlowUrja Studio Project\DefaultIcon",
+                        "/ve", "/d", &icon_str, "/f"]);
+                    no_window(&mut cmd);
+                    let _ = cmd.status();
+                }
+            }
+
             let compiled = resource_dir.join("sidecar").join(
                 if cfg!(windows) { "fus_io.exe" } else { "fus_io" }
             );
