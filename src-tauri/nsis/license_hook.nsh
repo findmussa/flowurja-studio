@@ -18,13 +18,15 @@
 !undef MUI_UNICON
 
 ; ── Document icon for .fus file associations ───────────────────────────────
-; Tauri registers "FlowUrja Studio.fus\DefaultIcon" pointing to exe,0.
-; These macros override it with our custom document.ico after the default
-; install runs, and clean it up on uninstall.
+; Tauri registers the file association ProgID under SHCTX (HKCU\Software\Classes
+; for per-user installs, HKLM\Software\Classes for machine-wide) using the
+; association `name` field as the FILECLASS key ("FlowUrja Studio Project").
+; customInstall runs after Tauri's APP_ASSOCIATE call, so this write wins.
 !macro customInstall
-  WriteRegStr HKCR "FlowUrja Studio.fus\DefaultIcon" "" "$INSTDIR\document.ico,0"
+  WriteRegStr SHCTX "Software\Classes\FlowUrja Studio Project\DefaultIcon" "" "$INSTDIR\document.ico,0"
 !macroend
 
 !macro customUnInstall
+  DeleteRegValue SHCTX "Software\Classes\FlowUrja Studio Project\DefaultIcon" ""
   Delete "$INSTDIR\document.ico"
 !macroend
