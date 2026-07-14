@@ -1481,14 +1481,6 @@ fn parse_fast_binary(path: &str) -> Result<serde_json::Value, String> {
                  file may be corrupt or an unsupported variant"
             ));
         }
-        let payload_bytes = (num_chans + 1).saturating_mul(nt).saturating_mul(8);
-        if payload_bytes > 500 * 1024 * 1024 {
-            return Err(format!(
-                "FileID=4: uncompressed data ({} MB) exceeds 500 MB limit. \
-                 Load fewer channels or a shorter time window.",
-                payload_bytes / (1024 * 1024)
-            ));
-        }
 
         // ── ColScl and ColOff (per-channel f32) ──────────────────────────────
         let mut col_scl: Vec<f32> = Vec::with_capacity(num_chans);
@@ -1575,13 +1567,6 @@ fn parse_fast_binary(path: &str) -> Result<serde_json::Value, String> {
         return Err(format!(
             "FileID={file_id}: unrealistic dimensions NT={nt}, NumChans={num_chans} — \
              file may be corrupt or an unsupported variant"
-        ));
-    }
-    let payload_bytes = (num_chans + 1).saturating_mul(nt).saturating_mul(8);
-    if payload_bytes > 500 * 1024 * 1024 {
-        return Err(format!(
-            "FileID={file_id}: uncompressed data ({} MB) exceeds 500 MB limit.",
-            payload_bytes / (1024 * 1024)
         ));
     }
 
@@ -1745,9 +1730,12 @@ struct OutputFileMeta {
 }
 
 /// Read just the binary header of a .outb file to extract metadata quickly.
+/// Reads only the first 36 bytes — never loads the full (potentially GB-sized) file.
 fn outb_header_meta(path: &str) -> Option<(usize, usize, f64, f64)> {
-    let bytes = std::fs::read(path).ok()?;
-    if bytes.len() < 36 { return None; }
+    use std::io::Read;
+    let mut file = std::fs::File::open(path).ok()?;
+    let mut bytes = [0u8; 36];
+    file.read_exact(&mut bytes).ok()?;
     let file_id = i16::from_le_bytes([bytes[0], bytes[1]]);
     match file_id {
         4 => {
