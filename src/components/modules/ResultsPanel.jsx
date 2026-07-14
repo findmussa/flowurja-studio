@@ -1707,10 +1707,9 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
         // Rust sends column-major LE f64 bytes encoded as base64.
         // Decode: base64 → raw bytes → Float64Array → per-channel slices.
         // ~5× faster than JSON.parse for large files (avoids float-text round-trip).
-        const binStr = atob(raw.data);
-        const rawBytes = new Uint8Array(binStr.length);
-        for (let i = 0; i < binStr.length; i++) rawBytes[i] = binStr.charCodeAt(i);
-        const allVals = new Float64Array(rawBytes.buffer);
+        const allVals = new Float64Array(
+          Uint8Array.from(atob(raw.data), c => c.charCodeAt(0)).buffer
+        );
         const nRows = raw.nRows, nCols = raw.nCols;
         const cols = [];
         for (let c = 0; c < nCols; c++) cols.push(allVals.slice(c * nRows, (c + 1) * nRows));

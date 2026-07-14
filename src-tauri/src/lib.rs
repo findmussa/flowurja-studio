@@ -1475,6 +1475,20 @@ fn parse_fast_binary(path: &str) -> Result<serde_json::Value, String> {
                 "FileID=4: invalid header NT={nt}, NumChans={num_chans}, LenName={len_name}"
             ));
         }
+        if num_chans > 50_000 || nt > 50_000_000 {
+            return Err(format!(
+                "FileID=4: unrealistic dimensions NT={nt}, NumChans={num_chans} — \
+                 file may be corrupt or an unsupported variant"
+            ));
+        }
+        let payload_bytes = (num_chans + 1).saturating_mul(nt).saturating_mul(8);
+        if payload_bytes > 500 * 1024 * 1024 {
+            return Err(format!(
+                "FileID=4: uncompressed data ({} MB) exceeds 500 MB limit. \
+                 Load fewer channels or a shorter time window.",
+                payload_bytes / (1024 * 1024)
+            ));
+        }
 
         // ── ColScl and ColOff (per-channel f32) ──────────────────────────────
         let mut col_scl: Vec<f32> = Vec::with_capacity(num_chans);
@@ -1554,6 +1568,23 @@ fn parse_fast_binary(path: &str) -> Result<serde_json::Value, String> {
     let _time_end = read_f64(&mut pos)?;          // TimeEnd — not needed
     let num_chans = read_i32(&mut pos)? as usize; // excludes Time
 
+    if nt == 0 || num_chans == 0 {
+        return Err(format!("FileID={file_id}: invalid header NT={nt}, NumChans={num_chans}"));
+    }
+    if num_chans > 50_000 || nt > 50_000_000 {
+        return Err(format!(
+            "FileID={file_id}: unrealistic dimensions NT={nt}, NumChans={num_chans} — \
+             file may be corrupt or an unsupported variant"
+        ));
+    }
+    let payload_bytes = (num_chans + 1).saturating_mul(nt).saturating_mul(8);
+    if payload_bytes > 500 * 1024 * 1024 {
+        return Err(format!(
+            "FileID={file_id}: uncompressed data ({} MB) exceeds 500 MB limit.",
+            payload_bytes / (1024 * 1024)
+        ));
+    }
+
     // ── File description (skipped) ──────────────────────────────────────────
     let len_desc = read_i32(&mut pos)? as usize;
     pos += len_desc;
@@ -1585,7 +1616,7 @@ fn parse_fast_binary(path: &str) -> Result<serde_json::Value, String> {
     for _ in 0..num_chans { col_off.push(read_f32(&mut pos)?); }
 
     // Packed int16 data
-    let expected = nt * num_chans * 2;
+    let expected = (nt).saturating_mul(num_chans).saturating_mul(2);
     if pos + expected > bytes.len() {
         return Err(format!(
             "File too short: need {expected} bytes of packed int16 data, only {} remain.",
@@ -1594,8 +1625,7 @@ fn parse_fast_binary(path: &str) -> Result<serde_json::Value, String> {
     }
     for t in 0..nt {
         for ch in 0..num_chans {
-            let packed = i16::from_le_bytes([bytes[pos], bytes[pos + 1]]) as f32;
-            pos += 2;
+            let packed = read_i16(&mut pos)? as f32;
             cols[ch + 1][t] = ((packed - col_off[ch]) / col_scl[ch]) as f64;
         }
     }
