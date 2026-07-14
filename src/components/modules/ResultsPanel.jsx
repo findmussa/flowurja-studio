@@ -194,6 +194,7 @@ function find1P(visRuns) {
     const ci = run.parsed.channels.findIndex(c => c === 'GenSpeed' || c === 'RotSpeed' || c === 'HSShftV');
     if (ci < 0) continue;
     const col = run.parsed.cols[ci];
+    if (!col) continue;
     let sum = 0; for (let i = 0; i < col.length; i++) sum += col[i];
     const rpm = sum / col.length;
     if (rpm > 0) return rpm / 60;
@@ -256,6 +257,7 @@ function computeDEL(cycles, m, feq = 1) {
 function computeDeltaRun(runA, runB, colorIdx) {
   const tA = runA.parsed.cols[0];
   const tB = runB.parsed.cols[0];
+  if (!tA || !tB) return null;
   const channels = ['Time'];
   const units    = [runA.parsed.units[0]];
   const cols     = [Float64Array.from(tA)];
@@ -266,11 +268,13 @@ function computeDeltaRun(runA, runB, colorIdx) {
   for (let ci = 1; ci < runA.parsed.channels.length; ci++) {
     const name = runA.parsed.channels[ci];
     const aCol = runA.parsed.cols[ci];
+    if (!aCol) { channels.push(name); units.push(runA.parsed.units[ci]); cols.push(new Float64Array(tA.length)); continue; }
     const bci  = bMap.get(name);
     const delta = new Float64Array(tA.length);
 
     if (bci !== undefined) {
       const bCol = runB.parsed.cols[bci];
+      if (!bCol) { channels.push(name); units.push(runA.parsed.units[ci]); cols.push(delta); continue; }
       for (let i = 0; i < tA.length; i++) {
         const t = tA[i];
         // Binary search t in tB
@@ -319,14 +323,14 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
 
   const { gMin, gMax } = useMemo(() => {
     let lo = Infinity, hi = -Infinity;
-    for (const r of visRuns) { const t = r.parsed.cols[0]; if (t.length) { if (t[0] < lo) lo = t[0]; if (t[t.length - 1] > hi) hi = t[t.length - 1]; } }
+    for (const r of visRuns) { const t = r.parsed.cols[0]; if (t && t.length) { if (t[0] < lo) lo = t[0]; if (t[t.length - 1] > hi) hi = t[t.length - 1]; } }
     if (!isFinite(lo)) { lo = 0; hi = 1; }
     return { gMin: lo, gMax: hi };
   }, [visRuns]);
 
   const { cMin, cMax } = useMemo(() => {
     let lo = -Infinity, hi = Infinity;
-    for (const r of visRuns) { const t = r.parsed.cols[0]; if (t.length) { if (t[0] > lo) lo = t[0]; if (t[t.length - 1] < hi) hi = t[t.length - 1]; } }
+    for (const r of visRuns) { const t = r.parsed.cols[0]; if (t && t.length) { if (t[0] > lo) lo = t[0]; if (t[t.length - 1] < hi) hi = t[t.length - 1]; } }
     if (!isFinite(lo) || lo > hi) { lo = gMin; hi = gMax; }
     return { cMin: lo, cMax: hi };
   }, [visRuns, gMin, gMax]);
@@ -338,9 +342,11 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
     let lo = Infinity, hi = -Infinity;
     for (const r of visRuns) {
       const t = r.parsed.cols[0];
+      if (!t) continue;
       for (const name of selArr) {
         const ci = r.parsed.channels.indexOf(name); if (ci < 0) continue;
         const col = r.parsed.cols[ci];
+        if (!col) continue;
         for (let i = 0; i < t.length; i++) {
           if (t[i] < xLo - 1e-10 || t[i] > xHi + 1e-10) continue;
           if (trimCommon && (t[i] < cMin - 1e-10 || t[i] > cMax + 1e-10)) continue;
@@ -406,7 +412,8 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
       const nVis = visRuns.length;
       for (let ri = 0; ri < nVis; ri++) {
         const run = visRuns[ri];
-        const t = run.parsed.cols[0]; const n = t.length;
+        const t = run.parsed.cols[0]; if (!t || !t.length) continue;
+        const n = t.length;
         let iA = 0, iB = n - 1;
         for (let i = 0; i < n; i++) if (t[i] >= xMin) { iA = Math.max(0, i - 1); break; }
         for (let i = n - 1; i >= 0; i--) if (t[i] <= xMax) { iB = Math.min(n - 1, i + 1); break; }
@@ -414,7 +421,7 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
         for (let si = 0; si < selArr.length; si++) {
           const name = selArr[si];
           const ci = run.parsed.channels.indexOf(name); if (ci < 0) continue;
-          const col = run.parsed.cols[ci];
+          const col = run.parsed.cols[ci]; if (!col) continue;
           ctx.strokeStyle = lineColor(run, si, nVis);
           ctx.lineWidth = nVis === 1 && selArr.length === 1 ? 1.7 : 1.3;
           ctx.setLineDash(lineDash(si, nVis));
@@ -431,7 +438,7 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
       // Run end markers
       if (nVis > 1) {
         for (const run of visRuns) {
-          const t = run.parsed.cols[0]; if (!t.length) continue;
+          const t = run.parsed.cols[0]; if (!t || !t.length) continue;
           const tEnd = t[t.length - 1];
           if (Math.abs(tEnd - tMax) < 1e-10) continue;
           const px = cx(tEnd);
@@ -452,14 +459,15 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
         ctx.setLineDash([]);
         for (let ri = 0; ri < nVis; ri++) {
           const run = visRuns[ri];
-          const t = run.parsed.cols[0];
+          const t = run.parsed.cols[0]; if (!t) continue;
           let best = 0, bestD = Infinity;
           for (let i = 0; i < t.length; i++) { const d = Math.abs(t[i] - hov.tHov); if (d < bestD) { bestD = d; best = i; } }
           if (t[best] < xMin - 1e-10 || t[best] > xMax + 1e-10) continue;
           const dotX = cx(t[best]);
           for (let si = 0; si < selArr.length; si++) {
             const ci = run.parsed.channels.indexOf(selArr[si]); if (ci < 0) continue;
-            const py = cy(run.parsed.cols[ci][best]);
+            const col_ci = run.parsed.cols[ci]; if (!col_ci) continue;
+            const py = cy(col_ci[best]);
             const cl = lineColor(run, si, nVis);
             ctx.fillStyle = cl; ctx.strokeStyle = dark ? '#1a1a1c' : '#fff'; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.arc(dotX, py, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -542,15 +550,16 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
     if (!hov || nVis === 0 || selArr.length === 0) return null;
     const rows = [];
     for (const run of visRuns) {
-      const t = run.parsed.cols[0];
+      const t = run.parsed.cols[0]; if (!t) continue;
       let best = 0, bestD = Infinity;
       for (let i = 0; i < t.length; i++) { const d = Math.abs(t[i] - hov.tHov); if (d < bestD) { bestD = d; best = i; } }
       for (let si = 0; si < selArr.length; si++) {
         const name = selArr[si];
         const ci = run.parsed.channels.indexOf(name);
+        const col_ci = ci >= 0 ? run.parsed.cols[ci] : null;
         rows.push({
           runId: run.id, run, name, si,
-          val: ci >= 0 ? run.parsed.cols[ci][best] : null,
+          val: col_ci ? col_ci[best] : null,
           unit: ci >= 0 ? run.parsed.units[ci] : '',
           t: t[best],
         });
@@ -630,12 +639,13 @@ function FFTChart({ runs, selectedNames, onResetRef, onCaptureRef }) {
     if (visRuns.length === 0 || selArr.length === 0) return [];
     const out = [];
     for (const run of visRuns) {
-      const t = run.parsed.cols[0];
+      const t = run.parsed.cols[0]; if (!t) continue;
       const dt = t.length >= 2 ? (t[1] - t[0]) : 0.05;
       for (let si = 0; si < selArr.length; si++) {
         const name = selArr[si];
         const ci = run.parsed.channels.indexOf(name); if (ci < 0) continue;
-        const psd = welchPSD(run.parsed.cols[ci], dt); if (!psd) continue;
+        const col = run.parsed.cols[ci]; if (!col) continue;
+        const psd = welchPSD(col, dt); if (!psd) continue;
         out.push({ run, name, si, freqs: psd.freqs, psd: psd.psd, unit: run.parsed.units[ci] });
       }
     }
@@ -1140,6 +1150,7 @@ function ScatterChart({ runs, xName, yName, onCaptureRef }) {
       const yi = run.parsed.channels.indexOf(yName);
       if (xi < 0 || yi < 0) continue;
       const xc = run.parsed.cols[xi], yc = run.parsed.cols[yi];
+      if (!xc || !yc) continue;
       for (let i = 0; i < xc.length; i++) pts.push({ x: xc[i], y: yc[i], run });
     }
     return pts;
@@ -1499,6 +1510,7 @@ function StatsArea({ runs, selectedNames, wohlerM, onWohlerM }) {
         const ci = run.parsed.channels.indexOf(name);
         if (ci < 0) { row[run.id] = null; continue; }
         const col = run.parsed.cols[ci];
+        if (!col) { row[run.id] = null; continue; }
         let lo = Infinity, hi = -Infinity, sum = 0;
         for (let i = 0; i < col.length; i++) {
           if (col[i] < lo) lo = col[i]; if (col[i] > hi) hi = col[i]; sum += col[i];
@@ -1507,7 +1519,7 @@ function StatsArea({ runs, selectedNames, wohlerM, onWohlerM }) {
         for (let i = 0; i < col.length; i++) ssq += (col[i] - mean) ** 2;
         const cycles = rainflowCount(Array.from(col));
         const t = run.parsed.cols[0];
-        const T = t.length >= 2 ? t[t.length - 1] - t[0] : 1;
+        const T = t && t.length >= 2 ? t[t.length - 1] - t[0] : 1;
         const del = computeDEL(cycles, wohlerM, T > 0 ? T : 1);
         row[run.id] = { mean, std: Math.sqrt(ssq / col.length), min: lo, max: hi, del, unit: run.parsed.units[ci] };
       }
@@ -1641,8 +1653,26 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
   const captureRef     = useRef(null); // set by active chart via onCaptureRef → returns canvas element
   const chanClickTimer = useRef(null); // debounce single-click vs double-click on channel rows
   const presetBtnRef  = useRef(null);
+  // Ref so on-demand column loading can read latest runs without re-triggering the effect.
+  const runsRef = useRef(runs);
+  useEffect(() => { runsRef.current = runs; }, [runs]);
 
   useEffect(() => { onFileLoaded?.(runs.length > 0 ? 'loaded' : null); }, [runs.length, onFileLoaded]);
+
+  // On-demand column loading: whenever the selected channel set changes, fetch any
+  // columns that are selected but not yet loaded for streaming .outb runs.
+  useEffect(() => {
+    for (const run of runsRef.current) {
+      if (!run.parsed._path) continue; // .out text files have all cols already
+      const needed = [];
+      for (let i = 0; i < run.parsed.channels.length; i++) {
+        if (!run.parsed._loaded.has(i) && (i === 0 || selectedNames.has(run.parsed.channels[i]))) {
+          needed.push(i);
+        }
+      }
+      if (needed.length) loadRunColumns(run.id, run.parsed._path, needed);
+    }
+  }, [selectedNames]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const unionChannels = useMemo(() => {
     const map = new Map();
@@ -1698,36 +1728,82 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
     });
   }, []);
 
+  // Merge column data returned by read_outb_columns into the matching run.
+  const mergeOutbCols = useCallback((runId, nRows, rawIndices, base64Data) => {
+    const allVals = new Float64Array(
+      Uint8Array.from(atob(base64Data), c => c.charCodeAt(0)).buffer
+    );
+    setRuns(prev => prev.map(run => {
+      if (run.id !== runId) return run;
+      const cols = [...run.parsed.cols];
+      for (let i = 0; i < rawIndices.length; i++) {
+        cols[rawIndices[i]] = allVals.slice(i * nRows, (i + 1) * nRows);
+      }
+      const loaded = new Set(run.parsed._loaded);
+      rawIndices.forEach(idx => loaded.add(idx));
+      return { ...run, parsed: { ...run.parsed, cols, _loaded: loaded } };
+    }));
+  }, []);
+
+  // Fetch specific column indices for an already-registered outb run.
+  const loadRunColumns = useCallback(async (runId, filePath, indices) => {
+    if (!indices.length) return;
+    try {
+      const raw = await invoke('read_outb_columns', { path: filePath, indices });
+      if (raw.data) mergeOutbCols(runId, raw.nRows, raw.indices, raw.data);
+    } catch (e) {
+      onLog?.('error', `Results: column load failed — ${e?.message ?? e}`);
+    }
+  }, [mergeOutbCols, onLog]);
+
   const loadFile = useCallback(async (fp, colorIdx) => {
     setLoadingPath(fp); setError('');
     try {
       let parsed;
-      if (fp.endsWith('.outb')) {
-        const raw = await invoke('read_outb_file', { path: fp });
-        // Rust sends column-major LE f64 bytes encoded as base64.
-        // Decode: base64 → raw bytes → Float64Array → per-channel slices.
-        // ~5× faster than JSON.parse for large files (avoids float-text round-trip).
-        const allVals = new Float64Array(
-          Uint8Array.from(atob(raw.data), c => c.charCodeAt(0)).buffer
-        );
-        const nRows = raw.nRows, nCols = raw.nCols;
-        const cols = [];
-        for (let c = 0; c < nCols; c++) cols.push(allVals.slice(c * nRows, (c + 1) * nRows));
-        parsed = { channels: raw.channels, units: raw.units, cols, nRows };
+      if (fp.toLowerCase().endsWith('.outb')) {
+        // Phase 1 — header only (KB of memory, instant).
+        const hdr = await invoke('read_outb_header', { path: fp });
+        const nCols = hdr.nCols;
+        // cols is sparse: null until the channel is loaded on demand.
+        const cols = new Array(nCols).fill(null);
+        parsed = {
+          channels: hdr.channels, units: hdr.units,
+          nRows: hdr.nRows, nCols,
+          cols,
+          _path: fp,             // kept for on-demand column fetches
+          _loaded: new Set(),    // which indices have been fetched
+        };
+        const parts = fp.replace(/\\/g, '/').split('/');
+        const name = parts[parts.length - 1].replace(/\.(outb|out)$/i, '');
+        const runId = makeRunId();
+        const run = { id: runId, label: name, filePath: fp, parsed, colorIdx, visible: true };
+        setRuns(prev => [...prev, run]);
+        // Auto-select first data channel name (if nothing selected yet).
+        let autoName = null;
+        setSelectedNames(prev => {
+          if (prev.size > 0) return prev;
+          autoName = hdr.channels[1] ?? null;
+          return autoName ? new Set([autoName]) : prev;
+        });
+        onLog?.('info', `Results: opened ${parts[parts.length - 1]} — ${nCols - 1} channels, ${hdr.nRows.toLocaleString()} steps`);
+        // Phase 2 — load Time (0) + the auto-selected channel immediately.
+        const autoIdx = autoName ? hdr.channels.indexOf(autoName) : -1;
+        const initIndices = [0, ...(autoIdx > 0 ? [autoIdx] : [])];
+        await loadRunColumns(runId, fp, initIndices);
       } else {
         const text = await invoke('read_text_file', { path: fp });
         parsed = parseOutFile(text);
+        const parts = fp.replace(/\\/g, '/').split('/');
+        const name = parts[parts.length - 1].replace(/\.(outb|out)$/i, '');
+        const run = { id: makeRunId(), label: name, filePath: fp, parsed, colorIdx, visible: true };
+        setRuns(prev => [...prev, run]);
+        setSelectedNames(prev => {
+          if (prev.size > 0) return prev;
+          const first = parsed.channels[1] ?? null;
+          return first ? new Set([first]) : prev;
+        });
+        onLog?.('info', `Results: loaded ${parts[parts.length - 1]} — ${parsed.channels.length - 1} channels, ${parsed.nRows.toLocaleString()} steps`);
       }
-      const parts = fp.replace(/\\/g, '/').split('/');
-      const name = parts[parts.length - 1].replace(/\.(outb|out)$/i, '');
-      const run = { id: makeRunId(), label: name, filePath: fp, parsed, colorIdx, visible: true };
-      setRuns(prev => [...prev, run]);
-      setSelectedNames(prev => {
-        if (prev.size > 0) return prev;
-        const first = parsed.channels[1] ?? null;
-        return first ? new Set([first]) : prev;
-      });
-      onLog?.('info', `Results: loaded ${parts[parts.length - 1]} — ${parsed.channels.length - 1} channels, ${parsed.nRows.toLocaleString()} steps`);
       return true;
     } catch (e) {
       const msg = e?.message ?? String(e);
@@ -1735,7 +1811,7 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
       onLog?.('error', `Results: ${msg}`);
       return false;
     } finally { setLoadingPath(''); }
-  }, [onLog]);
+  }, [onLog, loadRunColumns]);
 
   const handleOpen = async () => {
     try {

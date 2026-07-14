@@ -1635,6 +1635,228 @@ async fn read_outb_file(path: String) -> Result<serde_json::Value, String> {
         .map_err(|e| e.to_string())?
 }
 
+// ── Streaming .outb reader — header + selective column extraction ─────────────
+//
+// These two commands implement two-phase loading:
+//
+//   1. read_outb_header  — reads only the header (channel names, units, dims).
+//      Memory: O(num_chans × name_len) — typically a few KB regardless of file size.
+//
+//   2. read_outb_columns — streams the data section row-by-row, extracting only
+//      the requested channel indices.  Memory: O(len(indices) × NT) — for 5 channels
+//      over 12 000 timesteps: ~480 KB instead of 840 MB for all channels.
+//
+// Supported: FileID 1, 2 (packed int16, with ColScl/ColOff) and FileID 4
+// (FileFmtID_ChanLen_In — packed int16 with per-channel scale/offset, variable
+// name-field width).  Both formats store data as NT × NumChans packed i16 rows.
+
+// ── BufReader helpers ────────────────────────────────────────────────────────
+
+fn obr_i16(r: &mut impl std::io::Read) -> Result<i16, String> {
+    let mut b = [0u8; 2];
+    r.read_exact(&mut b).map_err(|e| format!("EOF (i16): {e}"))?;
+    Ok(i16::from_le_bytes(b))
+}
+fn obr_i32(r: &mut impl std::io::Read) -> Result<i32, String> {
+    let mut b = [0u8; 4];
+    r.read_exact(&mut b).map_err(|e| format!("EOF (i32): {e}"))?;
+    Ok(i32::from_le_bytes(b))
+}
+fn obr_f32(r: &mut impl std::io::Read) -> Result<f32, String> {
+    let mut b = [0u8; 4];
+    r.read_exact(&mut b).map_err(|e| format!("EOF (f32): {e}"))?;
+    Ok(f32::from_le_bytes(b))
+}
+fn obr_f64(r: &mut impl std::io::Read) -> Result<f64, String> {
+    let mut b = [0u8; 8];
+    r.read_exact(&mut b).map_err(|e| format!("EOF (f64): {e}"))?;
+    Ok(f64::from_le_bytes(b))
+}
+fn obr_skip(r: &mut impl std::io::Read, n: usize) -> Result<(), String> {
+    let mut buf = vec![0u8; n.min(65536)];
+    let mut left = n;
+    while left > 0 {
+        let take = left.min(buf.len());
+        r.read_exact(&mut buf[..take]).map_err(|e| format!("EOF skipping {n} bytes: {e}"))?;
+        left -= take;
+    }
+    Ok(())
+}
+fn obr_str(r: &mut impl std::io::Read, len: usize) -> Result<String, String> {
+    let mut buf = vec![0u8; len];
+    r.read_exact(&mut buf).map_err(|e| format!("EOF (str[{len}]): {e}"))?;
+    Ok(String::from_utf8_lossy(&buf)
+        .trim_matches(|c: char| c == '\0' || c.is_ascii_whitespace())
+        .to_string())
+}
+
+struct OutbHeader {
+    file_id:   i16,
+    nt:        usize,
+    num_chans: usize,
+    time_out1: f64,
+    time_step: f64,
+    col_scl:   Vec<f32>,
+    col_off:   Vec<f32>,
+    channels:  Vec<String>,
+    units:     Vec<String>,
+}
+
+/// Parse header for FileID 1, 2, or 4 using sequential BufReader reads.
+/// After return, `r` is positioned at the first byte of the packed data section.
+fn parse_outb_header_stream(r: &mut impl std::io::Read) -> Result<OutbHeader, String> {
+    let file_id = obr_i16(r)?;
+
+    if file_id == 4 {
+        let len_name  = obr_i16(r)? as usize;
+        let num_chans = obr_i32(r)? as usize;
+        let nt        = obr_i32(r)? as usize;
+        let time_out1 = obr_f64(r)?;
+        let time_step = obr_f64(r)?;
+        if nt == 0 || num_chans == 0 || len_name == 0 {
+            return Err(format!("FileID=4: invalid header NT={nt} NumChans={num_chans} LenName={len_name}"));
+        }
+        if num_chans > 50_000 || nt > 50_000_000 {
+            return Err(format!("FileID=4: unrealistic dimensions NT={nt} NumChans={num_chans}"));
+        }
+        let mut col_scl = vec![0.0f32; num_chans];
+        let mut col_off = vec![0.0f32; num_chans];
+        for v in &mut col_scl { *v = obr_f32(r)?; }
+        for v in &mut col_off { *v = obr_f32(r)?; }
+        let len_desc = obr_i32(r)? as usize;
+        obr_skip(r, len_desc)?;
+        let mut channels = Vec::with_capacity(num_chans + 1);
+        let mut units    = Vec::with_capacity(num_chans + 1);
+        for _ in 0..=num_chans { channels.push(obr_str(r, len_name)?); }
+        for _ in 0..=num_chans {
+            units.push(obr_str(r, len_name)?.replace('(', "").replace(')', ""));
+        }
+        return Ok(OutbHeader { file_id, nt, num_chans, time_out1, time_step, col_scl, col_off, channels, units });
+    }
+
+    if file_id == 1 || file_id == 2 {
+        let _num_dof  = obr_i16(r)?;
+        let nt        = obr_i32(r)? as usize;
+        let time_step = obr_f64(r)?;
+        let time_out1 = obr_f64(r)?;
+        let _time_end = obr_f64(r)?;
+        let num_chans = obr_i32(r)? as usize;
+        if nt == 0 || num_chans == 0 {
+            return Err(format!("FileID={file_id}: invalid header NT={nt} NumChans={num_chans}"));
+        }
+        if num_chans > 50_000 || nt > 50_000_000 {
+            return Err(format!("FileID={file_id}: unrealistic dimensions NT={nt} NumChans={num_chans}"));
+        }
+        let len_desc = obr_i32(r)? as usize;
+        obr_skip(r, len_desc)?;
+        let len_name = obr_i16(r)? as usize;
+        let mut channels = Vec::with_capacity(num_chans + 1);
+        for _ in 0..=num_chans { channels.push(obr_str(r, len_name)?); }
+        let len_unit = obr_i16(r)? as usize;
+        let mut units = Vec::with_capacity(num_chans + 1);
+        for _ in 0..=num_chans {
+            units.push(obr_str(r, len_unit)?.replace('(', "").replace(')', ""));
+        }
+        let mut col_scl = vec![0.0f32; num_chans];
+        let mut col_off = vec![0.0f32; num_chans];
+        for v in &mut col_scl { *v = obr_f32(r)?; }
+        for v in &mut col_off { *v = obr_f32(r)?; }
+        return Ok(OutbHeader { file_id, nt, num_chans, time_out1, time_step, col_scl, col_off, channels, units });
+    }
+
+    Err(format!(
+        "Unsupported FileID={file_id}. Supported: 1 (packed int16 with time), \
+         2 (packed int16 computed time), 4 (packed int16 ChanLen_In)."
+    ))
+}
+
+/// Return only header metadata — no data decoded, no large allocations.
+#[tauri::command]
+async fn read_outb_header(path: String) -> Result<serde_json::Value, String> {
+    tokio::task::spawn_blocking(move || {
+        let file = std::fs::File::open(&path).map_err(|e| format!("Cannot open: {e}"))?;
+        let mut r = std::io::BufReader::with_capacity(512 * 1024, file);
+        let h = parse_outb_header_stream(&mut r)?;
+        Ok(serde_json::json!({
+            "channels": h.channels,
+            "units":    h.units,
+            "nRows":    h.nt,
+            "nCols":    h.num_chans + 1,
+        }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Stream packed data, extracting only the requested channel indices.
+/// `indices` are 0-based col indices in the output (0 = Time, 1..N = data channels).
+/// Returns column-major LE f64 as base64 — one entry per requested index, in order.
+#[tauri::command]
+async fn read_outb_columns(path: String, indices: Vec<usize>) -> Result<serde_json::Value, String> {
+    tokio::task::spawn_blocking(move || {
+        if indices.is_empty() {
+            return Ok(serde_json::json!({ "nRows": 0, "nCols": 0, "indices": [], "data": "" }));
+        }
+        let file = std::fs::File::open(&path).map_err(|e| format!("Cannot open: {e}"))?;
+        // Use a large buffer so sequential reads are batched into few OS calls.
+        let mut r = std::io::BufReader::with_capacity(512 * 1024, file);
+        let h = parse_outb_header_stream(&mut r)?;
+
+        let nt        = h.nt;
+        let num_chans = h.num_chans;
+        let n_out     = indices.len();
+
+        // Which output position each request lands in:
+        //   indices[i] == 0          → Time (synthetic)
+        //   indices[i] == k (k >= 1) → packed data column k-1 (0-based)
+        let time_out_pos: Option<usize> = indices.iter().position(|&i| i == 0);
+
+        // (packed-data col index 0-based, output position) pairs — sorted by col for
+        // sequential row access (avoids random seeking within the row buffer).
+        let mut ch_out_pairs: Vec<(usize, usize)> = indices.iter().enumerate()
+            .filter_map(|(out_pos, &idx)| {
+                if idx >= 1 && idx <= num_chans { Some((idx - 1, out_pos)) }
+                else { None }
+            })
+            .collect();
+        ch_out_pairs.sort_unstable_by_key(|&(ch, _)| ch);
+
+        let mut out: Vec<Vec<f64>> = vec![vec![0.0f64; nt]; n_out];
+
+        if let Some(tp) = time_out_pos {
+            for t in 0..nt { out[tp][t] = h.time_out1 + t as f64 * h.time_step; }
+        }
+
+        // Stream rows from where the header left off.
+        // Each row is num_chans packed i16 values (row-major).
+        use std::io::Read as _;
+        let row_size = num_chans * 2;
+        let mut row_buf = vec![0u8; row_size];
+
+        for t in 0..nt {
+            r.read_exact(&mut row_buf)
+                .map_err(|e| format!("Data read error at row {t}/{nt}: {e}"))?;
+            for &(ch, out_pos) in &ch_out_pairs {
+                let b  = ch * 2;
+                let raw = i16::from_le_bytes([row_buf[b], row_buf[b + 1]]) as f64;
+                out[out_pos][t] = (raw - h.col_off[ch] as f64) / h.col_scl[ch] as f64;
+            }
+        }
+
+        let mut buf = Vec::with_capacity(n_out * nt * 8);
+        for col in &out { for &v in col { buf.extend_from_slice(&v.to_le_bytes()); } }
+
+        Ok(serde_json::json!({
+            "nRows":   nt,
+            "nCols":   n_out,
+            "indices": indices,
+            "data":    to_base64(&buf),
+        }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// Diagnoses an .outb FileID=4 file, returning parsed header fields and byte
 /// samples at key positions — used to verify data_start and layout assumptions.
 #[tauri::command]
@@ -2149,7 +2371,8 @@ pub fn run() {
             list_turbine_templates, patch_libdiscon_paths,
             sidecar_call,
             read_text_file, write_text_file, create_dir, list_dir, copy_dir, rename_file, remove_dir,
-            read_outb_file, dump_file_hex, diagnose_outb_file,
+            read_outb_file, read_outb_header, read_outb_columns,
+            dump_file_hex, diagnose_outb_file,
             scan_output_files,
             scan_bts_files,
             write_binary_file,
