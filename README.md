@@ -32,7 +32,7 @@ Download the installer for your platform from the [Releases](https://github.com/
 
 | Platform | Requirement | File |
 |----------|------------|------|
-| macOS | macOS 13 Ventura or later (Apple Silicon or Intel) | `.dmg` |
+| macOS | macOS 13 Ventura or later (Apple Silicon) | `.dmg` |
 | Windows | Windows 10/11 (64-bit) | `_x64-setup.exe` |
 
 **macOS:** Open the `.dmg`, drag FlowUrja Studio to Applications. On first launch, go to **System Settings → Privacy & Security → Open Anyway** if prompted.
