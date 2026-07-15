@@ -70,7 +70,7 @@ npm run tauri build      # production build
 ```
 
 The app ships with pre-built OpenFAST/TurbSim binaries in `src-tauri/resources/bin/`.
-The Python sidecar (`fws_io.py`) runs directly in development; CI compiles it with PyInstaller for release builds.
+The Python sidecar (`fus_io.py`) runs directly in development; CI compiles it with PyInstaller for release builds.
 
 ---
 
