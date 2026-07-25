@@ -127,16 +127,16 @@ export default function RawFileModal({
               <button onClick={handleSave} className={s.saveBtn} disabled={saving}>
                 {saving ? "Saving…" : "Save"}
               </button>
-            </>) : (
-              fromDisk && filePath && (
+            </>) : (<>
+              {fromDisk && filePath && (
                 <button onClick={handleEditClick} className={s.editBtn}>
                   Edit file
                 </button>
-              )
-            )}
-            <button onClick={handleClose} className={s.closeBtn} disabled={saving}>
-              Close ×
-            </button>
+              )}
+              <button onClick={handleClose} className={s.closeBtn}>
+                Close ×
+              </button>
+            </>)}
           </div>
         </div>
 

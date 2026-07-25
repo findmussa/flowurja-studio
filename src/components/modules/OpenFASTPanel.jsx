@@ -1172,8 +1172,18 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           onClose={() => setShowRaw(false)}
           onSaved={(newContent) => {
             setRawContent(newContent);
-            fstSnapshotRef.current = "";   // treat as externally modified — mark dirty
-            onLog?.("ok", `Saved directly → ${fstPath.split("/").pop()}`);
+            try {
+              const kv       = parseFstLines(newContent);
+              const newState = fstParsedToState(kv);
+              newState.BinPath    = p.BinPath;
+              newState.FilePrefix = p.FilePrefix;
+              setP(newState);
+              fstSnapshotRef.current = JSON.stringify(newState);
+              onLog?.("ok", `Saved and re-parsed → ${fstPath.split("/").pop()}`);
+            } catch (err) {
+              fstSnapshotRef.current = "";
+              onLog?.("warn", `Saved → ${fstPath.split("/").pop()} — could not re-parse (${err}). UI parameters may be out of sync. Check the file format.`);
+            }
           }}
         />
       )}
