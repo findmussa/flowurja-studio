@@ -156,7 +156,7 @@ function WorkersPicker() {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function SettingsPanel({ onLog }) {
+export default function SettingsPanel({ onLog, onCheckForUpdates }) {
   const {
     resolvedPath: ofPath,
     source:       ofSource,
@@ -242,13 +242,27 @@ export default function SettingsPanel({ onLog }) {
         <Card title="About" icon={Info}>
 
           {/* App info */}
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 16 }}>
             <AboutRow label="FlowUrja Studio"   value={`v${APP_VERSION}`} />
             <AboutRow label="Bundled OpenFAST"  value={`v${OF_COMPAT}`}  mono />
             <AboutRow label="Bundled TurbSim"   value={`v${TS_COMPAT}`}  mono />
             <AboutRow label="Platform"          value="macOS 13+ · Windows 10/11" />
             <AboutRow label="License"           value="Apache 2.0" />
           </div>
+          {onCheckForUpdates && (
+            <button
+              onClick={onCheckForUpdates}
+              style={{
+                display: "block", width: "100%", marginBottom: 20,
+                padding: "7px 0", borderRadius: 8,
+                border: "0.5px solid var(--bd)", background: "var(--bg-soft)",
+                color: "var(--tx-2)", fontSize: 12.5, fontWeight: 500,
+                cursor: "pointer", textAlign: "center",
+              }}
+            >
+              Check for Updates…
+            </button>
+          )}
 
           {/* Developer */}
           <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--tx-5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>

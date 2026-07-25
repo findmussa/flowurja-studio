@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { open as openDialog, ask } from "@tauri-apps/plugin-dialog";
+import UpdateDialog   from "./components/UpdateDialog";
 import Sidebar        from "./components/Sidebar";
 import WelcomeScreen, { saveToRecent } from "./components/WelcomeScreen";
 // saveToRecent is also used in handleOpenProject (directory picker path)
@@ -66,8 +67,22 @@ function isSkippedTarget(el) {
 const platform = navigator.userAgent.includes("Windows") ? "windows" : "macos";
 document.documentElement.setAttribute("data-platform", platform);
 
+const APP_VERSION = "1.0.0";
+const GITHUB_REPO = "findmussa/flowurja-studio";
+
+function semverGt(a, b) {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] ?? 0) > (pb[i] ?? 0)) return true;
+    if ((pa[i] ?? 0) < (pb[i] ?? 0)) return false;
+  }
+  return false;
+}
+
 export default function App() {
   const [activeModule,      setActiveModule]      = useState("openfast");
+  const [updateInfo,        setUpdateInfo]        = useState(null);
   const [sidebarWidth,      setSidebarWidth]      = useState(SIDEBAR_DEFAULT);
   const [project,           setProject]           = useState(null);
   // Welcome screen: show when app opens with no project; dismissed by selecting folder or skipping
@@ -340,6 +355,38 @@ export default function App() {
       setWelcomeDismissed(true);
     } catch {}
   }, []);
+
+  // ── Update check ─────────────────────────────────────────────────────────
+  const checkForUpdates = useCallback(async (manual = false) => {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
+        { headers: { Accept: "application/vnd.github+json" } }
+      );
+      const data = await res.json();
+      const latest = (data.tag_name ?? "").replace(/^v/, "");
+      if (semverGt(latest, APP_VERSION)) {
+        setUpdateInfo({ latest, releaseUrl: data.html_url ?? "" });
+      } else if (manual) {
+        // Triggered from Settings button — let the user know they're up to date
+        setUpdateInfo({ upToDate: true, latest });
+      }
+    } catch {}
+  }, []);
+
+  // Auto-check 6 seconds after launch (non-blocking, silent on error)
+  useEffect(() => {
+    const t = setTimeout(() => checkForUpdates(false), 6000);
+    return () => clearTimeout(t);
+  }, [checkForUpdates]);
+
+  // macOS menu "Check for Updates…" triggers this event
+  useEffect(() => {
+    let unlisten;
+    listen("trigger-update-check", () => checkForUpdates(true))
+      .then(fn => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, [checkForUpdates]);
 
   // On startup: open a .fus file passed as CLI arg (Windows) or macOS double-click
   // (emitted as "open-fus-file" by the Rust RunEvent::Opened handler).
@@ -670,6 +717,24 @@ export default function App() {
       background:   fs ? "var(--bg-base)" : "transparent",
     }}>
 
+      {/* ── Update dialog ───────────────────────────────────────────────── */}
+      {updateInfo && !updateInfo.upToDate && (
+        <UpdateDialog
+          currentVersion={APP_VERSION}
+          latestVersion={updateInfo.latest}
+          releaseUrl={updateInfo.releaseUrl}
+          onClose={() => setUpdateInfo(null)}
+        />
+      )}
+      {updateInfo?.upToDate && (
+        <UpdateDialog
+          currentVersion={APP_VERSION}
+          latestVersion={updateInfo.latest}
+          upToDate
+          onClose={() => setUpdateInfo(null)}
+        />
+      )}
+
       {/* ── Welcome screen — shown on first launch until folder is chosen ── */}
       {showWelcome && (
         <WelcomeScreen
@@ -852,7 +917,7 @@ export default function App() {
                 onFileLoaded={v => setModuleFiles(p => ({ ...p, windfield: v }))} />
             </div>
             {activeModule === "settings" && (
-              <SettingsPanel onLog={addLog} />
+              <SettingsPanel onLog={addLog} onCheckForUpdates={() => checkForUpdates(true)} />
             )}
             {!["openfast","turbsim","windbatch","batchrun","inflowwind","elastodyn","aerodyn","servodyn","hydrodyn","seastate","subdyn","moordyn","icedyn","results","windfield","settings"].includes(activeModule)
               && <GenericPanel module={activeModule} />}

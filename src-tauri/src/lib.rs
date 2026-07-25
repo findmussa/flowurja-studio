@@ -2466,6 +2466,64 @@ pub fn run() {
                 }
             }
 
+            // ── macOS menu bar ─────────────────────────────────────────────
+            // Build a full macOS menu so we can inject "Check for Updates…"
+            // into the app submenu. Without an explicit menu, Tauri generates a
+            // minimal default that has no slot for our custom item.
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::menu::{MenuBuilder, SubmenuBuilder, MenuItem};
+                use tauri::Emitter;
+
+                let check_item = MenuItem::with_id(
+                    app, "check_for_updates", "Check for Updates…", true, None::<&str>,
+                )?;
+
+                let app_menu = SubmenuBuilder::new(app, "FlowUrja Studio")
+                    .item(&check_item)
+                    .separator()
+                    .services()
+                    .separator()
+                    .hide()
+                    .hide_others()
+                    .show_all()
+                    .separator()
+                    .quit()
+                    .build()?;
+
+                let edit_menu = SubmenuBuilder::new(app, "Edit")
+                    .undo()
+                    .redo()
+                    .separator()
+                    .cut()
+                    .copy()
+                    .paste()
+                    .select_all()
+                    .build()?;
+
+                let window_menu = SubmenuBuilder::new(app, "Window")
+                    .minimize()
+                    .maximize()
+                    .separator()
+                    .bring_all_to_front()
+                    .build()?;
+
+                let menu = MenuBuilder::new(app)
+                    .item(&app_menu)
+                    .item(&edit_menu)
+                    .item(&window_menu)
+                    .build()?;
+
+                app.set_menu(menu)?;
+
+                let handle = app.app_handle().clone();
+                app.on_menu_event(move |_app, event| {
+                    if event.id() == "check_for_updates" {
+                        let _ = handle.emit("trigger-update-check", ());
+                    }
+                });
+            }
+
             // Spawn Python sidecar in a background thread so setup() returns immediately.
             // Production: compiled binary (fus_io / fus_io.exe) produced by PyInstaller in CI.
             // Fallback: fus_io.py via system Python — also bundled in sidecar/ by tauri.conf.json
