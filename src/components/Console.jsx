@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
-import { Terminal, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Terminal, Trash2, ChevronUp } from "lucide-react";
 import s from "./Console.module.css";
 
 const LEVEL_CLASS = { info: s.lvInfo, ok: s.lvOk, warn: s.lvWarn, error: s.lvError };
 const LEVEL_ICON  = { info: "·", ok: "✓", warn: "!", error: "✗" };
 
-export default function Console({ open, height, onToggle, onDragStart, logs, onClear }) {
+export default function Console({ open, height, dragging, onToggle, onDragStart, logs, onClear }) {
   const bodyRef = useRef(null);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export default function Console({ open, height, onToggle, onDragStart, logs, onC
 
   return (
     <div
-      className={s.console}
+      className={`${s.console}${dragging ? ` ${s.consoleDragging}` : ""}`}
       data-no-drag
       style={{ height: open ? height : 28 }}
     >
@@ -43,10 +43,8 @@ export default function Console({ open, height, onToggle, onDragStart, logs, onC
         >
           <Trash2 size={12} strokeWidth={1.8} />
         </button>
-        <div className={s.iconBtn} style={{ pointerEvents:"none" }}>
-          {open
-            ? <ChevronDown size={13} strokeWidth={2} />
-            : <ChevronUp   size={13} strokeWidth={2} />}
+        <div className={`${s.iconBtn} ${s.chevronBtn}`} style={{ pointerEvents:"none" }}>
+          <ChevronUp size={13} strokeWidth={2} className={open ? s.chevronOpen : s.chevron} />
         </div>
       </div>
 

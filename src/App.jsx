@@ -580,8 +580,9 @@ export default function App() {
   const closeProjectRef = useRef(null);
   useEffect(() => { closeProjectRef.current = handleCloseProject; }, [handleCloseProject]);
 
-  const [consoleOpen,   setConsoleOpen]   = useState(false);
-  const [consoleHeight, setConsoleHeight] = useState(CONSOLE_DEFAULT);
+  const [consoleOpen,     setConsoleOpen]     = useState(false);
+  const [consoleHeight,   setConsoleHeight]   = useState(CONSOLE_DEFAULT);
+  const [consoleDragging, setConsoleDragging] = useState(false);
   const [isFullscreen,  setIsFullscreen]  = useState(false);
   // Start with empty logs — modules add their own on mount
   const [consoleLogs, setConsoleLogs] = useState([
@@ -770,6 +771,7 @@ export default function App() {
     e.preventDefault();
     e.stopPropagation();
     consoleDragActive.current = true;
+    setConsoleDragging(true);
     consoleDragStartY.current = e.clientY;
     consoleDragStartH.current = consoleHeightRef.current;
     document.body.style.cursor = "row-resize";
@@ -781,6 +783,7 @@ export default function App() {
     };
     const onUp = () => {
       consoleDragActive.current = false;
+      setConsoleDragging(false);
       document.body.style.cursor = "";
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup",   onUp);
@@ -1024,6 +1027,7 @@ export default function App() {
           <Console
             open={consoleOpen}
             height={consoleHeight}
+            dragging={consoleDragging}
             onToggle={() => setConsoleOpen(o => !o)}
             onDragStart={onConsoleDragStart}
             logs={consoleLogs}
