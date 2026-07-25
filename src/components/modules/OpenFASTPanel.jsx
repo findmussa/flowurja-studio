@@ -718,7 +718,6 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
       .then(content => {
         const kv = parseFstLines(content);
         const wt = Number(kv.WindType ?? kv.NWindInpFile ?? 1);
-        onLog?.("info", `InflowWind sync read → WindType=${wt} (key found: ${"WindType" in kv ? "WindType" : "NWindInpFile" in kv ? "NWindInpFile" : "none"})`);
         setWindType(wt);
         if (kv.HWindSpeed) setHWindSpeed(String(kv.HWindSpeed));
         if (kv.FileName_BTS) {

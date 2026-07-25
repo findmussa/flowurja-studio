@@ -791,7 +791,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
       _setP(parsed);
       setIsDirtyFlag(false);
       setFilePath(path);
-      onLog?.("info", `Opened ${path.split("/").pop()}`);
+      onLog?.("ok", `Loaded ${path.split("/").pop()}`);
     } catch (e) {
       onLog?.("error", String(e));
     }

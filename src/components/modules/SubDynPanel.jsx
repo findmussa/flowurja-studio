@@ -515,7 +515,7 @@ export default function SubDynPanel({
       _setP(parsed);
       setIsDirtyFlag(false);
       setFilePath(path);
-      onLog?.("info", `Opened ${path.split("/").pop()}`);
+      onLog?.("ok", `Loaded ${path.split("/").pop()}`);
     } catch (e) {
       onLog?.("error", String(e));
     }

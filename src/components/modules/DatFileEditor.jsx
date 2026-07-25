@@ -49,7 +49,7 @@ export default function DatFileEditor({
       const text = await invoke("read_text_file", { path });
       setContent(text);
       setOriginal(text);
-      onLog?.("ok", `Opened ${path.split("/").pop()}`);
+      onLog?.("ok", `Loaded ${path.split("/").pop()}`);
     } catch (err) {
       onLog?.("error", `Could not read ${path}: ${String(err)}`);
       setContent("");

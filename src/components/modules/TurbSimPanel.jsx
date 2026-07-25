@@ -488,6 +488,9 @@ function parseTurbineHints(content) {
   return kv;
 }
 
+// Module-level: persists across remounts so the binary path is only logged once.
+let _loggedTurbsimPath = null;
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function TurbSimPanel({ onLog, project, moduleFiles }) {
   const [tab,     setTab]   = useState("dashboard");
@@ -698,9 +701,10 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
 
   const unlistenRef = useRef([]);
 
-  // Log binary resolution result once the path is known
+  // Log binary resolution result — only once per unique path across remounts.
   useEffect(() => {
-    if (!turbsimPath) return;
+    if (!turbsimPath || _loggedTurbsimPath === turbsimPath) return;
+    _loggedTurbsimPath = turbsimPath;
     const src = turbsimSource === "bundled" ? "bundled"
               : turbsimSource === "override" ? "override"
               : "system";
