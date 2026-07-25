@@ -29,7 +29,7 @@ export default function Console({ open, height, onToggle, onDragStart, logs, onC
 
       {/* Bar — click anywhere to toggle */}
       <div className={s.bar} onClick={onToggle}>
-        <Terminal size={12} strokeWidth={1.8} style={{ color:"rgba(0,0,0,0.38)", flexShrink:0 }} />
+        <Terminal size={12} strokeWidth={1.8} style={{ color:"var(--tx-4)", flexShrink:0 }} />
         <span className={s.barLabel}>Console</span>
         <span className={s.statusText}>
           {open
