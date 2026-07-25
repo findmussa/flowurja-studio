@@ -391,6 +391,14 @@ export default function App() {
     return () => { unlisten?.(); };
   }, [checkForUpdates]);
 
+  // macOS menu "Settings…" (Cmd+,) triggers this event
+  useEffect(() => {
+    let unlisten;
+    listen("open-settings", () => handleModuleSelect("settings"))
+      .then(fn => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, []);
+
   // On startup: open a .fus file passed as CLI arg (Windows) or macOS double-click
   // (emitted as "open-fus-file" by the Rust RunEvent::Opened handler).
   useEffect(() => {

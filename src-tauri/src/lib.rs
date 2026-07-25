@@ -2475,17 +2475,19 @@ pub fn run() {
                 use tauri::menu::{MenuBuilder, SubmenuBuilder, MenuItem, PredefinedMenuItem};
                 use tauri::Emitter;
 
-                let about_item  = PredefinedMenuItem::about(app, Some("About FlowUrja Studio"), None)?;
-                let check_item  = MenuItem::with_id(app, "check_for_updates", "Check for Updates…", true, None::<&str>)?;
-                let services    = PredefinedMenuItem::services(app, None)?;
-                let hide_item   = PredefinedMenuItem::hide(app, Some("Hide FlowUrja Studio"))?;
-                let hide_others = PredefinedMenuItem::hide_others(app, None)?;
-                let show_all    = PredefinedMenuItem::show_all(app, None)?;
-                let quit_item   = PredefinedMenuItem::quit(app, Some("Quit FlowUrja Studio"))?;
+                let about_item    = PredefinedMenuItem::about(app, Some("About FlowUrja Studio"), None)?;
+                let settings_item = MenuItem::with_id(app, "open_settings", "Settings…", true, Some("Meta+,"))?;
+                let check_item    = MenuItem::with_id(app, "check_for_updates", "Check for Updates…", true, None::<&str>)?;
+                let services      = PredefinedMenuItem::services(app, None)?;
+                let hide_item     = PredefinedMenuItem::hide(app, Some("Hide FlowUrja Studio"))?;
+                let hide_others   = PredefinedMenuItem::hide_others(app, None)?;
+                let show_all      = PredefinedMenuItem::show_all(app, None)?;
+                let quit_item     = PredefinedMenuItem::quit(app, Some("Quit FlowUrja Studio"))?;
 
                 let app_menu = SubmenuBuilder::new(app, "FlowUrja Studio")
                     .item(&about_item)
                     .separator()
+                    .item(&settings_item)
                     .item(&check_item)
                     .separator()
                     .item(&services)
@@ -2524,8 +2526,10 @@ pub fn run() {
 
                 let handle = app.app_handle().clone();
                 app.on_menu_event(move |_app, event| {
-                    if event.id() == "check_for_updates" {
-                        let _ = handle.emit("trigger-update-check", ());
+                    match event.id().as_ref() {
+                        "check_for_updates" => { let _ = handle.emit("trigger-update-check", ()); }
+                        "open_settings"     => { let _ = handle.emit("open-settings", ()); }
+                        _ => {}
                     }
                 });
             }
