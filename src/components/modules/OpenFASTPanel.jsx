@@ -559,9 +559,13 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   // FilePrefix is NOT a real .fst parameter (it's the run-case name kept in UI state);
   // exclude it so typing a case name doesn't light up the model-file Save button.
   const isDirty = !!fstPath && fstSnapshotRef.current !== null && (() => {
-    const { FilePrefix: _a, BinPath: _b, ...pCore }    = p;
-    const { FilePrefix: _c, BinPath: _d, ...snapCore } = JSON.parse(fstSnapshotRef.current);
-    return JSON.stringify(pCore) !== JSON.stringify(snapCore);
+    try {
+      const { FilePrefix: _a, BinPath: _b, ...pCore }    = p;
+      const { FilePrefix: _c, BinPath: _d, ...snapCore } = JSON.parse(fstSnapshotRef.current);
+      return JSON.stringify(pCore) !== JSON.stringify(snapCore);
+    } catch {
+      return false;
+    }
   })();
 
   // ── Broadcast module active states to sidebar ─────────────────────────────────
@@ -1188,8 +1192,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
               fstSnapshotRef.current = JSON.stringify(newState);
               onLog?.("ok", `Saved and re-parsed → ${fstPath.split("/").pop()}`);
             } catch (err) {
-              // Keep current p unchanged — never overwrite UI with defaults
-              fstSnapshotRef.current = "";
+              // Keep current p unchanged — never overwrite UI with defaults.
+              // fstSnapshotRef is intentionally NOT changed here; isDirty reflects
+              // whether the form diverges from the last *parseable* snapshot on disk.
               onLog?.("warn", `Saved → ${fstPath.split("/").pop()} — file could not be validated (${err}). UI parameters were NOT updated. Fix the formatting and save again, or re-import from disk.`);
             }
           }}
