@@ -27,7 +27,6 @@
   color: var(--tx-7);
   pointer-events: none;
   opacity: 0.6;
-  transform: rotate(-8deg);
 }
 
 /* ── Card ─────────────────────────────────────────────────────────────────── */
@@ -48,7 +47,7 @@
     0 20px 60px rgba(0,0,0,0.14),
     0  4px 16px rgba(0,0,0,0.08);
   -webkit-app-region: no-drag;
-  animation: slideUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: slideUp 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -67,8 +66,28 @@
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: scale(0.96) translateY(14px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes contentIn {
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rotateBlades {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.bladeGroup {
+  animation: rotateBlades 14s linear infinite;
+  transform-origin: 100px 116px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bladeGroup { animation: none; }
+  .card { animation: none; }
 }
 
 .cardWide {
@@ -102,11 +121,11 @@
 }
 
 .version {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--tx-5);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tx-4);
   background: var(--bg-hover);
-  border: 0.5px solid var(--bd);
+  border: 1px solid var(--bd-input);
   border-radius: 5px;
   padding: 2px 7px;
   letter-spacing: 0.01em;
@@ -115,11 +134,12 @@
 
 /* ── Tagline ──────────────────────────────────────────────────────────────── */
 .tagline {
-  font-size: 12.5px;
-  color: var(--tx-4);
+  font-size: 13px;
+  color: var(--tx-3);
   line-height: 1.55;
   max-width: 260px;
   margin-bottom: 4px;
+  letter-spacing: -0.01em;
 }
 
 /* ── Divider ──────────────────────────────────────────────────────────────── */
@@ -148,12 +168,12 @@
   font-family: inherit;
   cursor: pointer;
   letter-spacing: -0.01em;
-  transition: background 0.14s, transform 0.1s, opacity 0.12s;
+  transition: background 0.14s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.12s;
   box-shadow: 0 2px 12px rgba(14,109,130,0.35);
   margin-bottom: 6px;
 }
 .primaryBtn:hover:not(:disabled)  { background: #0d5e70; }
-.primaryBtn:active:not(:disabled) { transform: scale(0.985); }
+.primaryBtn:active:not(:disabled) { transform: scale(0.97); transition-duration: 0.07s; }
 .primaryBtn:disabled { opacity: 0.42; cursor: not-allowed; }
 
 .btnArrow {
@@ -171,28 +191,29 @@
   width: 100%;
   height: 38px;
   padding: 0 16px;
-  background: var(--bg-hover);
-  border: 0.5px solid var(--bd);
+  background: var(--bg-pill);
+  border: 1px solid var(--bd-input);
   border-radius: 11px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
   color: var(--tx-2);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   margin-bottom: 4px;
 }
-.secondaryBtn:hover { background: var(--bg-hover-md); }
+.secondaryBtn:hover  { background: var(--bg-hover); }
+.secondaryBtn:active { transform: scale(0.97); transition-duration: 0.07s; }
 
 /* ── Recent projects ──────────────────────────────────────────────────────── */
 .recentLabel {
   display: flex;
   align-items: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--tx-5);
+  color: var(--tx-4);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-align: left;
   width: 100%;
   margin-bottom: 4px;
@@ -216,25 +237,41 @@
   border-radius: 7px;
   cursor: pointer;
   text-align: left;
-  transition: background 0.1s;
+  transition: background 0.1s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-family: inherit;
 }
-.recentItem:hover { background: var(--bg-hover); }
+.recentItem:hover  { background: var(--bg-hover); }
+.recentItem:active { transform: scale(0.98); transition-duration: 0.07s; }
 
 .recentName {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--tx-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 210px;
+  letter-spacing: -0.01em;
 }
 
 .recentDate {
-  font-size: 11px;
-  color: var(--tx-5);
+  font-size: 12px;
+  color: var(--tx-4);
   flex-shrink: 0;
   margin-left: 8px;
+}
+
+/* ── Template card ────────────────────────────────────────────────────────── */
+.templateCard {
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s, background 0.15s, box-shadow 0.2s;
+}
+.templateCard:hover:not([disabled]) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+}
+.templateCard:active:not([disabled]) {
+  transform: scale(0.97);
+  transition-duration: 0.07s;
+  box-shadow: none;
 }
 
 /* ── Skip button ──────────────────────────────────────────────────────────── */
@@ -260,7 +297,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--tx-4);
   background: none;
   border: none;
@@ -295,10 +332,10 @@
 }
 
 .fieldLabel {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--tx-3);
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
 }
 
 .fieldInput {
@@ -308,7 +345,7 @@
   background: var(--bg-surface);
   border: 0.5px solid var(--bd-input);
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-family: inherit;
   color: var(--tx-1);
   outline: none;
@@ -331,22 +368,23 @@
 .browseBtn {
   height: 34px;
   padding: 0 12px;
-  background: var(--bg-hover);
-  border: 0.5px solid var(--bd);
+  background: var(--bg-pill);
+  border: 1px solid var(--bd-input);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 13px;
   font-family: inherit;
-  color: var(--tx-3);
+  color: var(--tx-2);
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.browseBtn:hover { background: var(--bg-hover-md); }
+.browseBtn:hover  { background: var(--bg-hover); }
+.browseBtn:active { transform: scale(0.96); transition-duration: 0.07s; }
 
 .fieldHint {
-  font-size: 11px;
-  color: var(--tx-5);
+  font-size: 12px;
+  color: var(--tx-4);
   line-height: 1.4;
 }
 

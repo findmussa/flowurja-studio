@@ -145,6 +145,9 @@ export default function App() {
   // .fus file opened externally while another project is already mounted
   const [pendingFusPath, setPendingFusPath] = useState(null);
 
+  // Welcome → app transition
+  const [welcomeExiting, setWelcomeExiting] = useState(false);
+
   // ── Theme: "system" | "light" | "dark" ──────────────────────────────────
   const [theme, setTheme] = useState(() => localStorage.getItem("fws-theme") || "system");
   useEffect(() => {
@@ -169,11 +172,21 @@ export default function App() {
 
   // Called by WelcomeScreen when a project is created or opened via .fws
   const handleProjectReady = useCallback((projectData) => {
-    setProject(projectData);
-    setWelcomeDismissed(true);
-    if (projectData.ui?.activeModule) {
-      setActiveModule(projectData.ui.activeModule);
-    }
+    setWelcomeExiting(true);
+    setTimeout(() => {
+      setProject(projectData);
+      setWelcomeDismissed(true);
+      setWelcomeExiting(false);
+      if (projectData.ui?.activeModule) setActiveModule(projectData.ui.activeModule);
+    }, 200);
+  }, []);
+
+  const handleSkip = useCallback(() => {
+    setWelcomeExiting(true);
+    setTimeout(() => {
+      setWelcomeDismissed(true);
+      setWelcomeExiting(false);
+    }, 200);
   }, []);
 
   // ── Multi-model support ──────────────────────────────────────────────────────
@@ -510,6 +523,63 @@ export default function App() {
   useEffect(() => { moduleDirtyRef.current = moduleDirty;  }, [moduleDirty]);
   useEffect(() => { projectRef.current     = project;      }, [project]);
 
+  // ── Close project — Cmd+W / Ctrl+W / sidebar × button ─────────────────────
+  // Runs the same sim+dirty checks as confirmClose but resets to welcome screen
+  // instead of quitting. All values read via refs so this is stable ([] deps).
+  const handleCloseProject = useCallback(async () => {
+    if (!projectRef.current) return;
+    if (dialogOpenRef.current) return;
+    dialogOpenRef.current = true;
+    try {
+      if (simRunningRef.current) {
+        const ok = await ask(
+          "A simulation is currently running. Closing the project will abort it.\n\nClose anyway?",
+          { title: "FlowUrja Studio", kind: "warning", okLabel: "Close Anyway", cancelLabel: "Cancel" }
+        );
+        if (!ok) return;
+        if (simPidRef.current !== null) {
+          await invoke("kill_pid", { pid: simPidRef.current }).catch(() => {});
+          simPidRef.current = null;
+        }
+      } else {
+        const anyDirty = Object.values(moduleDirtyRef.current).some(Boolean);
+        if (anyDirty) {
+          const ok = await ask(
+            "You have unsaved changes that will be lost.\n\nClose project without saving?",
+            { title: "FlowUrja Studio", kind: "warning", okLabel: "Close Anyway", cancelLabel: "Cancel" }
+          );
+          if (!ok) return;
+        }
+      }
+      // Reset all project-scoped state back to initial values
+      setProject(null);
+      setWelcomeDismissed(false);
+      setModuleFiles({
+        fstPath: "", fstDir: "",
+        elastodyn: "", aerodyn: "", servodyn: "", inflowwind: "",
+        seastate: "", hydrodyn: "", subdyn: "", moordyn: "", icedyn: "",
+        windfield: null, results: null,
+      });
+      setModuleDirty({ openfast: false, elastodyn: false, aerodyn: false, servodyn: false, inflowwind: false, seastate: false, hydrodyn: false, subdyn: false, moordyn: false, icedyn: false });
+      setModuleActive(null);
+      setSimRunning(false);
+      setWfbExport(null);
+      setSharedInflowParams(null);
+      setNavConfirm({ show: false, targetModule: null, tabHint: null });
+      setPendingFusPath(null);
+      setShowAddModel(false);
+      setRemoveModelConfirm(null);
+      setActiveModule("openfast");
+    } finally {
+      dialogOpenRef.current = false;
+    }
+  }, []); // stable — reads all live values via refs
+
+  // Stable ref so the keydown listener (registered once in the main effect) always
+  // calls the latest handleCloseProject without needing to re-register.
+  const closeProjectRef = useRef(null);
+  useEffect(() => { closeProjectRef.current = handleCloseProject; }, [handleCloseProject]);
+
   const [consoleOpen,   setConsoleOpen]   = useState(false);
   const [consoleHeight, setConsoleHeight] = useState(CONSOLE_DEFAULT);
   const [isFullscreen,  setIsFullscreen]  = useState(false);
@@ -607,6 +677,20 @@ export default function App() {
       }).catch(() => {});
     }
 
+    // ── Cmd+W (macOS) / Ctrl+W (Windows) — close project, not app ────────────
+    // Intercepting keydown in JS before the native layer means e.preventDefault()
+    // stops macOS from routing Cmd+W to onCloseRequested (which would quit the app).
+    const handleKeyDown = (e) => {
+      if (!projectRef.current) return;
+      const isMacClose = platform === "macos"   && e.metaKey  && e.key === "w";
+      const isWinClose = platform === "windows" && e.ctrlKey  && e.key === "w";
+      if (isMacClose || isWinClose) {
+        e.preventDefault();
+        closeProjectRef.current?.();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
     const handleDblClick = (e) => {
       if (!isInHeader(e)) return;
       win.toggleMaximize().catch(() => {});
@@ -640,6 +724,7 @@ export default function App() {
 
     return () => {
       document.removeEventListener("contextmenu", noCtx);
+      document.removeEventListener("keydown",     handleKeyDown);
       document.removeEventListener("mousedown",   handleMouseDown);
       document.removeEventListener("dblclick",    handleDblClick);
       unlistenResize?.();
@@ -748,10 +833,12 @@ export default function App() {
 
       {/* ── Welcome screen — shown on first launch until folder is chosen ── */}
       {showWelcome && (
-        <WelcomeScreen
-          onProjectReady={handleProjectReady}
-          onSkip={() => setWelcomeDismissed(true)}
-        />
+        <div className={[s.welcomeOverlay, welcomeExiting ? s.welcomeOverlayExit : ""].join(" ").trim()}>
+          <WelcomeScreen
+            onProjectReady={handleProjectReady}
+            onSkip={handleSkip}
+          />
+        </div>
       )}
 
       {/* ── Main app ────────────────────────────────────────────────────── */}
@@ -763,6 +850,7 @@ export default function App() {
             onModuleSelect={handleModuleSelect}
             project={project}
             onOpenProject={handleOpenProject}
+            onCloseProject={handleCloseProject}
             theme={theme}
             onThemeChange={setTheme}
             moduleFiles={moduleFiles}

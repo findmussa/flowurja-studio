@@ -1,3 +1,26 @@
+/* ── Transition keyframes ─────────────────────────────────────────────────── */
+@keyframes welcomeOut {
+  from { opacity: 1; transform: scale(1);    }
+  to   { opacity: 0; transform: scale(1.04); }
+}
+
+@keyframes bodyIn {
+  from { opacity: 0; transform: scale(0.984); }
+  to   { opacity: 1; transform: scale(1);     }
+}
+
+/* ── Welcome overlay — wraps WelcomeScreen so we can animate it out ───────── */
+.welcomeOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.welcomeOverlayExit {
+  animation: welcomeOut 0.20s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  pointer-events: none;
+}
+
 .shell {
   position: relative;
   width: 100vw;
@@ -16,6 +39,12 @@
   min-height: 0;
   /* uniform gap so the sidebar and main panel float inside the window */
   padding: 8px;
+  animation: bodyIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcomeOverlayExit { animation: none; }
+  .body               { animation: none; }
 }
 
 .sidebarWrap {

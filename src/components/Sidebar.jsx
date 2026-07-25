@@ -54,6 +54,8 @@ const FILE_MODULES = new Set([
 
 const OFFSHORE_STORAGE_KEY = "fws-offshore-open";
 
+const isMac = document.documentElement.getAttribute("data-platform") !== "windows";
+
 function shortPath(p) {
   if (!p) return "";
   const parts = p.replace(/\\/g, "/").split("/").filter(Boolean);
@@ -96,7 +98,6 @@ function NavItem({ mod, activeModule, onSelect, loadedFstName, fileLoaded, dirty
         <div className={s.itemContent}>
           <span className={s.label}>{mod.label}</span>
           <span className={s.modelTag}>
-            <span className={s.modelDot} />
             <span className={s.modelName}>{loadedFstName}</span>
           </span>
         </div>
@@ -104,10 +105,8 @@ function NavItem({ mod, activeModule, onSelect, loadedFstName, fileLoaded, dirty
         <span className={s.label}>{mod.label}</span>
       )}
 
-      {FILE_MODULES.has(mod.id) && fileLoaded && !isCompOff && (
-        dirty
-          ? <span className={s.dirtyDot} title="Unsaved changes" />
-          : <span className={s.fileDot}  title="File loaded" />
+      {FILE_MODULES.has(mod.id) && fileLoaded && !isCompOff && dirty && (
+        <span className={s.dirtyDot} title="Unsaved changes" />
       )}
 
       {isActive    && <Check size={11} strokeWidth={2.5} style={{ color: mod.color, flexShrink: 0 }} />}
@@ -162,7 +161,7 @@ function ModelItem({ model, isActive, canDelete, onClick, onDelete }) {
       onClick={() => !isActive && onClick(model.id)}
       title={model.label || model.id}
     >
-      <span className={isActive ? s.modelDotActive : s.modelDotInactive} />
+      {isActive && <span className={s.modelDotActive} />}
       <span className={s.modelItemLabel}>{model.label || model.id}</span>
       {canDelete && (
         <button
@@ -199,7 +198,7 @@ function SectionHead({ label }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Sidebar({
   activeModule, onModuleSelect,
-  project, onOpenProject,
+  project, onOpenProject, onCloseProject,
   theme = "system", onThemeChange,
   moduleFiles,
   moduleDirty,
@@ -254,14 +253,25 @@ export default function Sidebar({
           {/* Project picker */}
           <div className={s.section}>
             <SectionHead label="Project" />
-            <button className={s.picker} onClick={onOpenProject}>
-              {project
-                ? <FwsFileIcon size={14} className={s.pickerIcon} />
-                : <FolderOpen  size={14} strokeWidth={1.8} className={s.pickerIcon} />
-              }
-              <span className={s.pickerName}>{project ? project.name : "Open project…"}</span>
-              <ChevronDown size={12} strokeWidth={2} className={s.pickerChevron} />
-            </button>
+            <div className={s.pickerRow}>
+              <button className={s.picker} onClick={onOpenProject}>
+                {project
+                  ? <FwsFileIcon size={14} className={s.pickerIcon} />
+                  : <FolderOpen  size={14} strokeWidth={1.8} className={s.pickerIcon} />
+                }
+                <span className={s.pickerName}>{project ? project.name : "Open project…"}</span>
+                <ChevronDown size={12} strokeWidth={2} className={s.pickerChevron} />
+              </button>
+              {project && (
+                <button
+                  className={s.closeProjectBtn}
+                  onClick={onCloseProject}
+                  title={isMac ? "Close project  ⌘W" : "Close project  Ctrl+W"}
+                >
+                  <X size={11} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
             {project && <p className={s.pickerPath}>{shortPath(project.workingDir)}</p>}
           </div>
 

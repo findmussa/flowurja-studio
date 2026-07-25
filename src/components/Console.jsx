@@ -31,7 +31,6 @@ export default function Console({ open, height, onToggle, onDragStart, logs, onC
       <div className={s.bar} onClick={onToggle}>
         <Terminal size={12} strokeWidth={1.8} style={{ color:"rgba(0,0,0,0.38)", flexShrink:0 }} />
         <span className={s.barLabel}>Console</span>
-        <span className={`${s.statusDot} ${logs.length ? s.dotGreen : s.dotGray}`} />
         <span className={s.statusText}>
           {open
             ? `${logs.length} line${logs.length !== 1 ? "s" : ""}`

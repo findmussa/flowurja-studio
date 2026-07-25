@@ -8,6 +8,7 @@ import {
 import RawFileModal from "../RawFileModal";
 // BinaryRow removed from dashboard — binary config lives in Settings (⚙)
 import InfoPopover from "../InfoPopover";
+import { Toaster, useToasts } from "../Toast";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
 import s from "./OpenFASTPanel.module.css";
 
@@ -504,7 +505,9 @@ const TurbineIcon = memo(function TurbineIcon({ spinning, className }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFilesDetected, onModuleActiveChange, onDirtyChange, onRegisterSave, discardSeq = 0, onModuleSelect, isActive = false, inflowWindParams = null, onSimRunningChange, onPidChange, onInflowPatch }) {
   // ── Core state ──────────────────────────────────────────────────────────────
+  const { toasts, add: addToast, remove: removeToast } = useToasts();
   const [tab,            setTab]            = useState("run");
+  const tabDirRef = useRef(1);
   const [p,              setP]              = useState(DEFAULT);
   const [running,        setRunning]        = useState(false);
   const [runPct,         setRunPct]         = useState(0);   // 0-100, parsed from stdout
@@ -961,6 +964,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     onSimRunningChange?.(false);
     onPidChange?.(null);
     onLog?.("warn", "Stopped by user.");
+    addToast("warn", "Simulation stopped", "Stopped by user", 3000);
   };
 
   // ── Run ───────────────────────────────────────────────────────────────────────
@@ -971,6 +975,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     setRunning(true);
     setRunPct(0);
     onSimRunningChange?.(true);
+    addToast("info", "Simulation started", effectiveCaseName, 3500);
 
     const resultsDir = project.resultsDir ?? `${project.workingDir}/results`;
     const caseName   = effectiveCaseName;
@@ -1057,6 +1062,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
             ? (fatalMsg || "OpenFAST FATAL ERROR — check the log above")
             : `OpenFAST exited with code ${payload.slice(4)}`;
           onLog?.("error", `Run failed: ${msg}`);
+          addToast("error", "Simulation failed", msg.slice(0, 120), 0);
           setRunning(false);
           onSimRunningChange?.(false);
           return;
@@ -1096,6 +1102,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           });
         } catch {}
 
+        addToast("success", "Simulation complete", `${caseName}/outb/${caseName}.outb`, 5000);
         setRunning(false);
         onSimRunningChange?.(false);
       });
@@ -1105,7 +1112,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
       onLog?.("info", `Running: ${ofBinPath} ${caseName}.fst`);
       await invoke("run_binary", { binary: ofBinPath, args: [runFstPath] });
     } catch (err) {
-      onLog?.("error", String(err));
+      const msg = String(err);
+      onLog?.("error", msg);
+      addToast("error", "Simulation failed", msg.slice(0, 120), 0);
       setRunning(false);
       onSimRunningChange?.(false);
     }
@@ -1131,11 +1140,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
       {/* ── Model bar ─────────────────────────────────────────────────────── */}
       {fstPath ? (
         <div className={s.loadedBar}>
-          {/* Dirty / clean indicator dot */}
-          <span
-            className={isDirty ? s.loadedDotDirty : s.loadedDot}
-            title={isDirty ? "Unsaved changes" : "Saved"}
-          />
+          {isDirty && (
+            <span className={s.loadedDotDirty} title="Unsaved changes" />
+          )}
           <span className={s.loadedFileName}>{fstPath.replace(/\\/g, "/").split("/").pop()}</span>
           <span className={s.loadedFilePath}>
             {(() => { const pts = fstPath.replace(/\\/g, "/").split("/"); return pts.length > 2 ? "…/" + pts.slice(-3, -1).join("/") : pts.slice(0, -1).join("/"); })()}
@@ -1151,7 +1158,6 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
         </div>
       ) : (
         <div className={s.noModelBar}>
-          <span className={s.noModelDot} />
           <span className={s.noModelText}>No turbine model loaded — use the <strong>+</strong> button in the sidebar to add a model</span>
         </div>
       )}
@@ -1172,7 +1178,12 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           <button
             key={t.id}
             className={`${s.tab} ${tab === t.id ? s.tabActive : ""}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }}
           >
             {t.label}
           </button>
@@ -1181,7 +1192,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
 
       {/* ── Editor tabs: Simulation / Modules / Output ─────────────────── */}
       {tab !== "run" && tab !== "linearize" && (
-        <div className={s.formArea}>
+        <div key={tab} className={`${s.formArea} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
           <div className={s.form}>
 
             {tab === "simulation" && (<>
@@ -1344,7 +1355,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
 
       {/* ── Linearize tab ────────────────────────────────────────────── */}
       {tab === "linearize" && (
-        <div className={s.formArea}>
+        <div key={tab} className={`${s.formArea} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
           <div className={s.form}>
             <SectionHead>Linearization</SectionHead>
             <div className={s.toggleGrid}>
@@ -1441,7 +1452,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
         <div className={s.runTab}>
 
           {/* ── Row 1: Sim params (left) | Turbine SVG (right) ── */}
-          <div className={s.runCardsRow}>
+          <div className={s.runCardsRow} style={{ "--row-idx": 0 }}>
 
             {/* Left: simulation parameters — 2×2 grid */}
             <div className={s.runCard}>
@@ -1509,7 +1520,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           </div>
 
           {/* ── Row 2: Wind source + Active modules (left) | Case name + Run (right) ── */}
-          <div className={s.runCardsRow}>
+          <div className={s.runCardsRow} style={{ "--row-idx": 1 }}>
 
             {/* Left: wind source (top) + active modules (bottom) */}
             <div className={s.runCard}>
@@ -1609,7 +1620,6 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                           active       ? s.modulePillOn   : s.modulePillOff,
                           isWarnPill   ? s.modulePillWarn : "",
                         ].join(" ")}
-                        style={active ? { "--pill-color": m.color } : {}}
                         onClick={() => setP(prev => ({ ...prev, [m.comp]: active ? 0 : m.defaultVal }))}
                         title={
                           isWarnPill
@@ -1619,10 +1629,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                             : `${m.label} disabled — click to enable`
                         }
                       >
-                        {isWarnPill
-                          ? <AlertTriangle size={10} strokeWidth={2.5} style={{ flexShrink: 0 }} />
-                          : <span className={active ? s.pillDotOn : s.pillDotOff} />
-                        }
+                        {isWarnPill && (
+                          <AlertTriangle size={10} strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                        )}
                         {m.label}
                       </button>
                     );
@@ -1700,16 +1709,20 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           </div>
 
           {/* ── Row 3: Simulation flow (left) | Recent runs (right) ── */}
-          <div className={s.runCardsRow}>
+          <div className={s.runCardsRow} style={{ "--row-idx": 2 }}>
 
             {/* Left: dependency flow graph */}
             <div className={[s.runCard, s.depCard].join(" ")}>
               <span className={s.sectionHead}>Simulation flow</span>
               <div className={s.depGraph}>
+                {(() => {
+                  const di = windType === 3 ? 2 : 0;
+                  return (<>
 
                 {windType === 3 && (<>
                   <div
                     className={s.depNode}
+                    style={{ "--dep-idx": 0 }}
                     onClick={() => onModuleSelect?.("turbsim")}
                     title="Open TurbSim"
                   >
@@ -1717,11 +1730,12 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                     <span className={s.depNodeFile}>{btsFile || "wind_field.bts"}</span>
                     <span className={s.depNodeMeta}>BTS wind file generator</span>
                   </div>
-                  <div className={s.depArrow} />
+                  <div className={s.depArrow} style={{ "--dep-idx": 1 }} />
                 </>)}
 
                 <div
                   className={[s.depNode, p.CompInflow > 0 ? s.depNodeActive : s.depNodeOff].join(" ")}
+                  style={{ "--dep-idx": di }}
                   onClick={() => p.CompInflow > 0 && onModuleSelect?.("inflowwind")}
                   title={p.CompInflow > 0 ? "Open InflowWind" : "InflowWind disabled"}
                 >
@@ -1733,11 +1747,12 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                   </div>
                   <span className={s.depNodeFile}>{p.InflowFile || "inflowwind.dat"}</span>
                 </div>
-                <div className={s.depArrow} />
+                <div className={s.depArrow} style={{ "--dep-idx": di + 1 }} />
 
                 <div
                   className={[s.depNode, s.depNodeMain, fstPath ? s.depNodeActive : s.depNodeOff].join(" ")}
-                  onClick={() => fstPath && setTab("simulation")}
+                  style={{ "--dep-idx": di + 2 }}
+                  onClick={() => { if (!fstPath) return; tabDirRef.current = 1; setTab("simulation"); }}
                   title={fstPath ? "View Simulation settings" : "No model loaded"}
                 >
                   <span className={s.depNodeLabel}>OpenFAST</span>
@@ -1751,9 +1766,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                     </span>
                   )}
                 </div>
-                <div className={s.depArrow} />
+                <div className={s.depArrow} style={{ "--dep-idx": di + 3 }} />
 
-                <div className={s.depModuleRow}>
+                <div className={s.depModuleRow} style={{ "--dep-idx": di + 4 }}>
                   {MODULE_PILL_DEFS.filter(m => m.id !== "inflowwind").map(m => {
                     const active    = p[m.comp] > 0;
                     const clickable = active && m.hasPanel;
@@ -1767,7 +1782,6 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                           active    ? s.depModNodeActive    : s.depModNodeOff,
                           clickable ? s.depModNodeClickable : "",
                         ].join(" ")}
-                        style={active ? { "--mod-color": m.color } : {}}
                         onClick={() => clickable && onModuleSelect?.(m.id)}
                         title={tipFile || (active ? m.label : `${m.label} disabled`)}
                       >
@@ -1776,9 +1790,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                     );
                   })}
                 </div>
-                <div className={s.depArrow} />
+                <div className={s.depArrow} style={{ "--dep-idx": di + 5 }} />
 
-                <div className={[s.depNode, fstPath ? s.depNodeOutput : s.depNodeOff].join(" ")}>
+                <div className={[s.depNode, fstPath ? s.depNodeOutput : s.depNodeOff].join(" ")} style={{ "--dep-idx": di + 6 }}>
                   <div className={s.depNodeHeader}>
                     <span className={s.depNodeLabel}>Output</span>
                     <span className={s.depNodeMeta}>
@@ -1788,6 +1802,8 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                   <span className={s.depNodeFile}>{effectiveCaseName}</span>
                 </div>
 
+                  </>);
+                })()}
               </div>
             </div>
 
@@ -1815,7 +1831,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           </div>
 
           {/* ── Row 4: Binary status (read-only) — full config in Settings ── */}
-          <div className={s.runCard} style={{ padding: "10px 16px" }}>
+          <div className={s.runCard} style={{ padding: "10px 16px", "--row-idx": 3 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <span className={s.sectionHead} style={{ margin: 0 }}>OpenFAST binary</span>
               <span style={{ fontSize: 11, color: "var(--tx-5)" }}>
@@ -1857,6 +1873,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
         </div>
       )}
 
+      <Toaster toasts={toasts} onDismiss={removeToast} />
     </div>
   );
 }

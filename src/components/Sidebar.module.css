@@ -67,30 +67,63 @@
 
 .sectionLabel {
   display: block;
-  font-size: 10px; font-weight: 700;
-  color: var(--tx-5);
-  text-transform: uppercase; letter-spacing: 0.08em;
+  font-size: 11px; font-weight: 700;
+  color: var(--tx-4);
+  text-transform: uppercase; letter-spacing: 0.07em;
   margin-bottom: 5px; padding: 0 2px;
 }
 
+.pickerRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .picker {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   display: flex; align-items: center; gap: 7px;
   padding: 7px 10px;
-  background: var(--bg-hover);
-  border: 0.5px solid var(--bd-subtle);
+  background: var(--bg-pill);
+  border: 1px solid var(--bd-input);
   border-radius: 9px;
   cursor: pointer; color: var(--tx-1);
   font-size: 13px; font-weight: 500; font-family: inherit;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.picker:hover { background: var(--bg-hover-md); }
+.picker:hover  { background: var(--bg-hover); }
+.picker:active { transform: scale(0.98); transition-duration: 0.07s; }
+
+.closeProjectBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--bd-input);
+  background: var(--bg-pill);
+  color: var(--tx-4);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.closeProjectBtn:hover {
+  background: rgba(239,68,68,0.08);
+  color: #EF4444;
+  border-color: rgba(239,68,68,0.28);
+}
+.closeProjectBtn:active {
+  transform: scale(0.88);
+  transition-duration: 0.07s;
+}
 .pickerIcon    { color: var(--tx-3); flex-shrink: 0; }
 .pickerName    { flex: 1; text-align: left; letter-spacing: -0.01em; }
 .pickerChevron { color: var(--tx-6); flex-shrink: 0; }
 .pickerPath {
-  font-size: 10.5px;
-  color: var(--tx-5);
+  font-size: 11px;
+  color: var(--tx-4);
   margin: 4px 2px 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -108,12 +141,14 @@
   padding: 6px 10px; border-radius: 8px;
   cursor: pointer; margin-bottom: 1px;
   color: var(--tx-1); font-size: 13px;
-  transition: background 0.12s; letter-spacing: -0.01em;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  letter-spacing: -0.01em;
   min-width: 0;
 }
 /* Offshore items — subtle indent to show they're nested */
 .itemIndent { padding-left: 20px; }
 .item:hover:not(.disabled):not(.active) { background: var(--bg-hover); }
+.item:active:not(.disabled) { transform: scale(0.97); transition-duration: 0.07s; }
 .active {
   background: var(--sidebar-active-bg) !important;
   box-shadow: var(--sidebar-active-shadow);
@@ -126,13 +161,13 @@
 .compOff:hover:not(.active) { background: var(--bg-hover); opacity: 0.75; }
 .label { flex: 1; }
 .off {
-  font-size: 10px; padding: 1px 6px; border-radius: 4px;
-  background: var(--bg-pill); color: var(--tx-6);
+  font-size: 11px; padding: 1px 6px; border-radius: 4px;
+  background: var(--bg-pill); color: var(--tx-5);
   border: 0.5px solid var(--bd-subtle);
 }
 /* Badge for comp-disabled modules — amber tint to signal "configurable" */
 .compOffBadge {
-  font-size: 10px; padding: 1px 6px; border-radius: 4px;
+  font-size: 11px; padding: 1px 6px; border-radius: 4px;
   background: rgba(245,158,11,0.10); color: #D97706;
   border: 0.5px solid rgba(245,158,11,0.30);
   flex-shrink: 0;
@@ -158,16 +193,10 @@
   min-width: 0; /* must be 0 so the flex child can shrink below content size */
 }
 
-.modelDot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: #10B981;
-  flex-shrink: 0;
-}
 
 /* Text node needs its own box for ellipsis to fire */
 .modelName {
-  font-size: 10px;
+  font-size: 11px;
   color: #10B981;
   font-family: "SF Mono", ui-monospace, monospace;
   letter-spacing: -0.01em;
@@ -175,15 +204,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
-}
-
-/* ── Green dot — file loaded and clean ── */
-.fileDot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: #10B981;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 1.5px rgba(16,185,129,0.25);
 }
 
 /* ── Orange dot — file loaded with unsaved changes ── */
@@ -210,15 +230,16 @@
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  border: 0.5px solid var(--bd-subtle);
-  background: var(--bg-hover);
+  border: 1px solid var(--bd-input);
+  background: var(--bg-pill);
   color: var(--tx-4);
   cursor: pointer;
   padding: 0;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   flex-shrink: 0;
 }
-.addModelBtn:hover { background: var(--bg-hover-md); color: var(--tx-1); }
+.addModelBtn:hover  { background: var(--bg-hover); color: var(--tx-1); }
+.addModelBtn:active { transform: scale(0.88); transition-duration: 0.07s; }
 
 .modelList {
   list-style: none;
@@ -234,12 +255,13 @@
   padding: 5px 8px;
   border-radius: 7px;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--tx-3);
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   min-width: 0;
 }
-.modelItem:hover:not(.modelItemActive) { background: var(--bg-hover); color: var(--tx-1); }
+.modelItem:hover:not(.modelItemActive)  { background: var(--bg-hover); color: var(--tx-1); }
+.modelItem:active:not(.modelItemActive) { transform: scale(0.97); transition-duration: 0.07s; }
 
 .modelItemActive {
   background: var(--sidebar-active-bg);
@@ -296,13 +318,6 @@
   box-shadow: 0 0 0 1.5px rgba(16,185,129,0.25);
 }
 
-.modelDotInactive {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--bd);
-  flex-shrink: 0;
-}
 
 /* ── Offshore collapsible toggle ── */
 .offshoreToggle {
@@ -314,23 +329,24 @@
   border-radius: 7px;
   cursor: pointer;
   list-style: none;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.offshoreToggle:hover { background: var(--bg-hover); }
+.offshoreToggle:hover  { background: var(--bg-hover); }
+.offshoreToggle:active { transform: scale(0.97); transition-duration: 0.07s; }
 
 .offshoreChevron {
-  color: var(--tx-5);
+  color: var(--tx-4);
   flex-shrink: 0;
-  transition: transform 0.18s ease;
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .offshoreChevronOpen { transform: rotate(90deg); }
 
 .offshoreLabel {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--tx-5);
+  color: var(--tx-4);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   flex-shrink: 0;
 }
 
@@ -357,7 +373,7 @@
   gap: 3px;
   padding: 3px;
   background: var(--bg-muted);
-  border: 0.5px solid var(--bd);
+  border: 1px solid var(--bd-input);
   border-radius: 9px;
 }
 
@@ -375,13 +391,14 @@
   font-family: inherit;
   color: var(--tx-4);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.themeBtn:hover { background: var(--bg-hover); color: var(--tx-2); }
+.themeBtn:hover  { background: var(--bg-hover); color: var(--tx-2); }
+.themeBtn:active { transform: scale(0.93); transition-duration: 0.07s; }
 .themeBtnActive {
   background: var(--bg-raised) !important;
   color: var(--tx-1) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 0.5px var(--bd-input);
 }
 
 /* ── Settings button ── */
@@ -392,12 +409,13 @@
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  border: 0.5px solid var(--bd);
-  background: var(--bg-muted);
-  color: var(--tx-4);
+  border: 1px solid var(--bd-input);
+  background: var(--bg-pill);
+  color: var(--tx-3);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.settingsBtn:hover { background: var(--bg-hover-md); color: var(--tx-1); }
+.settingsBtn:hover  { background: var(--bg-hover); color: var(--tx-1); }
+.settingsBtn:active { transform: scale(0.88); transition-duration: 0.07s; }
 

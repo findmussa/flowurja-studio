@@ -17,7 +17,7 @@ import { TURBINE_CATALOG, CONFIG_TYPE, scanModelDependencies } from "./WelcomeSc
 import s from "./AddModelSheet.module.css";
 
 // ── Template card ──────────────────────────────────────────────────────────────
-function ModelCard({ tmpl, selected, alreadyIn, onClick }) {
+function ModelCard({ tmpl, selected, alreadyIn, onClick, cardIdx }) {
   const cfg = CONFIG_TYPE[tmpl.configType] || CONFIG_TYPE.onshore;
 
   // Three states: available & clickable | already added (disabled) | coming soon (unavailable)
@@ -32,7 +32,7 @@ function ModelCard({ tmpl, selected, alreadyIn, onClick }) {
         alreadyIn  ? s.cardAdded     : "",
         !isAvail && !alreadyIn ? s.cardDim : "",
       ].join(" ")}
-      style={{ "--accent": cfg.color }}
+      style={{ "--accent": cfg.color, "--card-idx": cardIdx ?? 0 }}
       onClick={() => clickable && onClick(tmpl)}
     >
       <div className={s.cardAccent} />
@@ -74,6 +74,13 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
   const [siblingFiles,     setSiblingFiles]     = useState([]);
   const [adding,           setAdding]           = useState(false);
   const [error,            setError]            = useState("");
+  const [closing,          setClosing]          = useState(false);
+
+  const handleClose = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, 200);
+  };
 
   // Load bundled templates — mark loaded even on error so cards are never stuck
   useEffect(() => {
@@ -193,8 +200,11 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className={s.sheet}>
+    <div
+      className={[s.overlay, closing ? s.overlayExit : ""].join(" ")}
+      onClick={e => e.target === e.currentTarget && handleClose()}
+    >
+      <div className={[s.sheet, closing ? s.sheetExit : ""].join(" ")}>
 
         {/* Header */}
         <div className={s.header}>
@@ -202,7 +212,7 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
             <h2 className={s.title}>Add model</h2>
             <p className={s.sub}>Add a turbine model to <strong>{project?.name}</strong></p>
           </div>
-          <button className={s.closeBtn} onClick={onClose}><X size={16} strokeWidth={2} /></button>
+          <button className={s.closeBtn} onClick={handleClose}><X size={16} strokeWidth={2} /></button>
         </div>
 
         {/* Mode tabs */}
@@ -228,7 +238,7 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
               </div>
             ) : (
               <div className={s.zoo}>
-                {TURBINE_CATALOG.map((group) => (
+                {(() => { let cardIdx = 0; return TURBINE_CATALOG.map((group) => (
                   <div key={group.group}>
                     <p className={s.groupLabel}>{group.group}</p>
                     <div className={s.zooGrid} style={{ gridTemplateColumns: group.models.length === 1 ? "1fr" : "1fr 1fr" }}>
@@ -248,12 +258,13 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
                             selected={selectedTemplate?.id === tmpl.id}
                             alreadyIn={alreadyIn}
                             onClick={t => setSelectedTemplate(t)}
+                            cardIdx={cardIdx++}
                           />
                         );
                       })}
                     </div>
                   </div>
-                ))}
+                )); })()}
                 {/* Selected template detail */}
                 {selectedTemplate && (
                   <div style={{
@@ -292,7 +303,7 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
         {/* Footer */}
         {error && <p className={s.errorMsg}>{error}</p>}
         <div className={s.footer}>
-          <button className={s.cancelBtn} onClick={onClose} disabled={adding}>Cancel</button>
+          <button className={s.cancelBtn} onClick={handleClose} disabled={adding}>Cancel</button>
           <button className={s.addBtn} onClick={handleAdd} disabled={!canAdd || adding}>
             {adding ? "Adding…" : "Add model"}
           </button>

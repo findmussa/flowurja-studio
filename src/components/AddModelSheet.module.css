@@ -1,3 +1,19 @@
+/* ── Keyframes ── */
+@keyframes overlayIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes sheetIn  {
+  from { opacity: 0; transform: scale(0.96) translateY(14px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+@keyframes sheetOut {
+  from { opacity: 1; transform: scale(1)    translateY(0);   }
+  to   { opacity: 0; transform: scale(1.03) translateY(6px); }
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
 /* ── Overlay ── */
 .overlay {
   position: fixed;
@@ -9,6 +25,11 @@
   justify-content: center;
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
+  animation: overlayIn 0.18s ease both;
+}
+.overlayExit {
+  animation: overlayOut 0.20s ease forwards;
+  pointer-events: none;
 }
 
 /* ── Sheet card ── */
@@ -25,6 +46,10 @@
     0 24px 60px rgba(0, 0, 0, 0.28),
     0 8px 20px rgba(0, 0, 0, 0.12);
   overflow: hidden;
+  animation: sheetIn 0.40s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.sheetExit {
+  animation: sheetOut 0.20s cubic-bezier(0.55, 0, 1, 0.45) forwards;
 }
 
 /* ── Header ── */
@@ -124,12 +149,19 @@
   background: var(--bg-surface-hov);
   cursor: pointer;
   overflow: hidden;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   margin-bottom: 4px;
+  animation: cardIn 0.30s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(160ms + var(--card-idx, 0) * 45ms);
 }
-.card:hover:not(.cardDim) {
+.card:hover:not(.cardDim):not(.cardAdded) {
   border-color: var(--accent, #10B981);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #10B981) 14%, transparent);
+  transform: translateY(-2px);
+}
+.card:active:not(.cardDim):not(.cardAdded) {
+  transform: scale(0.97);
+  transition-duration: 0.07s;
 }
 .cardSelected {
   border-color: var(--accent, #10B981) !important;
@@ -296,16 +328,17 @@
   flex: 1;
   padding: 9px 14px;
   border-radius: 10px;
-  border: 0.5px solid var(--bd);
-  background: var(--bg-surface-hov);
+  border: 1px solid var(--bd-input);
+  background: var(--bg-pill);
   color: var(--tx-3);
   font-size: 13.5px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .cancelBtn:hover:not(:disabled) { background: var(--bg-hover); color: var(--tx-1); }
+.cancelBtn:active:not(:disabled) { transform: scale(0.97); transition-duration: 0.07s; }
 .cancelBtn:disabled { opacity: 0.5; cursor: default; }
 
 .addBtn {
@@ -313,13 +346,20 @@
   padding: 9px 14px;
   border-radius: 10px;
   border: none;
-  background: #1a2b3c;
+  background: #0F6D82;
   color: #fff;
   font-size: 13.5px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: opacity 0.12s;
+  letter-spacing: -0.01em;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.addBtn:hover:not(:disabled) { opacity: 0.88; }
+.addBtn:hover:not(:disabled) { background: #0C5A6B; }
+.addBtn:active:not(:disabled) { transform: scale(0.97); transition-duration: 0.07s; }
 .addBtn:disabled { opacity: 0.4; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .overlayExit, .sheet, .sheetExit, .card { animation: none; }
+  .card, .cancelBtn, .addBtn { transition: none; }
+}

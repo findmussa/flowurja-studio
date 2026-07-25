@@ -8,9 +8,19 @@
  *   hasDirtyWarning  — true when the file has unsaved changes (amber banner)
  *   onClose          — close handler
  */
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import s from "./RawFileModal.module.css";
 
 export default function RawFileModal({ content, filename, fromDisk = false, hasDirtyWarning = false, onClose }) {
+  const [closing, setClosing] = useState(false);
+
+  const handleClose = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, 200);
+  };
+
   const subtitle = fromDisk
     ? "Actual file on disk"
     : "Preview — not yet saved to disk";
@@ -18,15 +28,19 @@ export default function RawFileModal({ content, filename, fromDisk = false, hasD
   return createPortal(
     <div
       onMouseDown={e => e.stopPropagation()}
+      className={`${s.overlay}${closing ? ` ${s.overlayExit}` : ""}`}
       style={{
         position: "fixed", inset: 0, zIndex: 99998,
-        background: "rgba(0,0,0,0.52)",
+        background: "rgba(0,0,0,0.46)",
+        WebkitBackdropFilter: "blur(4px)",
+        backdropFilter: "blur(4px)",
         display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         onClick={e => e.stopPropagation()}
+        className={`${s.card}${closing ? ` ${s.cardExit}` : ""}`}
         style={{
           background: "var(--bg-app)", borderRadius: 12, overflow: "hidden",
           width: "min(860px, 90vw)", height: "min(600px, 80vh)",
@@ -51,14 +65,7 @@ export default function RawFileModal({ content, filename, fromDisk = false, hasD
             )}
             <span style={{ fontSize: 11.5, color: "var(--tx-5)" }}>{subtitle}</span>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              border: "none", background: "var(--bg-pill)", cursor: "pointer",
-              borderRadius: 6, padding: "4px 10px", fontSize: 12,
-              color: "var(--tx-3)", fontFamily: "inherit",
-            }}
-          >Close ×</button>
+          <button onClick={handleClose} className={s.closeBtn}>Close ×</button>
         </div>
 
         {/* Unsaved changes banner */}

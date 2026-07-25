@@ -9,13 +9,19 @@ import s from "./WelcomeScreen.module.css";
 function BackgroundTurbine() {
   return (
     <svg className={s.bgTurbine} viewBox="0 0 200 260" fill="none" aria-hidden="true">
+      {/* Tower + base */}
       <line x1="100" y1="120" x2="100" y2="240" stroke="currentColor" strokeWidth="10" strokeLinecap="round"/>
       <line x1="76"  y1="241" x2="124" y2="241" stroke="currentColor" strokeWidth="3"/>
+      {/* Nacelle */}
       <rect x="84" y="108" width="32" height="16" rx="4" fill="currentColor" fillOpacity="0.6"/>
+      {/* Hub */}
       <circle cx="100" cy="116" r="7" fill="currentColor"/>
-      <line x1="100" y1="109" x2="100" y2="28"  stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
-      <line x1="94"  y1="121" x2="30"  y2="168" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
-      <line x1="106" y1="121" x2="170" y2="168" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
+      {/* Rotating blades — 120° apart, hub at (100,116), radius 88 */}
+      <g className={s.bladeGroup}>
+        <line x1="100" y1="109" x2="100" y2="28"  stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
+        <line x1="106" y1="120" x2="176" y2="160" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
+        <line x1="94"  y1="120" x2="24"  y2="160" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
+      </g>
     </svg>
   );
 }
@@ -286,8 +292,8 @@ function GroupHeader({ label }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 5px" }}>
       <span style={{
-        fontSize: 9.5, fontWeight: 700, color: "var(--tx-5)",
-        textTransform: "uppercase", letterSpacing: "0.09em", whiteSpace: "nowrap",
+        fontSize: 11, fontWeight: 700, color: "var(--tx-4)",
+        textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap",
       }}>
         {label}
       </span>
@@ -305,17 +311,17 @@ function TemplateCard({ tmpl, selected, onSelect }) {
   return (
     <button
       onClick={() => available && onSelect(tmpl)}
+      className={s.templateCard}
       style={{
         display: "flex", flexDirection: "column", gap: 4,
         textAlign: "left",
         background: selected ? "rgba(8,145,178,0.08)" : "var(--bg-hover)",
-        border: selected ? "1.5px solid rgba(8,145,178,0.45)" : "0.5px solid var(--bd)",
+        border: selected ? "1.5px solid rgba(8,145,178,0.45)" : "1px solid var(--bd-input)",
         borderLeft: `3px solid ${accentColor}`,
         borderRadius: 8,
         padding: "9px 10px 9px 9px",
         cursor: available ? "pointer" : "default",
         opacity: available ? 1 : 0.5,
-        transition: "border-color 0.15s, background 0.15s",
         fontFamily: "inherit",
         minWidth: 0,
       }}
@@ -323,16 +329,17 @@ function TemplateCard({ tmpl, selected, onSelect }) {
       {/* Row 1: name + badge */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minWidth: 0 }}>
         <span style={{
-          fontSize: 12, fontWeight: 600,
+          fontSize: 13, fontWeight: 600,
           color: selected ? "#0891B2" : "var(--tx-1)",
           flex: 1, lineHeight: 1.25,
           wordBreak: "break-word",
+          letterSpacing: "-0.01em",
         }}>
           {tmpl.name}
         </span>
         {tmpl.badge && available && (
           <span style={{
-            fontSize: 9, fontWeight: 600, flexShrink: 0, marginTop: 1,
+            fontSize: 11, fontWeight: 600, flexShrink: 0, marginTop: 1,
             padding: "1.5px 6px", borderRadius: 4,
             background: selected ? "rgba(8,145,178,0.15)" : "rgba(16,185,129,0.1)",
             color: selected ? "#0891B2" : "#059669",
@@ -342,9 +349,9 @@ function TemplateCard({ tmpl, selected, onSelect }) {
         )}
         {!available && (
           <span style={{
-            fontSize: 9, fontWeight: 500, flexShrink: 0, marginTop: 1,
+            fontSize: 11, fontWeight: 500, flexShrink: 0, marginTop: 1,
             padding: "1.5px 6px", borderRadius: 4,
-            background: "var(--bg-base)", color: "var(--tx-5)",
+            background: "var(--bg-base)", color: "var(--tx-4)",
           }}>
             Coming soon
           </span>
@@ -353,25 +360,25 @@ function TemplateCard({ tmpl, selected, onSelect }) {
 
       {/* Row 2: config type · power · diameter */}
       <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 10, fontWeight: 500, color: available ? cfg.color : "var(--tx-5)" }}>
+        <span style={{ fontSize: 11, fontWeight: 500, color: available ? cfg.color : "var(--tx-5)" }}>
           {cfg.label}
         </span>
         {tmpl.ratedPower && (
           <>
-            <span style={{ fontSize: 10, color: "var(--tx-6)" }}>·</span>
-            <span style={{ fontSize: 10, color: "var(--tx-4)" }}>{tmpl.ratedPower / 1000} MW</span>
+            <span style={{ fontSize: 11, color: "var(--tx-5)" }}>·</span>
+            <span style={{ fontSize: 11, color: "var(--tx-3)" }}>{tmpl.ratedPower / 1000} MW</span>
           </>
         )}
         {tmpl.rotorDiameter && (
           <>
-            <span style={{ fontSize: 10, color: "var(--tx-6)" }}>·</span>
-            <span style={{ fontSize: 10, color: "var(--tx-4)" }}>Ø{tmpl.rotorDiameter} m</span>
+            <span style={{ fontSize: 11, color: "var(--tx-5)" }}>·</span>
+            <span style={{ fontSize: 11, color: "var(--tx-3)" }}>Ø{tmpl.rotorDiameter} m</span>
           </>
         )}
         {tmpl.hubHeight && (
           <>
-            <span style={{ fontSize: 10, color: "var(--tx-6)" }}>·</span>
-            <span style={{ fontSize: 10, color: "var(--tx-4)" }}>H {tmpl.hubHeight} m</span>
+            <span style={{ fontSize: 11, color: "var(--tx-5)" }}>·</span>
+            <span style={{ fontSize: 11, color: "var(--tx-3)" }}>H {tmpl.hubHeight} m</span>
           </>
         )}
       </div>
@@ -379,7 +386,7 @@ function TemplateCard({ tmpl, selected, onSelect }) {
       {/* Row 3: description (2 lines max) */}
       {tmpl.description && (
         <p style={{
-          margin: 0, fontSize: 10.5, color: "var(--tx-4)", lineHeight: 1.5,
+          margin: 0, fontSize: 11.5, color: "var(--tx-4)", lineHeight: 1.5,
           display: "-webkit-box", WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical", overflow: "hidden",
         }}>
@@ -651,12 +658,14 @@ export default function WelcomeScreen({
 
   // ── Shared tab-button style ───────────────────────────────────────────────
   const modeTab = (mode) => ({
-    flex: 1, padding: "5px 0", fontSize: 11.5, fontWeight: 500,
+    flex: 1, padding: "6px 0", fontSize: 12, fontWeight: 500,
     border: "none", borderRadius: 5, cursor: "pointer",
-    background: modelMode === mode ? "var(--bg-hover-md)" : "transparent",
+    background: modelMode === mode ? "var(--bg-surface)" : "transparent",
     color: modelMode === mode ? "var(--tx-1)" : "var(--tx-3)",
-    transition: "background 0.12s, color 0.12s",
+    boxShadow: modelMode === mode ? "0 1px 4px rgba(0,0,0,0.08), 0 0 0 0.5px var(--bd-input)" : "none",
+    transition: "background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)",
     fontFamily: "inherit",
+    letterSpacing: "-0.01em",
   });
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -726,8 +735,9 @@ export default function WelcomeScreen({
           </button>
 
           <p style={{
-            fontSize: 11.5, color: "var(--tx-4)",
+            fontSize: 12, color: "var(--tx-3)",
             margin: "0 0 18px", alignSelf: "flex-start",
+            letterSpacing: "-0.01em",
           }}>
             Step 1 of 2 — Name &amp; location
           </p>
@@ -790,8 +800,9 @@ export default function WelcomeScreen({
 
           <h2 className={s.wizardTitle}>Turbine Model</h2>
           <p style={{
-            fontSize: 11.5, color: "var(--tx-4)",
+            fontSize: 12, color: "var(--tx-3)",
             margin: "-14px 0 14px", alignSelf: "flex-start",
+            letterSpacing: "-0.01em",
           }}>
             Step 2 of 2 — Choose a starting model
           </p>
@@ -800,8 +811,8 @@ export default function WelcomeScreen({
           <div style={{
             display: "flex", gap: 2, width: "100%",
             background: "var(--bg-base)",
-            border: "0.5px solid var(--bd)",
-            borderRadius: 7, padding: 3,
+            border: "1px solid var(--bd-input)",
+            borderRadius: 8, padding: 3,
             marginBottom: 14,
           }}>
             <button style={modeTab("template")} onClick={() => setModelMode("template")}>
@@ -851,7 +862,7 @@ export default function WelcomeScreen({
           {/* ── Import mode ──────────────────────────────────────────────── */}
           {modelMode === "import" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
-              <p style={{ fontSize: 12, color: "var(--tx-3)", margin: 0 }}>
+              <p style={{ fontSize: 13, color: "var(--tx-3)", margin: 0, lineHeight: 1.5, letterSpacing: "-0.01em" }}>
                 Select an existing <code>.fst</code> file. The model folder and
                 any referenced sibling directories will be copied into the project.
               </p>
@@ -895,7 +906,7 @@ export default function WelcomeScreen({
 
           {/* ── Blank mode ───────────────────────────────────────────────── */}
           {modelMode === "fresh" && (
-            <p style={{ fontSize: 12, color: "var(--tx-3)", margin: 0, alignSelf: "flex-start" }}>
+            <p style={{ fontSize: 13, color: "var(--tx-3)", margin: 0, alignSelf: "flex-start", lineHeight: 1.5, letterSpacing: "-0.01em" }}>
               An empty project will be created. You can add an OpenFAST model later
               from the simulation panel.
             </p>
