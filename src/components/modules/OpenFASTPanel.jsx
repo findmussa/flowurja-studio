@@ -1173,7 +1173,14 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           onSaved={(newContent) => {
             setRawContent(newContent);
             try {
-              const kv       = parseFstLines(newContent);
+              const kv    = parseFstLines(newContent);
+              const tmax  = Number(kv.TMax);
+              const dt    = Number(kv.DT);
+              // Guard: if core numeric fields are missing or non-numeric, the file
+              // is malformed. Do NOT update p — it would silently show defaults.
+              if (!kv.EDFile || !(tmax > 0) || !(dt > 0)) {
+                throw new Error("core fields (TMax, DT, EDFile) missing or invalid");
+              }
               const newState = fstParsedToState(kv);
               newState.BinPath    = p.BinPath;
               newState.FilePrefix = p.FilePrefix;
@@ -1181,8 +1188,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
               fstSnapshotRef.current = JSON.stringify(newState);
               onLog?.("ok", `Saved and re-parsed → ${fstPath.split("/").pop()}`);
             } catch (err) {
+              // Keep current p unchanged — never overwrite UI with defaults
               fstSnapshotRef.current = "";
-              onLog?.("warn", `Saved → ${fstPath.split("/").pop()} — could not re-parse (${err}). UI parameters may be out of sync. Check the file format.`);
+              onLog?.("warn", `Saved → ${fstPath.split("/").pop()} — file could not be validated (${err}). UI parameters were NOT updated. Fix the formatting and save again, or re-import from disk.`);
             }
           }}
         />
