@@ -1167,8 +1167,14 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           content={rawContent}
           filename={fstPath ? fstPath.split("/").pop() : `${effectiveCaseName}.fst`}
           fromDisk={!!fstPath}
+          filePath={fstPath}
           hasDirtyWarning={isDirty}
           onClose={() => setShowRaw(false)}
+          onSaved={(newContent) => {
+            setRawContent(newContent);
+            fstSnapshotRef.current = "";   // treat as externally modified — mark dirty
+            onLog?.("ok", `Saved directly → ${fstPath.split("/").pop()}`);
+          }}
         />
       )}
 
