@@ -18,8 +18,118 @@ const DEVELOPER = {
   orcid:    "0000-0003-0447-6527",
 };
 
+const SPRING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+
+const SP_STYLES = `
+  @keyframes sp-card-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  .sp-btn {
+    transition: transform 0.45s ${SPRING}, opacity 0.15s;
+  }
+  .sp-btn:active {
+    transform: scale(0.94) !important;
+    transition-duration: 0.07s !important;
+  }
+  .sp-btn:disabled { pointer-events: none; }
+  .sp-stepper {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--bd-input);
+    border-radius: 9px;
+    overflow: hidden;
+    height: 32px;
+  }
+  .sp-stepper-btn {
+    width: 32px;
+    height: 32px;
+    background: var(--bg-pill);
+    border: none;
+    color: var(--tx-2);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.12s, transform 0.4s ${SPRING};
+    flex-shrink: 0;
+  }
+  .sp-stepper-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    color: var(--tx-1);
+  }
+  .sp-stepper-btn:active:not(:disabled) {
+    transform: scale(0.88);
+    transition-duration: 0.07s;
+  }
+  .sp-stepper-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .sp-stepper-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--bd-input);
+    flex-shrink: 0;
+  }
+  .sp-stepper-val {
+    min-width: 38px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .sp-link {
+    position: relative;
+    transition: opacity 0.15s;
+  }
+  .sp-link::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 0; height: 1px;
+    background: currentColor;
+    transition: width 0.2s ease-out;
+    border-radius: 1px;
+  }
+  .sp-link:hover { opacity: 0.85; }
+  .sp-link:hover::after { width: 100%; }
+  .sp-action-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 9px 0;
+    border-radius: 9px;
+    border: 1px solid var(--bd-input);
+    background: var(--bg-pill);
+    color: var(--tx-2);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: -0.01em;
+    transition: background 0.15s, color 0.12s, transform 0.45s ${SPRING};
+  }
+  .sp-action-btn:hover {
+    background: var(--bg-hover);
+    color: var(--tx-1);
+  }
+  .sp-action-btn:active {
+    transform: scale(0.97);
+    transition-duration: 0.07s;
+  }
+`;
+
 // ── Section card ──────────────────────────────────────────────────────────────
-function Card({ title, icon: Icon, children }) {
+function Card({ title, icon: Icon, index = 0, children }) {
   return (
     <div style={{
       border: "0.5px solid var(--bd-subtle)",
@@ -28,6 +138,8 @@ function Card({ title, icon: Icon, children }) {
       marginBottom: 14,
       background: "var(--bg-surface)",
       boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+      animation: `sp-card-in 0.38s ${SPRING} both`,
+      animationDelay: `${index * 75}ms`,
     }}>
       <div style={{
         display: "flex", alignItems: "center", gap: 8,
@@ -35,8 +147,8 @@ function Card({ title, icon: Icon, children }) {
         background: "var(--bg-muted)",
         borderBottom: "0.5px solid var(--bd-subtle)",
       }}>
-        <Icon size={13} strokeWidth={2} style={{ color: "var(--tx-4)", flexShrink: 0 }} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--tx-2)", letterSpacing: "-0.01em" }}>
+        <Icon size={13} strokeWidth={2} style={{ color: "var(--tx-3)", flexShrink: 0 }} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--tx-1)", letterSpacing: "-0.015em" }}>
           {title}
         </span>
       </div>
@@ -50,7 +162,7 @@ function Card({ title, icon: Icon, children }) {
 function FieldLabel({ children }) {
   return (
     <p style={{
-      fontSize: 10.5, fontWeight: 700, color: "var(--tx-5)",
+      fontSize: 11, fontWeight: 700, color: "var(--tx-5)",
       textTransform: "uppercase", letterSpacing: "0.07em",
       marginBottom: 8,
     }}>
@@ -63,25 +175,29 @@ function AboutRow({ label, value, mono, href }) {
   return (
     <div style={{
       display: "flex", alignItems: "center",
-      padding: "7px 0",
+      padding: "9px 0",
       borderBottom: "0.5px solid var(--bd-subtle)",
-      fontSize: 13,
+      fontSize: 13.5,
+      letterSpacing: "-0.01em",
     }}>
-      <span style={{ color: "var(--tx-4)", flex: 1 }}>{label}</span>
+      <span style={{ color: "var(--tx-3)", fontWeight: 400, flex: 1 }}>{label}</span>
       {href ? (
         <a href={href} target="_blank" rel="noreferrer" style={{
-          color: "#0891B2", textDecoration: "none", fontSize: 12,
+          color: "#0891B2", textDecoration: "none", fontSize: 13,
           fontFamily: mono ? "'SF Mono', ui-monospace, monospace" : "inherit",
           display: "flex", alignItems: "center", gap: 4,
+          fontWeight: 500,
         }}>
           {value}
           <ExternalLink size={10} strokeWidth={2} />
         </a>
       ) : (
         <span style={{
-          color: "var(--tx-2)",
+          color: "var(--tx-1)",
           fontFamily: mono ? "'SF Mono', ui-monospace, monospace" : "inherit",
-          fontSize: mono ? 11.5 : 13,
+          fontSize: mono ? 12.5 : 13.5,
+          fontWeight: mono ? 500 : 500,
+          letterSpacing: mono ? "0.01em" : "-0.01em",
         }}>
           {value}
         </span>
@@ -124,30 +240,34 @@ function WorkersPicker() {
     <div>
       <FieldLabel>Default parallel workers</FieldLabel>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+        <div className="sp-stepper">
           <button
+            className="sp-stepper-btn"
             onClick={() => pick(Math.max(1, val - 1))}
             disabled={val <= 1}
-            style={{ width: 28, height: 28, borderRadius: "7px 0 0 7px", border: "0.5px solid var(--bd)", background: "var(--bg-surface)", color: "var(--tx-2)", cursor: "pointer", fontSize: 16, lineHeight: 1, fontFamily: "inherit", opacity: val <= 1 ? 0.35 : 1 }}
           >−</button>
-          <div style={{ width: 36, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderTop: "0.5px solid var(--bd)", borderBottom: "0.5px solid var(--bd)", background: "rgba(124,58,237,0.08)", fontSize: 13, fontWeight: 700, color: "#7C3AED" }}>{val}</div>
+          <div className="sp-stepper-sep" />
+          <div className="sp-stepper-val" style={{ color: "#7C3AED", background: "rgba(124,58,237,0.07)" }}>
+            {val}
+          </div>
+          <div className="sp-stepper-sep" />
           <button
+            className="sp-stepper-btn"
             onClick={() => pick(Math.min(cpuCores ?? 64, val + 1))}
             disabled={cpuCores !== null && val >= cpuCores}
-            style={{ width: 28, height: 28, borderRadius: "0 7px 7px 0", border: "0.5px solid var(--bd)", background: "var(--bg-surface)", color: "var(--tx-2)", cursor: "pointer", fontSize: 16, lineHeight: 1, fontFamily: "inherit", opacity: (cpuCores !== null && val >= cpuCores) ? 0.35 : 1 }}
           >+</button>
         </div>
-        <span style={{ fontSize: 11.5, color: "var(--tx-5)" }}>
+        <span style={{ fontSize: 12.5, color: "var(--tx-3)", letterSpacing: "-0.005em" }}>
           {val === 1 ? "sequential — one case at a time" : `${val} simultaneous OpenFAST processes`}
           {cpuCores !== null && (
-            <span style={{ marginLeft: 6, opacity: 0.7 }}>
+            <span style={{ marginLeft: 6, color: "var(--tx-4)" }}>
               <Cpu size={10} style={{ verticalAlign: "middle", marginRight: 2 }} />
               {cpuCores} cores detected
             </span>
           )}
         </span>
       </div>
-      <p style={{ fontSize: 11, color: "var(--tx-5)", marginTop: 6 }}>
+      <p style={{ fontSize: 12, color: "var(--tx-4)", marginTop: 6, letterSpacing: "-0.005em" }}>
         Applied as the default when a new Simulation Batch session starts.
         Can be changed per-session in the Batch Run panel.
       </p>
@@ -182,6 +302,7 @@ export default function SettingsPanel({ onLog, onCheckForUpdates }) {
       flex: 1, display: "flex", flexDirection: "column",
       overflow: "hidden", minHeight: 0,
     }}>
+      <style>{SP_STYLES}</style>
       {/* Header */}
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
@@ -191,7 +312,7 @@ export default function SettingsPanel({ onLog, onCheckForUpdates }) {
         WebkitAppRegion: "drag",
       }}>
         <Settings size={15} strokeWidth={1.8} style={{ color: "var(--tx-4)" }} />
-        <span style={{ fontSize: 15, fontWeight: 600, color: "var(--tx-1)", letterSpacing: "-0.02em", WebkitAppRegion: "no-drag" }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: "var(--tx-1)", letterSpacing: "-0.025em", WebkitAppRegion: "no-drag" }}>
           Settings
         </span>
       </div>
@@ -200,8 +321,8 @@ export default function SettingsPanel({ onLog, onCheckForUpdates }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px 40px" }}>
 
         {/* ── Binaries ── */}
-        <Card title="Binaries" icon={Cpu}>
-          <p style={{ fontSize: 12, color: "var(--tx-4)", marginBottom: 14, lineHeight: 1.6 }}>
+        <Card title="Binaries" icon={Cpu} index={0}>
+          <p style={{ fontSize: 13, color: "var(--tx-3)", marginBottom: 14, lineHeight: 1.6, letterSpacing: "-0.005em" }}>
             FlowUrja Studio ships with bundled versions of OpenFAST and TurbSim.
             Override to use a different build — useful for custom patches or newer releases.
           </p>
@@ -234,12 +355,12 @@ export default function SettingsPanel({ onLog, onCheckForUpdates }) {
         </Card>
 
         {/* ── Defaults ── */}
-        <Card title="Defaults" icon={RefreshCw}>
+        <Card title="Defaults" icon={RefreshCw} index={1}>
           <WorkersPicker />
         </Card>
 
         {/* ── About ── */}
-        <Card title="About" icon={Info}>
+        <Card title="About" icon={Info} index={2}>
 
           {/* App info */}
           <div style={{ marginBottom: 16 }}>
@@ -250,29 +371,20 @@ export default function SettingsPanel({ onLog, onCheckForUpdates }) {
             <AboutRow label="License"           value="Apache 2.0" />
           </div>
           {onCheckForUpdates && (
-            <button
-              onClick={onCheckForUpdates}
-              style={{
-                display: "block", width: "100%", marginBottom: 20,
-                padding: "7px 0", borderRadius: 8,
-                border: "0.5px solid var(--bd)", background: "var(--bg-soft)",
-                color: "var(--tx-2)", fontSize: 12.5, fontWeight: 500,
-                cursor: "pointer", textAlign: "center",
-              }}
-            >
+            <button className="sp-action-btn" onClick={onCheckForUpdates}>
               Check for Updates…
             </button>
           )}
 
           {/* Developer */}
-          <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--tx-5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "var(--tx-5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
             Developer
           </p>
           <div style={{
             background: "var(--bg-muted)", border: "0.5px solid var(--bd-subtle)",
             borderRadius: 10, padding: "12px 14px", marginBottom: 20,
           }}>
-            <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--tx-1)", marginBottom: 10 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "var(--tx-1)", marginBottom: 10, letterSpacing: "-0.02em" }}>
               {DEVELOPER.name}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
@@ -284,8 +396,8 @@ export default function SettingsPanel({ onLog, onCheckForUpdates }) {
                 { label: DEVELOPER.linkedin,          href: `https://${DEVELOPER.linkedin}` },
                 { label: `ORCID ${DEVELOPER.orcid}`, href: `https://orcid.org/${DEVELOPER.orcid}` },
               ].map(({ label, href }) => (
-                <a key={href} href={href} target="_blank" rel="noreferrer" style={{
-                  fontSize: 11.5, color: "#0891B2", textDecoration: "none",
+                <a key={href} href={href} target="_blank" rel="noreferrer" className="sp-link" style={{
+                  fontSize: 12, color: "#0891B2", textDecoration: "none",
                   display: "flex", alignItems: "center", gap: 3,
                 }}>
                   <ExternalLink size={9} strokeWidth={2} />
@@ -298,14 +410,14 @@ export default function SettingsPanel({ onLog, onCheckForUpdates }) {
           {/* Third-party attribution */}
           <div style={{
             borderTop: "0.5px solid var(--bd-subtle)", paddingTop: 12, marginTop: 4,
-            fontSize: 11, color: "var(--tx-5)", lineHeight: 1.8,
+            fontSize: 12, color: "var(--tx-4)", lineHeight: 1.8, letterSpacing: "-0.005em",
           }}>
-            <div style={{ fontWeight: 600, color: "var(--tx-4)", marginBottom: 4 }}>
+            <div style={{ fontWeight: 600, color: "var(--tx-3)", marginBottom: 4, letterSpacing: "-0.005em" }}>
               Third-party components
             </div>
             <div><strong style={{ color: "var(--tx-4)" }}>OpenFAST &amp; TurbSim v4.2.0</strong> — NREL · Apache 2.0</div>
             <div><strong style={{ color: "var(--tx-4)" }}>ROSCO v2.10.1</strong> — NREL (Abbas et al., 2022) · Apache 2.0</div>
-            <div style={{ marginTop: 6, fontWeight: 600, color: "var(--tx-4)" }}>
+            <div style={{ marginTop: 6, fontWeight: 600, color: "var(--tx-3)", letterSpacing: "-0.005em" }}>
               Bundled reference turbines
             </div>
             <div><strong style={{ color: "var(--tx-4)" }}>NREL 5MW</strong> — Jonkman et al. (2009) NREL/TP-500-38060 · Apache 2.0</div>

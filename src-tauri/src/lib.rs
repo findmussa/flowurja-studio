@@ -2472,23 +2472,29 @@ pub fn run() {
             // minimal default that has no slot for our custom item.
             #[cfg(target_os = "macos")]
             {
-                use tauri::menu::{MenuBuilder, SubmenuBuilder, MenuItem};
+                use tauri::menu::{MenuBuilder, SubmenuBuilder, MenuItem, PredefinedMenuItem};
                 use tauri::Emitter;
 
-                let check_item = MenuItem::with_id(
-                    app, "check_for_updates", "Check for Updates…", true, None::<&str>,
-                )?;
+                let about_item  = PredefinedMenuItem::about(app, Some("About FlowUrja Studio"), None)?;
+                let check_item  = MenuItem::with_id(app, "check_for_updates", "Check for Updates…", true, None::<&str>)?;
+                let services    = PredefinedMenuItem::services(app, None)?;
+                let hide_item   = PredefinedMenuItem::hide(app, Some("Hide FlowUrja Studio"))?;
+                let hide_others = PredefinedMenuItem::hide_others(app, None)?;
+                let show_all    = PredefinedMenuItem::show_all(app, None)?;
+                let quit_item   = PredefinedMenuItem::quit(app, Some("Quit FlowUrja Studio"))?;
 
                 let app_menu = SubmenuBuilder::new(app, "FlowUrja Studio")
+                    .item(&about_item)
+                    .separator()
                     .item(&check_item)
                     .separator()
-                    .services()
+                    .item(&services)
                     .separator()
-                    .hide()
-                    .hide_others()
-                    .show_all()
+                    .item(&hide_item)
+                    .item(&hide_others)
+                    .item(&show_all)
                     .separator()
-                    .quit()
+                    .item(&quit_item)
                     .build()?;
 
                 let edit_menu = SubmenuBuilder::new(app, "Edit")

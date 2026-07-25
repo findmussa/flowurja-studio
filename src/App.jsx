@@ -366,7 +366,10 @@ export default function App() {
       const data = await res.json();
       const latest = (data.tag_name ?? "").replace(/^v/, "");
       if (semverGt(latest, APP_VERSION)) {
-        setUpdateInfo({ latest, releaseUrl: data.html_url ?? "" });
+        const downloadUrl = platform === "windows"
+          ? `https://github.com/${GITHUB_REPO}/releases/latest/download/FlowUrja-Studio-Windows.exe`
+          : `https://github.com/${GITHUB_REPO}/releases/latest/download/FlowUrja-Studio-macOS.dmg`;
+        setUpdateInfo({ latest, releaseUrl: downloadUrl });
       } else if (manual) {
         // Triggered from Settings button — let the user know they're up to date
         setUpdateInfo({ upToDate: true, latest });
