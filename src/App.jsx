@@ -1203,11 +1203,10 @@ export default function App() {
       )}
 
       <Toaster
-        position="bottom-right"
+        position="top-right"
         richColors
         theme="system"
         closeButton
-        visibleToasts={5}
         toastOptions={{ duration: 4000, style: { zIndex: 99999 } }}
       />
     </div>
