@@ -505,7 +505,7 @@ const TurbineIcon = memo(function TurbineIcon({ spinning, className }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFilesDetected, onModuleActiveChange, onDirtyChange, onRegisterSave, discardSeq = 0, onModuleSelect, isActive = false, inflowWindParams = null, onSimRunningChange, onPidChange, onInflowPatch }) {
   // ── Core state ──────────────────────────────────────────────────────────────
-  const { toasts, add: addToast, remove: removeToast } = useToasts();
+  const { add: addToast } = useToasts();
   const [tab,            setTab]            = useState("run");
   const tabDirRef = useRef(1);
   const [p,              setP]              = useState(DEFAULT);
@@ -1173,7 +1173,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           filePath={fstPath}
           hasDirtyWarning={isDirty}
           onClose={() => setShowRaw(false)}
-          onSaved={(newContent) => {
+          onSaved={async (newContent) => {
             setRawContent(newContent);
             try {
               const kv    = parseFstLines(newContent);
@@ -1195,6 +1195,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
               // fstSnapshotRef is intentionally NOT changed here; isDirty reflects
               // whether the form diverges from the last *parseable* snapshot on disk.
               onLog?.("warn", `Saved → ${fstPath.split("/").pop()} — file could not be validated (${err}). UI parameters were NOT updated. Fix the formatting and save again, or re-import from disk.`);
+              throw err; // propagate so RawFileModal shows a warn toast
             }
           }}
         />
@@ -1901,7 +1902,6 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
         </div>
       )}
 
-      <Toaster toasts={toasts} onDismiss={removeToast} />
     </div>
   );
 }

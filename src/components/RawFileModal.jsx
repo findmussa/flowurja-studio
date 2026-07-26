@@ -14,7 +14,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { AlertTriangle } from "lucide-react";
-import { toast } from "./toast";
+import { toast } from "./Toast";
 import s from "./RawFileModal.module.css";
 
 export default function RawFileModal({
@@ -59,13 +59,23 @@ export default function RawFileModal({
     setSaveError("");
     try {
       await invoke("write_text_file", { path: filePath, content: editContent });
-      onSaved?.(editContent);
-      toast.ok(`Saved — ${filename}`);
-      setEditing(false);
+      let reloadErr = null;
+      try { await onSaved?.(editContent); } catch (e) { reloadErr = e; }
+      setSaving(false);
+      // Exit animation first, then show toast once the modal is gone
+      setClosing(true);
+      const saved = filename;
+      setTimeout(() => {
+        if (!reloadErr) {
+          toast.success(`Saved — ${saved}`);
+        } else {
+          toast.warn(`Saved — ${saved}`, "Validation failed — see Console for details");
+        }
+        onClose?.();
+      }, 210);
     } catch (err) {
       setSaveError(String(err));
-      toast.error("Save failed — see error below");
-    } finally {
+      toast.error("Save failed", String(err).slice(0, 100));
       setSaving(false);
     }
   };
