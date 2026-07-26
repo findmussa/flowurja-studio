@@ -1043,6 +1043,8 @@ export default function SubDynPanel({
           filename={filePath ? filePath.split("/").pop() : "SubDyn.dat"}
           fromDisk={!!filePath}
           hasDirtyWarning={isDirty}
+          filePath={filePath}
+          onSaved={(newContent) => { rawContent.current = newContent; loadFileFromPath(filePath); }}
           onClose={() => setRawOpen(false)}
         />
       )}

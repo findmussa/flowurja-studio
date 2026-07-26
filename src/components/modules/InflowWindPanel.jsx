@@ -754,6 +754,8 @@ export default function InflowWindPanel({
           filename={filePath ? filePath.split("/").pop() : "InflowWind.dat"}
           fromDisk={!!filePath}
           hasDirtyWarning={isDirty}
+          filePath={filePath}
+          onSaved={(newContent) => { setRawContent(newContent); loadFile(filePath); }}
           onClose={() => setShowRaw(false)}
         />
       )}

@@ -57,9 +57,10 @@
   cursor: pointer;
   font-size: 11.5px;
   font-family: inherit;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-app-region: no-drag;
 }
+.headerBtn:active { transform: scale(0.88); transition-duration: 0.07s; }
 
 .headerBtnPrimary {
   background: rgba(75,156,211,0.10);

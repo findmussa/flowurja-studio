@@ -867,6 +867,8 @@ export default function MoorDynPanel({
           filename={filePath ? filePath.split("/").pop() : "MoorDyn.dat"}
           fromDisk={!!filePath}
           hasDirtyWarning={isDirty}
+          filePath={filePath}
+          onSaved={(newContent) => { rawContent.current = newContent; loadFileFromPath(filePath); }}
           onClose={() => setRawOpen(false)}
         />
       )}

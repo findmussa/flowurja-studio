@@ -1409,6 +1409,8 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
           filename={filePath ? filePath.split("/").pop() : "AeroDyn.dat"}
           fromDisk={!!filePath}
           hasDirtyWarning={isDirty}
+          filePath={filePath}
+          onSaved={(newContent) => { rawContent.current = newContent; loadFileFromPath(filePath); }}
           onClose={() => setRawOpen(false)}
         />
       )}

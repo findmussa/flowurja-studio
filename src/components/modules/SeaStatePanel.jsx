@@ -1482,6 +1482,8 @@ export default function SeaStatePanel({
           filename={filePath ? filePath.split("/").pop() : "SeaState.dat"}
           fromDisk={!!filePath}
           hasDirtyWarning={isDirty}
+          filePath={filePath}
+          onSaved={(newContent) => { rawContent.current = newContent; loadFileFromPath(filePath); }}
           onClose={() => setRawOpen(false)}
         />
       )}

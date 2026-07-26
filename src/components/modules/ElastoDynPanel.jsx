@@ -987,6 +987,8 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
           filename={filePath ? filePath.split("/").pop() : "ElastoDyn.dat"}
           fromDisk={!!filePath}
           hasDirtyWarning={isDirty}
+          filePath={filePath}
+          onSaved={(newContent) => { setRawContent(newContent); loadFile(filePath); }}
           onClose={() => setShowRaw(false)}
         />
       )}
