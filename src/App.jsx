@@ -1207,7 +1207,8 @@ export default function App() {
         richColors
         theme="system"
         closeButton
-        toastOptions={{ duration: 4000, style: { zIndex: 99999 } }}
+        style={{ zIndex: 99999 }}
+        toastOptions={{ duration: 4000 }}
       />
     </div>
   );
