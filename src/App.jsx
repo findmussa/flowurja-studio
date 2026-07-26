@@ -1209,7 +1209,7 @@ export default function App() {
         closeButton
         expand
         gap={8}
-        toastOptions={{ style: { zIndex: 99999 } }}
+        toastOptions={{ duration: 4000, style: { zIndex: 99999 } }}
       />
     </div>
   );

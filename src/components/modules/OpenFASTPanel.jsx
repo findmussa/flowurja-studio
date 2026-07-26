@@ -966,7 +966,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     onSimRunningChange?.(false);
     onPidChange?.(null);
     onLog?.("warn", "Stopped by user.");
-    toast.warning("Simulation stopped", { description: "Stopped by user", duration: 3000 });
+    toast.warning("Simulation stopped", { description: "Stopped by user" });
   };
 
   // ── Run ───────────────────────────────────────────────────────────────────────
@@ -977,7 +977,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     setRunning(true);
     setRunPct(0);
     onSimRunningChange?.(true);
-    toast.info("Simulation started", { description: effectiveCaseName, duration: 3500 });
+    toast.info("Simulation started", { description: effectiveCaseName });
 
     const resultsDir = project.resultsDir ?? `${project.workingDir}/results`;
     const caseName   = effectiveCaseName;
@@ -1104,7 +1104,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           });
         } catch {}
 
-        toast.success("Simulation complete", { description: `${caseName}/outb/${caseName}.outb`, duration: 5000 });
+        toast.success("Simulation complete", { description: `${caseName}/outb/${caseName}.outb` });
         setRunning(false);
         onSimRunningChange?.(false);
       });
