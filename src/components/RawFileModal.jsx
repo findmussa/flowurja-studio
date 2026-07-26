@@ -14,7 +14,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { AlertTriangle } from "lucide-react";
-import { toast } from "./Toast";
+import { toast } from "sonner";
 import s from "./RawFileModal.module.css";
 
 export default function RawFileModal({
@@ -67,15 +67,15 @@ export default function RawFileModal({
       const saved = filename;
       setTimeout(() => {
         if (!reloadErr) {
-          toast.success(`Saved — ${saved}`);
+          toast.success("Saved", { description: saved });
         } else {
-          toast.warn(`Saved — ${saved}`, "Validation failed — see Console for details");
+          toast.warning("Saved — validation failed", { description: "UI not updated — see Console for details" });
         }
         onClose?.();
       }, 210);
     } catch (err) {
       setSaveError(String(err));
-      toast.error("Save failed", String(err).slice(0, 100));
+      toast.error("Save failed", { description: String(err).slice(0, 100) });
       setSaving(false);
     }
   };

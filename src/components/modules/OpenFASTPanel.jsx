@@ -8,7 +8,7 @@ import {
 import RawFileModal from "../RawFileModal";
 // BinaryRow removed from dashboard — binary config lives in Settings (⚙)
 import InfoPopover from "../InfoPopover";
-import { Toaster, useToasts } from "../Toast";
+import { toast } from "sonner";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
 import s from "./OpenFASTPanel.module.css";
 
@@ -505,7 +505,6 @@ const TurbineIcon = memo(function TurbineIcon({ spinning, className }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFilesDetected, onModuleActiveChange, onDirtyChange, onRegisterSave, discardSeq = 0, onModuleSelect, isActive = false, inflowWindParams = null, onSimRunningChange, onPidChange, onInflowPatch }) {
   // ── Core state ──────────────────────────────────────────────────────────────
-  const { add: addToast } = useToasts();
   const [tab,            setTab]            = useState("run");
   const tabDirRef = useRef(1);
   const [p,              setP]              = useState(DEFAULT);
@@ -967,7 +966,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     onSimRunningChange?.(false);
     onPidChange?.(null);
     onLog?.("warn", "Stopped by user.");
-    addToast("warn", "Simulation stopped", "Stopped by user", 3000);
+    toast.warning("Simulation stopped", { description: "Stopped by user", duration: 3000 });
   };
 
   // ── Run ───────────────────────────────────────────────────────────────────────
@@ -978,7 +977,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     setRunning(true);
     setRunPct(0);
     onSimRunningChange?.(true);
-    addToast("info", "Simulation started", effectiveCaseName, 3500);
+    toast.info("Simulation started", { description: effectiveCaseName, duration: 3500 });
 
     const resultsDir = project.resultsDir ?? `${project.workingDir}/results`;
     const caseName   = effectiveCaseName;
@@ -1065,7 +1064,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
             ? (fatalMsg || "OpenFAST FATAL ERROR — check the log above")
             : `OpenFAST exited with code ${payload.slice(4)}`;
           onLog?.("error", `Run failed: ${msg}`);
-          addToast("error", "Simulation failed", msg.slice(0, 120), 0);
+          toast.error("Simulation failed", { description: msg.slice(0, 120), duration: Infinity });
           setRunning(false);
           onSimRunningChange?.(false);
           return;
@@ -1105,7 +1104,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
           });
         } catch {}
 
-        addToast("success", "Simulation complete", `${caseName}/outb/${caseName}.outb`, 5000);
+        toast.success("Simulation complete", { description: `${caseName}/outb/${caseName}.outb`, duration: 5000 });
         setRunning(false);
         onSimRunningChange?.(false);
       });
@@ -1117,7 +1116,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
     } catch (err) {
       const msg = String(err);
       onLog?.("error", msg);
-      addToast("error", "Simulation failed", msg.slice(0, 120), 0);
+      toast.error("Simulation failed", { description: msg.slice(0, 120), duration: Infinity });
       setRunning(false);
       onSimRunningChange?.(false);
     }

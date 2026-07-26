@@ -27,7 +27,7 @@ import SettingsPanel   from "./components/modules/SettingsPanel";
 import ResultsPanel    from "./components/modules/ResultsPanel";
 import WindFieldPanel  from "./components/modules/WindFieldPanel";
 import Console      from "./components/Console";
-import { Toaster }  from "./components/Toast";
+import { Toaster }  from "sonner";
 import s from "./App.module.css";
 
 const SIDEBAR_MIN     = 190;
@@ -1202,7 +1202,12 @@ export default function App() {
         </div>
       )}
 
-      <Toaster />
+      <Toaster
+        position="top-right"
+        richColors
+        theme="system"
+        toastOptions={{ style: { zIndex: 99999 } }}
+      />
     </div>
   );
 }
