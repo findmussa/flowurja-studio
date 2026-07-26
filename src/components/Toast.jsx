@@ -65,23 +65,51 @@ function ToastItem({ toast: t, onDismiss }) {
   );
 }
 
-// ── Toaster — global singleton, mount once in App ────────────────────────────
+// ── Toaster — global singleton, Sonner-style stacking ────────────────────────
+const PEEK = 10;  // px each back-toast peeks below the front in collapsed mode
+const STEP = 88;  // px offset per toast in expanded mode (≈ toast height + gap)
+
 export function Toaster() {
-  const [items, setItems] = useState([]);
+  const [items,    setItems]    = useState([]);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    const handler = (item) => setItems(prev => [...prev, item]);
+    const handler = item => setItems(prev => [...prev, item]);
     _subs.add(handler);
     return () => _subs.delete(handler);
   }, []);
 
-  const remove = useCallback((id) => {
+  const remove = useCallback(id => {
     setItems(prev => prev.filter(t => t.id !== id));
   }, []);
 
+  if (!items.length) return null;
+
+  // Newest first so index 0 = front card
+  const stack = [...items].reverse().slice(0, 3);
+  const count = stack.length;
+
   return createPortal(
-    <div className={s.container}>
-      {items.map(t => <ToastItem key={t.id} toast={t} onDismiss={remove} />)}
+    <div
+      className={s.container}
+      onMouseEnter={() => count > 1 && setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+    >
+      {stack.map((t, idx) => (
+        <div
+          key={t.id}
+          className={s.slot}
+          style={{
+            transform: expanded
+              ? `translateY(${idx * STEP}px) scale(1)`
+              : `translateY(${idx * PEEK}px) scale(${(1 - idx * 0.05).toFixed(3)})`,
+            opacity: expanded ? 1 : [1, 0.82, 0.64][idx] ?? 0.64,
+            zIndex: count - idx,
+          }}
+        >
+          <ToastItem toast={t} onDismiss={remove} />
+        </div>
+      ))}
     </div>,
     document.body
   );

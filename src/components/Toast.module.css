@@ -4,10 +4,22 @@
   top: 52px;
   right: 16px;
   z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
+  width: 356px;
+  overflow: visible;
+  pointer-events: none; /* slots carry their own pointer-events */
+}
+
+/* ── Stacking slot ── */
+.slot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  pointer-events: auto;
+  transform-origin: top center;
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity   0.3s ease;
 }
 
 /* ── Keyframes ── */
@@ -38,8 +50,7 @@
     0 12px 32px rgba(0,0,0,0.18),
     0 3px 8px  rgba(0,0,0,0.10),
     inset 0 1px 0 rgba(255,255,255,0.14);
-  min-width: 270px;
-  max-width: 340px;
+  width: 100%;
   pointer-events: all;
   animation: toastIn 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   position: relative;
