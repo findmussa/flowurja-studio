@@ -1206,6 +1206,9 @@ export default function App() {
         position="top-right"
         richColors
         theme="system"
+        closeButton
+        expand
+        gap={8}
         toastOptions={{ style: { zIndex: 99999 } }}
       />
     </div>
