@@ -27,6 +27,7 @@ import SettingsPanel   from "./components/modules/SettingsPanel";
 import ResultsPanel    from "./components/modules/ResultsPanel";
 import WindFieldPanel  from "./components/modules/WindFieldPanel";
 import Console      from "./components/Console";
+import Toaster      from "./components/Toaster";
 import s from "./App.module.css";
 
 const SIDEBAR_MIN     = 190;
@@ -1200,6 +1201,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <Toaster />
     </div>
   );
 }

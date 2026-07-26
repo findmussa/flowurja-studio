@@ -1,0 +1,73 @@
+.toaster {
+  position: fixed;
+  bottom: 44px; /* above the 28px Console bar */
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  pointer-events: none;
+}
+
+/* ── Entry / exit ── */
+@keyframes toastEnter {
+  from { opacity: 0; transform: translateX(14px) scale(0.94); }
+  to   { opacity: 1; transform: translateX(0)    scale(1); }
+}
+@keyframes toastExit {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(14px) scale(0.92); }
+}
+
+.enter { animation: toastEnter 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.exit  { animation: toastExit  0.28s cubic-bezier(0.55, 0, 1, 0.45)    both; }
+
+/* ── Toast card ── */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 12px;
+  border-radius: 9px;
+  background: var(--bg-header);
+  border: 0.5px solid var(--bd-subtle);
+  border-left-width: 3px;
+  color: var(--tx-2);
+  font-size: 12px;
+  font-family: inherit;
+  max-width: 300px;
+  pointer-events: auto;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.16);
+}
+
+/* ── Level colours ── */
+.ok    { border-left-color: #1D9E75; }
+.warn  { border-left-color: #BA7517; }
+.error { border-left-color: #C0392B; }
+
+.icon { flex-shrink: 0; display: flex; align-items: center; }
+.okIcon    { color: #1D9E75; }
+.warnIcon  { color: #BA7517; }
+.errorIcon { color: #C0392B; }
+
+.msg {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.5;
+}
+
+.close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border: none; background: none;
+  cursor: pointer; border-radius: 4px;
+  color: var(--tx-5); flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+}
+.close:hover { background: var(--bg-hover); color: var(--tx-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .enter, .exit { animation: none; }
+}

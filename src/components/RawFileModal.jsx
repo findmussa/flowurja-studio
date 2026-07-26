@@ -14,6 +14,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { AlertTriangle } from "lucide-react";
+import { toast } from "./toast";
 import s from "./RawFileModal.module.css";
 
 export default function RawFileModal({
@@ -59,9 +60,11 @@ export default function RawFileModal({
     try {
       await invoke("write_text_file", { path: filePath, content: editContent });
       onSaved?.(editContent);
+      toast.ok(`Saved — ${filename}`);
       setEditing(false);
     } catch (err) {
       setSaveError(String(err));
+      toast.error("Save failed — see error below");
     } finally {
       setSaving(false);
     }
