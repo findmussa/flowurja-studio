@@ -1,17 +1,42 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Terminal, Trash2, ChevronUp } from "lucide-react";
 import s from "./Console.module.css";
 
 const LEVEL_CLASS = { info: s.lvInfo, ok: s.lvOk, warn: s.lvWarn, error: s.lvError };
+const DOT_CLASS   = { idle: "dotIdle", active: "dotActive", error: "dotError" };
 const LEVEL_ICON  = { info: "·", ok: "✓", warn: "!", error: "✗" };
 
 export default function Console({ open, height, dragging, onToggle, onDragStart, logs, onClear }) {
-  const bodyRef = useRef(null);
+  const bodyRef    = useRef(null);
+  const prevLenRef = useRef(logs.length); // init to current so mount logs don't pulse
+  const dotTimer   = useRef(null);
+  const [dotState, setDotState] = useState("idle"); // "idle" | "active" | "error"
 
   useEffect(() => {
     if (open && bodyRef.current)
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [logs, open]);
+
+  // LED dot: pulse on new log, red on error, reset to idle after 2s quiet
+  useEffect(() => {
+    if (logs.length === 0) {
+      prevLenRef.current = 0;
+      setDotState("idle");
+      clearTimeout(dotTimer.current);
+      return;
+    }
+    if (logs.length <= prevLenRef.current) return;
+    prevLenRef.current = logs.length;
+
+    const latest  = logs[logs.length - 1];
+    const isError = latest?.level === "error";
+    setDotState(isError ? "error" : "active");
+
+    clearTimeout(dotTimer.current);
+    dotTimer.current = setTimeout(() => setDotState("idle"), 2000);
+  }, [logs]);
+
+  useEffect(() => () => clearTimeout(dotTimer.current), []);
 
   return (
     <div
@@ -30,6 +55,7 @@ export default function Console({ open, height, dragging, onToggle, onDragStart,
       {/* Bar — click anywhere to toggle */}
       <div className={s.bar} onClick={onToggle}>
         <Terminal size={12} strokeWidth={1.8} style={{ color:"var(--tx-4)", flexShrink:0 }} />
+        <div className={`${s.dot} ${s[DOT_CLASS[dotState]]}`} />
         <span className={s.barLabel}>Console</span>
         <span className={s.statusText}>
           {open

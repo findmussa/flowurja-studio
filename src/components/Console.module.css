@@ -54,12 +54,40 @@
   color: var(--tx-3);
 }
 
-.statusDot {
-  width: 6px; height: 6px;
-  border-radius: 50%; flex-shrink: 0;
+/* ── LED activity dot ── */
+@keyframes ledRipple {
+  from { transform: scale(1);   opacity: 0.6; }
+  to   { transform: scale(3.4); opacity: 0;   }
 }
-.dotGreen { background: #28C840; }
-.dotGray  { background: var(--tx-7); }
+
+.dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.35s ease;
+}
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.dotIdle   { background: var(--tx-7); }
+
+.dotActive { background: #28C840; }
+.dotActive::after {
+  background: #28C840;
+  animation: ledRipple 1.1s ease-out infinite;
+}
+
+.dotError  { background: #EF4444; }
+.dotError::after {
+  background: #EF4444;
+  animation: ledRipple 0.75s ease-out infinite;
+}
 
 .statusText {
   font-size: 11px;
@@ -119,7 +147,10 @@
 .empty { font-size: 12px; color: var(--tx-6); padding: 8px 0; font-style: italic; }
 
 @media (prefers-reduced-motion: reduce) {
-  .console, .consoleDragging { transition: none; }
-  .chevron, .chevronOpen     { transition: none; }
-  .body                      { animation: none; }
+  .console, .consoleDragging    { transition: none; }
+  .chevron, .chevronOpen        { transition: none; }
+  .body                         { animation: none; }
+  .dot                          { transition: none; }
+  .dotActive::after,
+  .dotError::after              { animation: none; }
 }
