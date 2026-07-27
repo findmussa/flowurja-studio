@@ -1272,12 +1272,12 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                   <input type="number" value={p.NumCorrSteps} min={0} max={20} step={1} onChange={setN("NumCorrSteps")} />
                   <p className={s.hint}>0 = explicit predictor only</p>
                 </Field>
-                <Field label="Jacobian interval (DT_UJac)" unit="s" info={{ param: "DT_UJac", desc: "How often the tight-coupling Jacobian is recomputed.", range: "> 0", unit: "s", default: "99999", note: "Set to 99999 to compute only once at initialisation." }}>
-                  <input type="number" value={p.DT_UJac} min={0} step={1} onChange={setN("DT_UJac")} />
+                <Field label="Jacobian interval (DT_UJac)" unit="s" title={p.NumCorrSteps === 0 ? "Unused when NumCrctn = 0 (explicit predictor). Set corrector steps ≥ 1 to activate." : undefined} info={{ param: "DT_UJac", desc: "How often the tight-coupling Jacobian is recomputed.", range: "> 0", unit: "s", default: "99999", note: "Set to 99999 to compute only once at initialisation." }}>
+                  <input type="number" value={p.DT_UJac} min={0} step={1} onChange={setN("DT_UJac")} disabled={p.NumCorrSteps === 0} />
                   <p className={s.hint}>99999 = once at start</p>
                 </Field>
-                <Field label="Jacobian scale (UJacSclFact)" info={{ param: "UJacSclFact", desc: "Scale factor applied to Jacobian entries to improve matrix conditioning when mixing physical quantities of very different magnitudes.", range: "> 0", default: "1E+05" }}>
-                  <input type="number" value={p.UJacSclFact} min={1} step={1e5} onChange={setN("UJacSclFact")} />
+                <Field label="Jacobian scale (UJacSclFact)" title={p.NumCorrSteps === 0 ? "Unused when NumCrctn = 0 (explicit predictor). Set corrector steps ≥ 1 to activate." : undefined} info={{ param: "UJacSclFact", desc: "Scale factor applied to Jacobian entries to improve matrix conditioning when mixing physical quantities of very different magnitudes.", range: "> 0", default: "1E+05" }}>
+                  <input type="number" value={p.UJacSclFact} min={1} step={1e5} onChange={setN("UJacSclFact")} disabled={p.NumCorrSteps === 0} />
                 </Field>
               </div>
               <SectionHead>Flags</SectionHead>
