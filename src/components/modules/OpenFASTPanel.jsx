@@ -21,9 +21,9 @@ const TABS = [
   { id: "linearize",  label: "Linearize"  },
 ];
 
-const COMP_ELAST   = ["None", "ElastoDyn", "BeamDyn"];
-const COMP_INFLOW  = ["None", "InflowWind"];
-const COMP_AERO    = ["None", "AeroDyn14", "AeroDyn", "AeroDisk"];
+const COMP_ELAST   = ["None", "ElastoDyn", "ElastoDyn + BeamDyn", "Simplified ElastoDyn"];
+const COMP_INFLOW  = ["None", "InflowWind", "ExtInflow"];
+const COMP_AERO    = ["None", "AeroDisk", "AeroDyn", "ExtLoads"];
 const COMP_SERVO   = ["None", "ServoDyn"];
 const COMP_SEAST   = ["None", "SeaState"];
 const COMP_HYDRO   = ["None", "HydroDyn"];
@@ -34,9 +34,11 @@ const COMP_ICE     = ["None", "IceFloe", "IceDyn"];
 const ABORT_LEVELS  = ["WARNING", "SEVERE", "FATAL"];
 const INTERP_ORDERS = [{ v: 1, label: "1 — Linear" }, { v: 2, label: "2 — Quadratic" }];
 const OUT_FMT_OPTS  = [
-  { v: 1, label: "Text (.out)" },
-  { v: 2, label: "Binary (.outb)" },
-  { v: 3, label: "Both" },
+  { v: 1, label: "1 — Text (.out)" },
+  { v: 2, label: "2 — Binary (.outb)" },
+  { v: 3, label: "3 — Text + Binary" },
+  { v: 4, label: "4 — Uncompressed binary (.outb)" },
+  { v: 5, label: "5 — Text + Uncompressed binary" },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -320,7 +322,7 @@ function buildFstContent(p, prefix) {
     `${pad(p.ChkptTime)} ChkptTime       - Amount of time between creating checkpoint files for potential restart (s)`,
     `${pad(q(p.DT_Out))} DT_Out          - Time step for tabular output (s) (or "default")`,
     `${pad(p.TStart)} TStart          - Time to begin tabular output (s)`,
-    `${pad(p.OutFileFmt)} OutFileFmt      - Format for tabular output file (switch) {1: text [.out]; 2: binary [.outb]; 3: both}`,
+    `${pad(p.OutFileFmt)} OutFileFmt      - Format for tabular (time-marching) output file (switch) {1: text file [<RootName>.out], 2: binary file [<RootName>.outb], 3: both 1 and 2, 4: uncompressed binary [<RootName>.outb, 5: both 1 and 4}`,
     `${pad(b(p.TabDelim))} TabDelim        - Use tab delimiters in text tabular output file? (flag)`,
     `${pad(q(p.OutFmt))} OutFmt          - Format used for text tabular output (quoted string)`,
     `---------------------- LINEARIZATION -------------------------------------------`,
@@ -1371,25 +1373,20 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
             {tab === "output" && (<>
               <SectionHead>Output format</SectionHead>
               <div className={s.grid2}>
-                <Field label="Output file format" info={{ param: "OutFileFmt", desc: "Format of the time-series output file.", range: "1, 2, or 3", default: "1", note: "1 = text (.out), human-readable; 2 = binary (.outb), smaller and faster; 3 = both simultaneously." }}>
-                  <div className={s.fmtSeg}>
-                    {OUT_FMT_OPTS.map(o => (
-                      <button key={o.v} className={`${s.fmtBtn} ${p.OutFileFmt === o.v ? s.fmtBtnActive : ""}`}
-                        onClick={() => setP(prev => ({ ...prev, OutFileFmt: o.v }))}>
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
+                <Field label="Output file format" info={{ param: "OutFileFmt", desc: "Format of the time-series output file.", range: "1–5", default: "1", note: "1/3/5 include text (.out); 2/4 are binary only. Binary is smaller and faster to write. Options 4 and 5 use uncompressed binary (universally readable but larger than compressed)." }}>
+                  <select value={p.OutFileFmt} onChange={setN("OutFileFmt")}>
+                    {OUT_FMT_OPTS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
+                  </select>
                 </Field>
-                <Field label="Column format (OutFmt)" title={p.OutFileFmt === 2 ? "Applies to text output only. Switch format to Text or Both." : undefined} info={{ param: "OutFmt", desc: "Fortran format specifier for each numeric output column.", default: '"ES10.3E2"', note: "The result must be exactly 10 characters wide (e.g. ES10.3E2, F10.4)." }}>
-                  <input type="text" value={p.OutFmt} onChange={setE("OutFmt")} disabled={p.OutFileFmt === 2} />
+                <Field label="Column format (OutFmt)" title={p.OutFileFmt === 2 || p.OutFileFmt === 4 ? "Applies to text output only. Switch to a format that includes .out (1, 3, or 5)." : undefined} info={{ param: "OutFmt", desc: "Fortran format specifier for each numeric output column.", default: '"ES10.3E2"', note: "The result must be exactly 10 characters wide (e.g. ES10.3E2, F10.4)." }}>
+                  <input type="text" value={p.OutFmt} onChange={setE("OutFmt")} disabled={p.OutFileFmt === 2 || p.OutFileFmt === 4} />
                   <p className={s.hint}>Text output only — inactive when format is Binary</p>
                 </Field>
               </div>
               <SectionHead>Flags</SectionHead>
               <div className={s.toggleGrid}>
                 <Toggle label="Write .sum summary file (SumPrint)" value={p.SumPrint} onChange={set("SumPrint")} info={{ param: "SumPrint", desc: "Write a summary file (<RootName>.sum) containing model properties, DOF configuration, and time-integration info.", default: "FALSE" }} />
-                <Toggle label="Tab-delimited text output (TabDelim)" value={p.TabDelim} onChange={set("TabDelim")} disabled={p.OutFileFmt === 2} title={p.OutFileFmt === 2 ? "Applies to text output only. Switch format to Text or Both." : undefined} info={{ param: "TabDelim", desc: "Separate output columns with tab characters instead of spaces.", default: "TRUE", note: "Makes the .out file directly importable into Excel and most scientific data tools." }} />
+                <Toggle label="Tab-delimited text output (TabDelim)" value={p.TabDelim} onChange={set("TabDelim")} disabled={p.OutFileFmt === 2 || p.OutFileFmt === 4} title={p.OutFileFmt === 2 || p.OutFileFmt === 4 ? "Applies to text output only. Switch to a format that includes .out (1, 3, or 5)." : undefined} info={{ param: "TabDelim", desc: "Separate output columns with tab characters instead of spaces.", default: "TRUE", note: "Makes the .out file directly importable into Excel and most scientific data tools." }} />
               </div>
               <SectionHead>Timing</SectionHead>
               <div className={s.grid2}>
@@ -1851,7 +1848,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                   <div className={s.depNodeHeader}>
                     <span className={s.depNodeLabel}>Output</span>
                     <span className={s.depNodeMeta}>
-                      {p.OutFileFmt === 1 ? ".out" : p.OutFileFmt === 2 ? ".outb" : ".out + .outb"}
+                      {p.OutFileFmt === 1 ? ".out" : p.OutFileFmt === 2 ? ".outb" : p.OutFileFmt === 4 ? ".outb (raw)" : ".out + .outb"}
                     </span>
                   </div>
                   <span className={s.depNodeFile}>{effectiveCaseName}</span>
