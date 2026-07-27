@@ -439,6 +439,106 @@ function buildInpContent(p, effectivePrefix) {
 // with sigma_u(z) TI gradient. No client-side profile writing needed.
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
+// ── Parse a TurbSim .inp back into a partial params object ───────────────────
+// Each line is: <value>   <ParamName>   - description
+// Quoted values arrive already stripped of their surrounding quotes.
+function parseInpContent(text) {
+  const TMODELS = ["IECKAI","IECVKM","GP_LLJ","NWTCUP","SMOOTH","WF_UPW","WF_07D","WF_14D","TIDAL","API","NONE"];
+  const ISTDS   = ["1","2","3","1-Ed2","1-Ed3"];
+  const ICLS    = ["A","B","C"];
+  const IWT     = ["NTM","1ETM","2ETM","3ETM","1EWM1","1EWM50"];
+  const WPROF   = ["PL","LOG","JET","H2L","API","IEC"];
+
+  const SKIP_PARAMS = new Set([
+    "UserFile","ProfileFile",
+    "SCMod1","SCMod2","SCMod3",
+    "InCDec1","InCDec2","InCDec3","CohExp",
+  ]);
+  const BOOL_PARAMS = new Set([
+    "Echo","WrBHHTP","WrFHHTP","WrADHH","WrADFF","WrBLFF",
+    "WrADTWR","WrHAWCFF","WrFMTFF","WrACT","Randomize",
+  ]);
+  const INT_PARAMS   = new Set(["RandSeed1","NumGrid_Z","NumGrid_Y","ScaleIEC"]);
+  const FLOAT_PARAMS = new Set([
+    "TimeStep","AnalysisTime","UsableTime","HubHt","GridHeight","GridWidth",
+    "VFlowAng","HFlowAng","RefHt","URef","RICH_NO","DistScl","CTLy","CTLz","CTStartTime",
+  ]);
+  const STRING_PARAMS = new Set([
+    "PLExp","Z0","Latitude","UStar","ZI","PC_UW","PC_UV","PC_VW","ZJetMax","ETMc",
+    "RandSeed2","CTEventPath","CTEventFile",
+  ]);
+
+  const updates = {};
+
+  for (const raw of text.split(/\r?\n/)) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    if (trimmed.startsWith('-') || trimmed.startsWith('=') || trimmed.startsWith('!')) continue;
+    if (trimmed.includes('TurbSim v2') || trimmed.startsWith('FlowUrja')) continue;
+
+    let rest = trimmed;
+    let rawValue;
+
+    if (rest.startsWith('"')) {
+      const closeIdx = rest.indexOf('"', 1);
+      if (closeIdx === -1) continue;
+      rawValue = rest.slice(1, closeIdx);
+      rest = rest.slice(closeIdx + 1).trimStart();
+    } else {
+      const spaceIdx = rest.search(/\s/);
+      if (spaceIdx === -1) continue;
+      rawValue = rest.slice(0, spaceIdx);
+      rest = rest.slice(spaceIdx).trimStart();
+    }
+
+    if (!rest) continue;
+    const paramName = rest.split(/\s/)[0];
+    if (!paramName || paramName === '-' || paramName === ',') continue;
+
+    if (SKIP_PARAMS.has(paramName)) continue;
+
+    if (BOOL_PARAMS.has(paramName)) {
+      updates[paramName] = rawValue.toLowerCase() === "true";
+    } else if (INT_PARAMS.has(paramName)) {
+      const v = parseInt(rawValue, 10);
+      if (!isNaN(v)) updates[paramName] = v;
+    } else if (FLOAT_PARAMS.has(paramName)) {
+      const v = parseFloat(rawValue);
+      if (!isNaN(v)) updates[paramName] = v;
+    } else if (STRING_PARAMS.has(paramName)) {
+      updates[paramName] = rawValue;
+    } else if (paramName === "TurbModel") {
+      const idx = TMODELS.indexOf(rawValue);
+      if (idx !== -1) {
+        updates.TurbModel = idx;
+        updates.gTI = 1.0;
+      }
+      // "USRVKM" → gTI-derived, leave as-is
+    } else if (paramName === "WindProfileType") {
+      const idx = WPROF.indexOf(rawValue);
+      if (idx !== -1) updates.WindProfileType = idx;
+      // "USR" → gTI-derived, leave as-is
+    } else if (paramName === "IECstandard") {
+      const idx = ISTDS.indexOf(rawValue);
+      if (idx !== -1) updates.IECstandard = idx;
+    } else if (paramName === "IECturbc") {
+      const idx = ICLS.indexOf(rawValue);
+      if (idx !== -1) {
+        updates.IECturbc = idx;
+        updates.IECturbc_custom = "";
+      } else {
+        updates.IECturbc = 3;
+        updates.IECturbc_custom = rawValue;
+      }
+    } else if (paramName === "IEC_WindType") {
+      const idx = IWT.indexOf(rawValue);
+      if (idx !== -1) updates.IEC_WindType = idx;
+    }
+  }
+
+  return updates;
+}
+
 const DEFAULT = {
   URef:12.0, RefHt:90.0, PLExp:"default", Z0:"default",
   WindProfileType:0, gTI:1.0,
@@ -635,6 +735,12 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
   const handleViewRaw = () => {
     setRawContent(buildInpContent(p, effectivePrefix));
     setShowRaw(true);
+  };
+
+  const handleApply = (editedContent) => {
+    const updates = parseInpContent(editedContent);
+    if (!Object.keys(updates).length) throw new Error("No recognizable parameters found");
+    setP(prev => ({ ...prev, ...updates }));
   };
   // ── Propagate turbine geometry from ElastoDyn / FST whenever moduleFiles changes ─
   // We store "actioned" (applied OR dismissed) in sessionStorage keyed by file path so that
@@ -862,6 +968,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           content={rawContent}
           filename={`${effectivePrefix}.inp`}
           onClose={() => setShowRaw(false)}
+          onApply={handleApply}
         />
       )}
 

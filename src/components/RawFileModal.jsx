@@ -9,6 +9,8 @@
  *   hasDirtyWarning  — true when the file has unsaved changes (amber banner)
  *   onClose          — close handler
  *   onSaved          — called with new content string after a successful save
+ *   onApply          — when provided: skip disk-save; call onApply(editedContent) on confirm.
+ *                      Opens directly in edit mode (no warning dialog).
  */
 import { useState } from "react";
 import { createPortal } from "react-dom";
@@ -25,10 +27,11 @@ export default function RawFileModal({
   hasDirtyWarning = false,
   onClose,
   onSaved,
+  onApply,
 }) {
   const [closing,      setClosing]      = useState(false);
   const [showWarning,  setShowWarning]  = useState(false);
-  const [editing,      setEditing]      = useState(false);
+  const [editing,      setEditing]      = useState(!!onApply);
   const [editContent,  setEditContent]  = useState(content);
   const [saving,       setSaving]       = useState(false);
   const [saveError,    setSaveError]    = useState("");
@@ -39,7 +42,14 @@ export default function RawFileModal({
     setTimeout(onClose, 200);
   };
 
-  const handleEditClick = () => setShowWarning(true);
+  const handleEditClick = () => {
+    if (onApply) {
+      setEditing(true);
+      setEditContent(content);
+    } else {
+      setShowWarning(true);
+    }
+  };
 
   const handleEditAnyway = () => {
     setShowWarning(false);
@@ -51,6 +61,21 @@ export default function RawFileModal({
     setEditing(false);
     setEditContent(content);
     setSaveError("");
+  };
+
+  const handleApply = () => {
+    try {
+      onApply(editContent);
+      setClosing(true);
+      const fn = filename;
+      setTimeout(() => {
+        toast.success("Applied", { description: `Parameters updated from ${fn}` });
+        onClose?.();
+      }, 210);
+    } catch (err) {
+      setSaveError(String(err));
+      toast.error("Apply failed", { description: String(err).slice(0, 100) });
+    }
   };
 
   const handleSave = async () => {
@@ -81,7 +106,9 @@ export default function RawFileModal({
   };
 
   const subtitle = editing
-    ? "Editing — unsaved changes"
+    ? onApply
+      ? "Editing — generated preview"
+      : "Editing — unsaved changes"
     : fromDisk
       ? "Actual file on disk"
       : "Preview — not yet saved to disk";
@@ -137,13 +164,19 @@ export default function RawFileModal({
               <button onClick={handleDiscard} className={s.discardBtn} disabled={saving}>
                 Discard
               </button>
-              <button onClick={handleSave} className={s.saveBtn} disabled={saving}>
-                {saving ? "Saving…" : "Save"}
-              </button>
+              {onApply ? (
+                <button onClick={handleApply} className={s.saveBtn}>
+                  Apply
+                </button>
+              ) : (
+                <button onClick={handleSave} className={s.saveBtn} disabled={saving}>
+                  {saving ? "Saving…" : "Save"}
+                </button>
+              )}
             </>) : (<>
-              {fromDisk && filePath && (
+              {(fromDisk && filePath || !!onApply) && (
                 <button onClick={handleEditClick} className={s.editBtn}>
-                  Edit file
+                  {onApply ? "Edit" : "Edit file"}
                 </button>
               )}
               <button onClick={handleClose} className={s.closeBtn}>
