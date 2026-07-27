@@ -1083,6 +1083,7 @@
   transition: background 0.1s, color 0.1s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); white-space: nowrap;
 }
 .compBtn:hover { color: var(--tx-2); background: var(--bg-hover); }
+.compBtn:disabled { opacity: 0.35; cursor: not-allowed; }
 .compBtnActive {
   background: var(--bg-surface); color: #0891B2; font-weight: 600;
   box-shadow: 0 1px 3px rgba(0,0,0,0.10);

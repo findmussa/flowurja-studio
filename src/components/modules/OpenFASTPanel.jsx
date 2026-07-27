@@ -387,21 +387,26 @@ function Collapsible({ title, children }) {
   );
 }
 
-function CompSelector({ options, value, onChange, disabled }) {
+function CompSelector({ options, value, onChange, disabled, lockedAbove, lockedAboveTitle }) {
   return (
     <div className={s.compSeg}>
-      {options.map((label, i) => (
-        <button key={i} disabled={disabled}
-          className={`${s.compBtn} ${value === i ? s.compBtnActive : ""}`}
-          onClick={() => onChange(i)}>
-          {label}
-        </button>
-      ))}
+      {options.map((label, i) => {
+        const partialLock = !disabled && lockedAbove !== undefined && i > lockedAbove;
+        return (
+          <button key={i}
+            disabled={disabled || partialLock}
+            title={partialLock ? lockedAboveTitle : undefined}
+            className={`${s.compBtn} ${value === i ? s.compBtnActive : ""}`}
+            onClick={() => onChange(i)}>
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function ModuleRow({ title, compOptions, value, onChange, fileKey, fileValue, onFileChange, onBrowse, compact, lockedReason }) {
+function ModuleRow({ title, compOptions, value, onChange, fileKey, fileValue, onFileChange, onBrowse, compact, lockedReason, lockedAbove, lockedAboveTitle }) {
   const active = value > 0;
   return (
     <div
@@ -415,7 +420,7 @@ function ModuleRow({ title, compOptions, value, onChange, fileKey, fileValue, on
             {lockedReason ? "locked" : active ? compOptions[value] : "disabled"}
           </span>
         </div>
-        <CompSelector options={compOptions} value={value} onChange={onChange} disabled={!!lockedReason} />
+        <CompSelector options={compOptions} value={value} onChange={onChange} disabled={!!lockedReason} lockedAbove={lockedAbove} lockedAboveTitle={lockedAboveTitle} />
       </div>
       {active && fileKey && !lockedReason && (
         <div className={s.moduleFilePath}>
@@ -847,6 +852,8 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   const setE = k => e  => setP(prev => ({ ...prev, [k]: e.target.value }));
   // SeaState → HydroDyn cascade: turning off SeaState must also disable HydroDyn
   const setCompSeaSt = v => setP(prev => ({ ...prev, CompSeaSt: v, ...(v === 0 ? { CompHydro: 0 } : {}) }));
+  // InflowWind → AeroDyn cascade: still air (CompInflow=0) only supports None or AeroDisk
+  const setCompInflow = v => setP(prev => ({ ...prev, CompInflow: v, ...(v === 0 && prev.CompAero >= 2 ? { CompAero: 1 } : {}) }));
   // Derived flags used for dependency dimming across tabs
   const isOffshore = p.CompSeaSt > 0 || p.CompHydro > 0 || p.CompSub > 0 || p.MHK > 0;
   const isMHK = p.MHK > 0;
@@ -1321,8 +1328,10 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
               <SectionHead>Module coupling</SectionHead>
               <div className={s.moduleGrid}>
                 <ModuleRow compact title="ElastoDyn"          compOptions={COMP_ELAST}   value={p.CompElast}   onChange={set("CompElast")}   fileKey="EDFile"      fileValue={p.EDFile}      onFileChange={v => setP(prev => ({ ...prev, EDFile:      v }))} onBrowse={() => browseFile("EDFile")}      />
-                <ModuleRow compact title="InflowWind"         compOptions={COMP_INFLOW}  value={p.CompInflow}  onChange={set("CompInflow")}  fileKey="InflowFile"  fileValue={p.InflowFile}  onFileChange={v => setP(prev => ({ ...prev, InflowFile:  v }))} onBrowse={() => browseFile("InflowFile")}  />
-                <ModuleRow compact title="AeroDyn"            compOptions={COMP_AERO}    value={p.CompAero}    onChange={set("CompAero")}    fileKey="AeroFile"    fileValue={p.AeroFile}    onFileChange={v => setP(prev => ({ ...prev, AeroFile:    v }))} onBrowse={() => browseFile("AeroFile")}    />
+                <ModuleRow compact title="InflowWind"         compOptions={COMP_INFLOW}  value={p.CompInflow}  onChange={setCompInflow}      fileKey="InflowFile"  fileValue={p.InflowFile}  onFileChange={v => setP(prev => ({ ...prev, InflowFile:  v }))} onBrowse={() => browseFile("InflowFile")}  />
+                <ModuleRow compact title="AeroDyn"            compOptions={COMP_AERO}    value={p.CompAero}    onChange={set("CompAero")}    fileKey="AeroFile"    fileValue={p.AeroFile}    onFileChange={v => setP(prev => ({ ...prev, AeroFile:    v }))} onBrowse={() => browseFile("AeroFile")}
+                  lockedAbove={p.CompInflow === 0 ? 1 : undefined}
+                  lockedAboveTitle="AeroDyn requires InflowWind (CompInflow ≥ 1). Enable InflowWind first." />
                 <ModuleRow compact title="ServoDyn"           compOptions={COMP_SERVO}   value={p.CompServo}   onChange={set("CompServo")}   fileKey="ServoFile"   fileValue={p.ServoFile}   onFileChange={v => setP(prev => ({ ...prev, ServoFile:   v }))} onBrowse={() => browseFile("ServoFile")}   />
                 <ModuleRow compact title="SeaState"           compOptions={COMP_SEAST}   value={p.CompSeaSt}   onChange={setCompSeaSt}       fileKey="SeaStFile"   fileValue={p.SeaStFile}   onFileChange={v => setP(prev => ({ ...prev, SeaStFile:   v }))} onBrowse={() => browseFile("SeaStFile")}   />
                 <ModuleRow compact title="HydroDyn"           compOptions={COMP_HYDRO}   value={p.CompHydro}   onChange={set("CompHydro")}   fileKey="HydroFile"   fileValue={p.HydroFile}   onFileChange={v => setP(prev => ({ ...prev, HydroFile:   v }))} onBrowse={() => browseFile("HydroFile")}
