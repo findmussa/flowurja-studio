@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { Cloud, FolderOpen, RefreshCw, Eye, Save, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { Cloud, FolderOpen, RefreshCw, Eye, Save, ChevronDown, ChevronRight, AlertTriangle, List } from "lucide-react";
 import InfoPopover from "../InfoPopover";
 import RawFileModal from "../RawFileModal";
 import s from "./InflowWindPanel.module.css";
@@ -321,6 +322,75 @@ const TABS = [
   { id: "flow",   label: "Flow"    },
   { id: "lidar",  label: "LIDAR"   },
   { id: "output", label: "Output"  },
+];
+
+// ── Keys that are relevant regardless of WindType (for missing-fields filter) ─
+const COMMON_KEYS = new Set([
+  "WindType","PropagationDir","VFlowAng","VelInterpCubic",
+  "NWindVel","WindVxiList","WindVyiList","WindVziList",
+  "Echo","SumPrint",
+  "SensorType","NumPulseGate","PulseSpacing","NumBeam",
+  "FocalDistanceX","FocalDistanceY","FocalDistanceZ",
+  "RotorApexOffsetPos","URefLid","MeasurementInterval",
+  "LidRadialVel","ConsiderHubMotion",
+]);
+
+// Keys that are only relevant for a specific WindType
+const TYPE_KEYS = {
+  1: new Set(["HWindSpeed","RefHt","PLexp"]),
+  2: new Set(["Filename_Uni","RefHt_Uni","RefLength"]),
+  3: new Set(["FileName_BTS"]),
+  4: new Set(["FilenameRoot","TowerFile"]),
+  5: new Set([
+    "FileName_u","FileName_v","FileName_w",
+    "nx","ny","nz","dx","dy","dz","RefHt_Hawc",
+    "ScaleMethod","SFx","SFy","SFz","SigmaFx","SigmaFy","SigmaFz",
+    "URef","WindProfile","PLExp_Hawc","Z0","XOffset",
+  ]),
+  6: new Set(["UserFile"]),
+  7: new Set(["FilenameRoot"]),
+};
+
+// ── Output variable catalogue ─────────────────────────────────────────────────
+const OUT_VARS = [
+  {
+    group: "Wind Velocity at Output Points",
+    vars: [
+      { name: "Wind1VelX", desc: "X-dir (streamwise) velocity at output point 1",         unit: "m/s" },
+      { name: "Wind1VelY", desc: "Y-dir (lateral) velocity at output point 1",             unit: "m/s" },
+      { name: "Wind1VelZ", desc: "Z-dir (vertical) velocity at output point 1",            unit: "m/s" },
+      { name: "Wind2VelX", desc: "X-dir velocity at output point 2 (requires NWindVel ≥ 2)", unit: "m/s" },
+      { name: "Wind2VelY", desc: "Y-dir velocity at output point 2",                       unit: "m/s" },
+      { name: "Wind2VelZ", desc: "Z-dir velocity at output point 2",                       unit: "m/s" },
+      { name: "Wind3VelX", desc: "X-dir velocity at output point 3 (requires NWindVel ≥ 3)", unit: "m/s" },
+      { name: "Wind3VelY", desc: "Y-dir velocity at output point 3",                       unit: "m/s" },
+      { name: "Wind3VelZ", desc: "Z-dir velocity at output point 3",                       unit: "m/s" },
+    ],
+  },
+  {
+    group: "Hub-Height Wind",
+    vars: [
+      { name: "HHWndSpd", desc: "Hub-height horizontal wind speed (magnitude)",   unit: "m/s" },
+      { name: "HHWndDir", desc: "Hub-height wind direction, meteorological convention", unit: "deg" },
+      { name: "HHWndVx",  desc: "Hub-height U-component (streamwise)",             unit: "m/s" },
+      { name: "HHWndVy",  desc: "Hub-height V-component (lateral)",               unit: "m/s" },
+      { name: "HHWndVz",  desc: "Hub-height W-component (vertical)",              unit: "m/s" },
+    ],
+  },
+  {
+    group: "Rotor-Disk Averages",
+    vars: [
+      { name: "RtFldFxh",   desc: "Rotor-disk-averaged X-dir wind force, hub frame",  unit: "N"   },
+      { name: "RtFldFyh",   desc: "Rotor-disk-averaged Y-dir wind force, hub frame",  unit: "N"   },
+      { name: "RtFldFzh",   desc: "Rotor-disk-averaged Z-dir wind force, hub frame",  unit: "N"   },
+      { name: "RtFldMxh",   desc: "Rotor-disk-averaged X-dir moment, hub frame",      unit: "N·m" },
+      { name: "RtFldMyh",   desc: "Rotor-disk-averaged Y-dir moment, hub frame",      unit: "N·m" },
+      { name: "RtFldMzh",   desc: "Rotor-disk-averaged Z-dir moment, hub frame",      unit: "N·m" },
+      { name: "RtFldCdEff", desc: "Rotor-disk-averaged effective drag coefficient",   unit: "-"   },
+      { name: "RtFldDynP",  desc: "Rotor-disk-averaged dynamic pressure",            unit: "Pa"  },
+      { name: "RtFldSkew",  desc: "Inflow skew angle at rotor disk",                 unit: "deg" },
+    ],
+  },
 ];
 
 // ── Auto-name helper ──────────────────────────────────────────────────────────
@@ -648,8 +718,9 @@ function buildInflowWindContent(p) {
 
 // ── Sub-components (all at module level — never inside the component) ─────────
 
-function Field({ label, unit, children, hint, info, fieldKey }) {
+function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
   const missingSet = useContext(MissingCtx);
+  const [hintVisible, setHintVisible] = useState(false);
   const key = fieldKey || label.match(/\(([A-Za-z_][A-Za-z_0-9]*)\)\s*$/)?.[1];
   const isMissing = key && missingSet.size > 0 && missingSet.has(key);
   return (
@@ -666,8 +737,16 @@ function Field({ label, unit, children, hint, info, fieldKey }) {
           />
         )}
       </div>
-      <div className={isMissing ? s.fieldDefaulted : undefined}>
+      <div
+        className={isMissing ? s.fieldDefaulted : undefined}
+        style={{ position: "relative" }}
+        onMouseEnter={() => disabledHint && setHintVisible(true)}
+        onMouseLeave={() => setHintVisible(false)}
+      >
         {children}
+        {disabledHint && hintVisible && (
+          <div className={s.disabledHint}>{disabledHint}</div>
+        )}
       </div>
       {hint && <span className={s.hint}>{hint}</span>}
     </div>
@@ -701,6 +780,136 @@ function Collapsible({ title, children, defaultOpen = false }) {
       </button>
       {open && <div className={s.collapsibleBody}>{children}</div>}
     </div>
+  );
+}
+
+function OutVarModal({ current, onClose, onApply }) {
+  const [selected, setSelected] = useState(() => {
+    const names = (current || "").split("\n")
+      .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
+    return new Set(names);
+  });
+  const [query,   setQuery]   = useState("");
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 220);
+  };
+
+  const handleApply = () => {
+    const outList = [...selected].map(n => `"${n}"`).join("\n");
+    onApply(outList);
+    handleClose();
+  };
+
+  const toggle = (name) =>
+    setSelected(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
+
+  const q = query.toLowerCase();
+  const filteredGroups = OUT_VARS.map(g => ({
+    ...g,
+    vars: q ? g.vars.filter(v =>
+      v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q) || v.unit.toLowerCase().includes(q)
+    ) : g.vars,
+  })).filter(g => g.vars.length > 0);
+
+  return createPortal(
+    <div
+      className={`${s.modalOverlay} ${visible ? s.modalOverlayVisible : ""}`}
+      onClick={handleClose}
+    >
+      <div
+        className={`${s.modal} ${visible ? s.modalVisible : ""}`}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={s.modalHeader}>
+          <span className={s.modalTitle}>Output variable picker</span>
+          <span className={s.modalCount}>{selected.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
+        </div>
+
+        {/* Search */}
+        <div className={s.modalSearch}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
+            <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+            <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <input
+            className={s.modalSearchInput}
+            placeholder="Search variables… (name, description, unit)"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            autoFocus
+          />
+        </div>
+
+        {/* Variable groups */}
+        <div className={s.modalBody}>
+          {filteredGroups.map(g => {
+            const allOn  = g.vars.every(v => selected.has(v.name));
+            const someOn = g.vars.some(v => selected.has(v.name));
+            return (
+              <div key={g.group} className={s.varGroup}>
+                <div className={s.varGroupHead}>
+                  <button
+                    type="button"
+                    className={`${s.groupCheck} ${allOn ? s.groupCheckAll : someOn ? s.groupCheckSome : ""}`}
+                    onClick={() => {
+                      setSelected(prev => {
+                        const n = new Set(prev);
+                        if (allOn) g.vars.forEach(v => n.delete(v.name));
+                        else       g.vars.forEach(v => n.add(v.name));
+                        return n;
+                      });
+                    }}
+                  />
+                  <span>{g.group}</span>
+                  <span className={s.varGroupCount}>{g.vars.filter(v => selected.has(v.name)).length}/{g.vars.length}</span>
+                </div>
+                {g.vars.map(v => (
+                  <label key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}>
+                    <input
+                      type="checkbox"
+                      className={s.varCheck}
+                      checked={selected.has(v.name)}
+                      onChange={() => toggle(v.name)}
+                    />
+                    <span className={s.varName}>{v.name}</span>
+                    <span className={s.varUnit}>{v.unit}</span>
+                    <span className={s.varDesc}>{v.desc}</span>
+                    {selected.has(v.name) && (
+                      <svg width="11" height="11" viewBox="0 0 12 12" className={s.varCheck__mark}>
+                        <polyline points="1.5,6 4.5,9 10.5,3" stroke={ACCENT} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </label>
+                ))}
+              </div>
+            );
+          })}
+          {filteredGroups.length === 0 && (
+            <p className={s.varNoMatch}>No variables match "{query}"</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className={s.modalFooter}>
+          <button className={s.modalCancelBtn} onClick={handleClose} type="button">Cancel</button>
+          <button className={s.modalApplyBtn} onClick={handleApply} type="button">
+            Apply {selected.size} channel{selected.size !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -750,17 +959,18 @@ export default function InflowWindPanel({
   onWindParamsChange,
   simRunning = false,
 }) {
-  const [tab,           setTab]          = useState("source");
-  const tabDirRef                        = useRef(1);
-  const [p,             _setP]           = useState(DEFAULT);
-  const [filePath,      setFilePath]     = useState("");
-  const [isDirtyFlag,   setIsDirtyFlag]  = useState(false);
-  const [btsFiles,      setBtsFiles]     = useState([]);
-  const [scanning,      setScanning]     = useState(false);
-  const [showRaw,       setShowRaw]      = useState(false);
-  const [rawContent,    setRawContent]   = useState("");
-  const [generating,    setGenerating]   = useState(false);
-  const [customDatName, setCustomDatName] = useState("");
+  const [tab,            setTab]           = useState("source");
+  const tabDirRef                         = useRef(1);
+  const [p,              _setP]           = useState(DEFAULT);
+  const [filePath,       setFilePath]     = useState("");
+  const [isDirtyFlag,    setIsDirtyFlag]  = useState(false);
+  const [btsFiles,       setBtsFiles]     = useState([]);
+  const [scanning,       setScanning]     = useState(false);
+  const [showRaw,        setShowRaw]      = useState(false);
+  const [rawContent,     setRawContent]   = useState("");
+  const [generating,     setGenerating]   = useState(false);
+  const [customDatName,  setCustomDatName] = useState("");
+  const [showOutVarModal, setShowOutVarModal] = useState(false);
   const originalRef = useRef(null);
 
   const setP = useCallback((updater) => {
@@ -782,16 +992,22 @@ export default function InflowWindPanel({
   const autoName         = useMemo(() => autoFilename(p.WindType, p), [p.WindType, p.HWindSpeed, p.FileName_BTS, p.Filename_Uni, p.FilenameRoot]); // eslint-disable-line react-hooks/exhaustive-deps
   const effectiveDatName = customDatName.trim() || autoName;
 
-  // Detect fields missing from the loaded file (showing defaults)
+  // Detect fields missing from the loaded file (showing defaults).
+  // Only flag params that are relevant to the currently active WindType.
   const missingFields = useMemo(() => {
     if (!filePath || !p.__rawKV__) return [];
-    const rawKeys = new Set(Object.keys(p.__rawKV__));
+    const rawKeys    = new Set(Object.keys(p.__rawKV__));
+    const activeKeys = new Set([
+      ...COMMON_KEYS,
+      ...(TYPE_KEYS[p.WindType] || []),
+    ]);
     return Object.keys(DEFAULT).filter(k => {
       if (k.startsWith("__")) return false;
       if (typeof DEFAULT[k] === "string" && DEFAULT[k].includes("\n")) return false;
+      if (!activeKeys.has(k)) return false;
       return !rawKeys.has(k);
     });
-  }, [filePath, p.__rawKV__]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filePath, p.__rawKV__, p.WindType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── File operations ────────────────────────────────────────────────────────
   const loadFile = async (path) => {
@@ -1388,7 +1604,12 @@ export default function InflowWindPanel({
 
                 {/* VelInterpCubic — below sourceCard, disabled for Steady */}
                 <div className={s.field} style={{ marginTop: 10 }}>
-                  <Field label="Cubic time interpolation (VelInterpCubic)" info={INFO.VelInterpCubic} fieldKey="VelInterpCubic">
+                  <Field
+                    label="Cubic time interpolation (VelInterpCubic)"
+                    info={INFO.VelInterpCubic}
+                    fieldKey="VelInterpCubic"
+                    disabledHint={p.WindType === 1 ? "Switch to a time-varying wind type (e.g. TurbSim BTS) to enable cubic interpolation" : undefined}
+                  >
                     <Toggle
                       value={p.VelInterpCubic}
                       onChange={v => setP(prev => ({ ...prev, VelInterpCubic: v }))}
@@ -1513,8 +1734,11 @@ export default function InflowWindPanel({
                       <option value={2}>2 — Continuous wave</option>
                     </select>
                   </Field>
-                  <Field label="Number of beams (NumBeam)" info={INFO.NumBeam} fieldKey="NumBeam"
-                    hint="0–5 beams">
+                  <Field
+                    label="Number of beams (NumBeam)" info={INFO.NumBeam} fieldKey="NumBeam"
+                    hint="0–5 beams"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType to 1 (Pulsed) or 2 (CW) to enable lidar parameters" : undefined}
+                  >
                     <input className={s.inp} type="number" value={p.NumBeam}
                       onChange={setNum("NumBeam")} min="0" max="5" step="1"
                       disabled={p.SensorType === 0} />
@@ -1536,17 +1760,26 @@ export default function InflowWindPanel({
 
                 <p className={s.sectionHead}>Focal Point</p>
                 <div className={s.grid3}>
-                  <Field label="X distance (FocalDistanceX)" unit="m" info={INFO.FocalDistanceX} fieldKey="FocalDistanceX">
+                  <Field
+                    label="X distance (FocalDistanceX)" unit="m" info={INFO.FocalDistanceX} fieldKey="FocalDistanceX"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType > 0 to enable focal point settings" : undefined}
+                  >
                     <input className={s.inp} type="number" value={p.FocalDistanceX}
                       onChange={setNum("FocalDistanceX")} step="10"
                       disabled={p.SensorType === 0} />
                   </Field>
-                  <Field label="Y distance (FocalDistanceY)" unit="m" info={INFO.FocalDistanceY} fieldKey="FocalDistanceY">
+                  <Field
+                    label="Y distance (FocalDistanceY)" unit="m" info={INFO.FocalDistanceY} fieldKey="FocalDistanceY"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType > 0 to enable focal point settings" : undefined}
+                  >
                     <input className={s.inp} type="number" value={p.FocalDistanceY}
                       onChange={setNum("FocalDistanceY")} step="1"
                       disabled={p.SensorType === 0} />
                   </Field>
-                  <Field label="Z distance (FocalDistanceZ)" unit="m" info={INFO.FocalDistanceZ} fieldKey="FocalDistanceZ">
+                  <Field
+                    label="Z distance (FocalDistanceZ)" unit="m" info={INFO.FocalDistanceZ} fieldKey="FocalDistanceZ"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType > 0 to enable focal point settings" : undefined}
+                  >
                     <input className={s.inp} type="number" value={p.FocalDistanceZ}
                       onChange={setNum("FocalDistanceZ")} step="1"
                       disabled={p.SensorType === 0} />
@@ -1555,27 +1788,39 @@ export default function InflowWindPanel({
 
                 <p className={s.sectionHead}>Position & Timing</p>
                 <div className={s.grid2}>
-                  <Field label="Apex offset pos. (RotorApexOffsetPos)" unit="m m m"
+                  <Field
+                    label="Apex offset pos. (RotorApexOffsetPos)" unit="m m m"
                     info={INFO.RotorApexOffsetPos} fieldKey="RotorApexOffsetPos"
-                    hint="Three space-separated values: X Y Z">
+                    hint="Three space-separated values: X Y Z"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType > 0 to configure lidar position" : undefined}
+                  >
                     <input className={s.inp} type="text" value={p.RotorApexOffsetPos}
                       onChange={e => setP(prev => ({ ...prev, RotorApexOffsetPos: e.target.value }))}
                       placeholder="0.0 0.0 0.0"
                       disabled={p.SensorType === 0} />
                   </Field>
-                  <Field label="Measurement interval (MeasurementInterval)" unit="s"
-                    info={INFO.MeasurementInterval} fieldKey="MeasurementInterval">
+                  <Field
+                    label="Measurement interval (MeasurementInterval)" unit="s"
+                    info={INFO.MeasurementInterval} fieldKey="MeasurementInterval"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType > 0 to configure measurement timing" : undefined}
+                  >
                     <input className={s.inp} type="number" value={p.MeasurementInterval}
                       onChange={setNum("MeasurementInterval")} step="0.05"
                       disabled={p.SensorType === 0} />
                   </Field>
-                  <Field label="Reference speed (URefLid)" unit="m/s" info={INFO.URefLid} fieldKey="URefLid">
+                  <Field
+                    label="Reference speed (URefLid)" unit="m/s" info={INFO.URefLid} fieldKey="URefLid"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType > 0 to configure lidar reference speed" : undefined}
+                  >
                     <input className={s.inp} type="number" value={p.URefLid}
                       onChange={setNum("URefLid")} step="0.5"
                       disabled={p.SensorType === 0} />
                   </Field>
-                  <Field label="Hub motion influence (ConsiderHubMotion)"
-                    info={INFO.ConsiderHubMotion} fieldKey="ConsiderHubMotion">
+                  <Field
+                    label="Hub motion influence (ConsiderHubMotion)"
+                    info={INFO.ConsiderHubMotion} fieldKey="ConsiderHubMotion"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType > 0 to configure hub motion" : undefined}
+                  >
                     <select className={s.inp} value={p.ConsiderHubMotion}
                       onChange={setNum("ConsiderHubMotion")}
                       disabled={p.SensorType === 0}>
@@ -1586,7 +1831,10 @@ export default function InflowWindPanel({
                 </div>
 
                 <div className={s.field}>
-                  <Field label="Return radial velocity (LidRadialVel)" info={INFO.LidRadialVel} fieldKey="LidRadialVel">
+                  <Field
+                    label="Return radial velocity (LidRadialVel)" info={INFO.LidRadialVel} fieldKey="LidRadialVel"
+                    disabledHint={p.SensorType === 0 ? "Set SensorType > 0 to configure lidar output mode" : undefined}
+                  >
                     <Toggle
                       value={p.LidRadialVel}
                       onChange={v => setP(prev => ({ ...prev, LidRadialVel: v }))}
@@ -1620,10 +1868,21 @@ export default function InflowWindPanel({
                   </Field>
                 </div>
 
-                <p className={s.sectionHead} style={{ marginTop: 10 }}>
-                  Output Channels (OutList)
-                  <InfoPopover content={INFO.OutList} accentColor={ACCENT} />
-                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, marginBottom: 4 }}>
+                  <p className={s.sectionHead} style={{ margin: 0 }}>
+                    Output Channels (OutList)
+                    <InfoPopover content={INFO.OutList} accentColor={ACCENT} />
+                  </p>
+                  <div style={{ flex: 1 }} />
+                  <button
+                    className={s.pickVarsBtn}
+                    type="button"
+                    onClick={() => setShowOutVarModal(true)}
+                  >
+                    <List size={11} strokeWidth={2} />
+                    Pick variables
+                  </button>
+                </div>
                 <p className={s.hint} style={{ marginBottom: 8 }}>
                   One channel name per line. Quotes are optional — added automatically on save.
                   Common channels: Wind1VelX · Wind1VelY · Wind1VelZ
@@ -1635,6 +1894,14 @@ export default function InflowWindPanel({
                   spellCheck={false}
                   rows={8}
                 />
+
+                {showOutVarModal && (
+                  <OutVarModal
+                    current={p.OutList}
+                    onClose={() => setShowOutVarModal(false)}
+                    onApply={outList => setP(prev => ({ ...prev, OutList: outList }))}
+                  />
+                )}
               </div>
             )}
 
