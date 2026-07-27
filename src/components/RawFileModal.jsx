@@ -64,18 +64,23 @@ export default function RawFileModal({
   };
 
   const handleApply = () => {
+    let applyErr = null;
     try {
       onApply(editContent);
-      setClosing(true);
-      const fn = filename;
-      setTimeout(() => {
-        toast.success("Applied", { description: `Parameters updated from ${fn}` });
-        onClose?.();
-      }, 210);
-    } catch (err) {
-      setSaveError(String(err));
-      toast.error("Apply failed", { description: String(err).slice(0, 100) });
+    } catch (e) {
+      applyErr = e;
     }
+    if (applyErr) {
+      setSaveError(String(applyErr));
+      toast.error("Apply failed", { description: String(applyErr).slice(0, 100) });
+      return;
+    }
+    const fn = filename;
+    setClosing(true);
+    setTimeout(() => {
+      toast.success("Applied", { description: fn });
+      onClose?.();
+    }, 210);
   };
 
   const handleSave = async () => {
@@ -243,7 +248,7 @@ export default function RawFileModal({
               </div>
               <h3 className={s.warnTitle}>Edit with care</h3>
               <p className={s.warnBody}>
-                The <code className={s.warnCode}>.fst</code> file uses strict whitespace and
+                <code className={s.warnCode}>{filename}</code> uses strict whitespace and
                 formatting rules. Incorrect spacing, missing values, or broken comments can
                 cause OpenFAST to fail silently or crash.
               </p>
