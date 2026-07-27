@@ -350,9 +350,9 @@ function SectionHead({ children }) { return <p className={s.sectionHead}>{childr
 
 const OF_ACCENT = "#0891B2";
 
-function Field({ label, unit, info, children }) {
+function Field({ label, unit, info, title, children }) {
   return (
-    <div className={s.field}>
+    <div className={s.field} title={title}>
       <div className={s.fieldHeader}>
         <label className={s.fieldLabel}>{label}{unit && <span className={s.unit}> {unit}</span>}</label>
         {info && <InfoPopover accentColor={OF_ACCENT} content={typeof info === "string" ? { desc: info } : info} />}
@@ -362,9 +362,9 @@ function Field({ label, unit, info, children }) {
   );
 }
 
-function Toggle({ label, value, onChange, info, disabled }) {
+function Toggle({ label, value, onChange, info, disabled, title }) {
   return (
-    <div className={s.toggleRow}>
+    <div className={s.toggleRow} title={title}>
       <button type="button" disabled={disabled} className={`${s.toggle} ${value ? s.toggleOn : ""}`} onClick={() => onChange(!value)}>
         <span className={s.toggleThumb} />
       </button>
@@ -1369,7 +1369,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                     ))}
                   </div>
                 </Field>
-                <Field label="Column format (OutFmt)" info={{ param: "OutFmt", desc: "Fortran format specifier for each numeric output column.", default: '"ES10.3E2"', note: "The result must be exactly 10 characters wide (e.g. ES10.3E2, F10.4)." }}>
+                <Field label="Column format (OutFmt)" title={p.OutFileFmt === 2 ? "Applies to text output only. Switch format to Text or Both." : undefined} info={{ param: "OutFmt", desc: "Fortran format specifier for each numeric output column.", default: '"ES10.3E2"', note: "The result must be exactly 10 characters wide (e.g. ES10.3E2, F10.4)." }}>
                   <input type="text" value={p.OutFmt} onChange={setE("OutFmt")} disabled={p.OutFileFmt === 2} />
                   <p className={s.hint}>Text output only — inactive when format is Binary</p>
                 </Field>
@@ -1377,7 +1377,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
               <SectionHead>Flags</SectionHead>
               <div className={s.toggleGrid}>
                 <Toggle label="Write .sum summary file (SumPrint)" value={p.SumPrint} onChange={set("SumPrint")} info={{ param: "SumPrint", desc: "Write a summary file (<RootName>.sum) containing model properties, DOF configuration, and time-integration info.", default: "FALSE" }} />
-                <Toggle label="Tab-delimited text output (TabDelim)" value={p.TabDelim} onChange={set("TabDelim")} disabled={p.OutFileFmt === 2} info={{ param: "TabDelim", desc: "Separate output columns with tab characters instead of spaces.", default: "TRUE", note: "Makes the .out file directly importable into Excel and most scientific data tools." }} />
+                <Toggle label="Tab-delimited text output (TabDelim)" value={p.TabDelim} onChange={set("TabDelim")} disabled={p.OutFileFmt === 2} title={p.OutFileFmt === 2 ? "Applies to text output only. Switch format to Text or Both." : undefined} info={{ param: "TabDelim", desc: "Separate output columns with tab characters instead of spaces.", default: "TRUE", note: "Makes the .out file directly importable into Excel and most scientific data tools." }} />
               </div>
               <SectionHead>Timing</SectionHead>
               <div className={s.grid2}>
@@ -1403,10 +1403,10 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
             <SectionHead>Linearization</SectionHead>
             <div className={s.toggleGrid}>
               <Toggle label="Enable linearization (Linearize)" value={p.Linearize} onChange={set("Linearize")} info={{ param: "Linearize", desc: "Activate linearization analysis. OpenFAST produces state-space matrices (A, B, C, D) at each specified azimuth angle.", default: "FALSE" }} />
-              <Toggle label="Find steady-state operating point first (CalcSteady)" value={p.CalcSteady} onChange={set("CalcSteady")} disabled={!p.Linearize} info={{ param: "CalcSteady", desc: "Compute a periodic steady-state operating point before linearising.", default: "FALSE", note: "Required when rotor speed needs to be trimmed to rated. The trim routine runs before linearisation begins." }} />
+              <Toggle label="Find steady-state operating point first (CalcSteady)" value={p.CalcSteady} onChange={set("CalcSteady")} disabled={!p.Linearize} title={!p.Linearize ? "Enable Linearize first." : undefined} info={{ param: "CalcSteady", desc: "Compute a periodic steady-state operating point before linearising.", default: "FALSE", note: "Required when rotor speed needs to be trimmed to rated. The trim routine runs before linearisation begins." }} />
             </div>
             <div className={s.grid2}>
-              <Field label="Trim control (TrimCase)" info={{ param: "TrimCase", desc: "Which actuator to use during the steady-state trim.", range: "1–3", default: "3", note: "1 = yaw angle; 2 = generator torque; 3 = collective blade pitch." }}>
+              <Field label="Trim control (TrimCase)" title={!p.Linearize || !p.CalcSteady ? (!p.Linearize ? "Enable Linearize first, then enable CalcSteady." : "Enable CalcSteady to use trim settings.") : undefined} info={{ param: "TrimCase", desc: "Which actuator to use during the steady-state trim.", range: "1–3", default: "3", note: "1 = yaw angle; 2 = generator torque; 3 = collective blade pitch." }}>
                 <select value={p.TrimCase} onChange={setN("TrimCase")} disabled={!p.Linearize || !p.CalcSteady}>
                   <option value={1}>1 — Yaw</option>
                   <option value={2}>2 — Torque</option>
@@ -1414,26 +1414,26 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                 </select>
                 <p className={s.hint}>Used only when CalcSteady = True</p>
               </Field>
-              <Field label="Speed convergence tolerance (TrimTol)" info={{ param: "TrimTol", desc: "Rotor speed error tolerance for the trim convergence criterion.", range: "> 0", default: "1.0E-4", note: "Smaller values give a more accurate operating point but take longer to converge." }}>
+              <Field label="Speed convergence tolerance (TrimTol)" title={!p.Linearize || !p.CalcSteady ? (!p.Linearize ? "Enable Linearize first, then enable CalcSteady." : "Enable CalcSteady to use trim settings.") : undefined} info={{ param: "TrimTol", desc: "Rotor speed error tolerance for the trim convergence criterion.", range: "> 0", default: "1.0E-4", note: "Smaller values give a more accurate operating point but take longer to converge." }}>
                 <input type="number" value={p.TrimTol} step={0.0001} min={0} onChange={setN("TrimTol")} disabled={!p.Linearize || !p.CalcSteady} />
                 <p className={s.hint}>Used only when CalcSteady = True</p>
               </Field>
-              <Field label="Speed error gain (TrimGain)" info={{ param: "TrimGain", desc: "Proportional gain for the trim feedback loop.", range: "> 0", default: "0.001", note: "Increase if convergence is slow; reduce if the trim oscillates." }}>
+              <Field label="Speed error gain (TrimGain)" title={!p.Linearize || !p.CalcSteady ? (!p.Linearize ? "Enable Linearize first, then enable CalcSteady." : "Enable CalcSteady to use trim settings.") : undefined} info={{ param: "TrimGain", desc: "Proportional gain for the trim feedback loop.", range: "> 0", default: "0.001", note: "Increase if convergence is slow; reduce if the trim oscillates." }}>
                 <input type="number" value={p.TrimGain} step={0.001} min={0} onChange={setN("TrimGain")} disabled={!p.Linearize || !p.CalcSteady} />
               </Field>
-              <Field label="Tower damping (Twr_Kdmp)" unit="N/(m/s)" info={{ param: "Twr_Kdmp", desc: "Artificial dashpot gain added to tower DOFs during the trim phase to suppress transients.", range: "≥ 0", unit: "N/(m/s)", default: "0.0" }}>
+              <Field label="Tower damping (Twr_Kdmp)" unit="N/(m/s)" title={!p.Linearize || !p.CalcSteady ? (!p.Linearize ? "Enable Linearize first, then enable CalcSteady." : "Enable CalcSteady to use trim settings.") : undefined} info={{ param: "Twr_Kdmp", desc: "Artificial dashpot gain added to tower DOFs during the trim phase to suppress transients.", range: "≥ 0", unit: "N/(m/s)", default: "0.0" }}>
                 <input type="number" value={p.Twr_Kdmp} step={0.1} min={0} onChange={setN("Twr_Kdmp")} disabled={!p.Linearize || !p.CalcSteady} />
               </Field>
-              <Field label="Blade damping (Bld_Kdmp)" unit="N/(m/s)" info={{ param: "Bld_Kdmp", desc: "Artificial dashpot gain added to blade DOFs during the trim phase to suppress transients.", range: "≥ 0", unit: "N/(m/s)", default: "0.0" }}>
+              <Field label="Blade damping (Bld_Kdmp)" unit="N/(m/s)" title={!p.Linearize || !p.CalcSteady ? (!p.Linearize ? "Enable Linearize first, then enable CalcSteady." : "Enable CalcSteady to use trim settings.") : undefined} info={{ param: "Bld_Kdmp", desc: "Artificial dashpot gain added to blade DOFs during the trim phase to suppress transients.", range: "≥ 0", unit: "N/(m/s)", default: "0.0" }}>
                 <input type="number" value={p.Bld_Kdmp} step={0.1} min={0} onChange={setN("Bld_Kdmp")} disabled={!p.Linearize || !p.CalcSteady} />
               </Field>
             </div>
             <SectionHead>Linearization schedule</SectionHead>
             <div className={s.grid2}>
-              <Field label="Number of linearization points (NLinTimes)" info={{ param: "NLinTimes", desc: "Number of azimuth angles per revolution at which to linearise.", range: "≥ 1", default: "2", note: "Points are evenly distributed from 0° to 360°. More points give better rotor-averaged matrices." }}>
+              <Field label="Number of linearization points (NLinTimes)" title={!p.Linearize ? "Enable Linearize first." : undefined} info={{ param: "NLinTimes", desc: "Number of azimuth angles per revolution at which to linearise.", range: "≥ 1", default: "2", note: "Points are evenly distributed from 0° to 360°. More points give better rotor-averaged matrices." }}>
                 <input type="number" value={p.NLinTimes} step={1} min={1} onChange={setN("NLinTimes")} disabled={!p.Linearize} />
               </Field>
-              <Field label="Linearization times (LinTimes)" unit="s" info={{ param: "LinTimes", desc: "Explicit simulation times at which to linearise, comma-separated.", unit: "s", default: "30, 60", note: "Ignored when CalcSteady is true — azimuth angles are used instead." }}>
+              <Field label="Linearization times (LinTimes)" unit="s" title={!p.Linearize ? "Enable Linearize first." : p.CalcSteady ? "CalcSteady = True — azimuth schedule is computed automatically; explicit times are ignored." : undefined} info={{ param: "LinTimes", desc: "Explicit simulation times at which to linearise, comma-separated.", unit: "s", default: "30, 60", note: "Ignored when CalcSteady is true — azimuth angles are used instead." }}>
                 <input type="text" value={p.LinTimes} onChange={setE("LinTimes")} disabled={!p.Linearize || p.CalcSteady}
                   placeholder="e.g. 30, 60" />
                 <p className={s.hint}>Unused when CalcSteady = True — azimuth schedule is computed instead</p>
@@ -1441,14 +1441,14 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
             </div>
             <SectionHead>Linearization outputs</SectionHead>
             <div className={s.grid2}>
-              <Field label="Inputs (LinInputs)" info={{ param: "LinInputs", desc: "Which system inputs to include in the linearized model.", range: "0–2", default: "1", note: "0 = none; 1 = standard control/disturbance inputs; 2 = all module inputs (large files, debug use)." }}>
+              <Field label="Inputs (LinInputs)" title={!p.Linearize ? "Enable Linearize first." : undefined} info={{ param: "LinInputs", desc: "Which system inputs to include in the linearized model.", range: "0–2", default: "1", note: "0 = none; 1 = standard control/disturbance inputs; 2 = all module inputs (large files, debug use)." }}>
                 <select value={p.LinInputs} onChange={setN("LinInputs")} disabled={!p.Linearize}>
                   <option value={0}>0 — None</option>
                   <option value={1}>1 — Standard</option>
                   <option value={2}>2 — All module inputs (debug)</option>
                 </select>
               </Field>
-              <Field label="Outputs (LinOutputs)" info={{ param: "LinOutputs", desc: "Which system outputs to include in the linearized model.", range: "0–2", default: "1", note: "0 = none; 1 = user-defined OutList channels; 2 = all module outputs (large files, debug use)." }}>
+              <Field label="Outputs (LinOutputs)" title={!p.Linearize ? "Enable Linearize first." : undefined} info={{ param: "LinOutputs", desc: "Which system outputs to include in the linearized model.", range: "0–2", default: "1", note: "0 = none; 1 = user-defined OutList channels; 2 = all module outputs (large files, debug use)." }}>
                 <select value={p.LinOutputs} onChange={setN("LinOutputs")} disabled={!p.Linearize}>
                   <option value={0}>0 — None</option>
                   <option value={1}>1 — From OutList</option>
@@ -1457,8 +1457,8 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
               </Field>
             </div>
             <div className={s.toggleGrid}>
-              <Toggle label="Write full Jacobians to linearization file (LinOutJac)" value={p.LinOutJac} onChange={set("LinOutJac")} disabled={!p.Linearize} info={{ param: "LinOutJac", desc: "Append the full input/output Jacobian matrices to the .lin file.", default: "FALSE", note: "Creates large files; mainly useful for debugging module coupling." }} />
-              <Toggle label="Write module-level linearization files (LinOutMod)" value={p.LinOutMod} onChange={set("LinOutMod")} disabled={!p.Linearize} info={{ param: "LinOutMod", desc: "Write separate .lin files for each submodule (ElastoDyn, AeroDyn, etc.) in addition to the combined system file.", default: "FALSE" }} />
+              <Toggle label="Write full Jacobians to linearization file (LinOutJac)" value={p.LinOutJac} onChange={set("LinOutJac")} disabled={!p.Linearize} title={!p.Linearize ? "Enable Linearize first." : undefined} info={{ param: "LinOutJac", desc: "Append the full input/output Jacobian matrices to the .lin file.", default: "FALSE", note: "Creates large files; mainly useful for debugging module coupling." }} />
+              <Toggle label="Write module-level linearization files (LinOutMod)" value={p.LinOutMod} onChange={set("LinOutMod")} disabled={!p.Linearize} title={!p.Linearize ? "Enable Linearize first." : undefined} info={{ param: "LinOutMod", desc: "Write separate .lin files for each submodule (ElastoDyn, AeroDyn, etc.) in addition to the combined system file.", default: "FALSE" }} />
             </div>
 
             <SectionHead>VTK visualization</SectionHead>
@@ -1484,7 +1484,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
               </Field>
             </div>
             <div className={s.toggleGrid}>
-              <Toggle label="Write mesh fields to VTK files (VTK_fields)" value={p.VTK_fields} onChange={set("VTK_fields")} disabled={p.WrVTK === 0} info={{ param: "VTK_fields", desc: "Additionally write mesh field data (velocities, accelerations, forces) to VTK files.", default: "FALSE", note: "Significantly increases output file size." }} />
+              <Toggle label="Write mesh fields to VTK files (VTK_fields)" value={p.VTK_fields} onChange={set("VTK_fields")} disabled={p.WrVTK === 0} title={p.WrVTK === 0 ? "Select a VTK output mode first (WrVTK ≥ 1)." : undefined} info={{ param: "VTK_fields", desc: "Additionally write mesh field data (velocities, accelerations, forces) to VTK files.", default: "FALSE", note: "Significantly increases output file size." }} />
             </div>
           </div>
         </div>
