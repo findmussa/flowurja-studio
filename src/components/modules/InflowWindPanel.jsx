@@ -125,6 +125,10 @@ const INFO = {
     unit:  "m",
     default: "0.03",
   },
+  UserFile: {
+    param: "UserFile",
+    desc:  "Path to the user-defined wind DLL for WindType=6. The DLL must implement the InflowWind user-defined wind interface. All DLL-specific parameters must be configured directly in the .dat file.",
+  },
 };
 
 // ── Wind types ────────────────────────────────────────────────────────────────
@@ -134,6 +138,7 @@ const WIND_TYPES = [
   { value: 2, label: "Uniform",        desc: "Time-varying uniform wind from .wnd file" },
   { value: 4, label: "Bladed FF",      desc: "Binary Bladed-style full-field wind (.wnd + .sum)" },
   { value: 5, label: "HAWC2",          desc: "HAWC-format binary wind files (u/v/w components)" },
+  { value: 6, label: "User DLL",       desc: "User-defined wind from external DLL (WindType=6)" },
   { value: 7, label: "Native Bladed",  desc: "Native Bladed FF with wind scaling values file" },
 ];
 
@@ -157,6 +162,7 @@ function autoFilename(windType, p) {
   }
   if (windType === 4) return "IFW_Bladed.dat";
   if (windType === 5) return "IFW_HAWC2.dat";
+  if (windType === 6) return "IFW_UserDLL.dat";
   if (windType === 7) return "IFW_NativeBladed.dat";
   return "InflowWind.dat";
 }
@@ -184,6 +190,8 @@ const DEFAULT = {
   // Bladed FF (type 4 / Native Bladed type 7)
   FilenameRoot:   "none",
   TowerFile:      false,
+  // User DLL (type 6)
+  UserFile:       "none",
   // HAWC2 (type 5) — file paths
   FileName_u:     "none",
   FileName_v:     "none",
@@ -314,6 +322,7 @@ function buildInflowWindContent(p) {
     "Filename_Uni","RefHt_Uni","RefLength",
     "FileName_BTS",
     "FilenameRoot","TowerFile",
+    "UserFile",
     "FileName_u","FileName_v","FileName_w",
     "nx","ny","nz","dx","dy","dz","RefHt_Hawc",
     "ScaleMethod","SFx","SFy","SFz","SigmaFx","SigmaFy","SigmaFz",
@@ -348,6 +357,8 @@ function buildInflowWindContent(p) {
     `${pad(r(p.RefLength))} RefLength       - Reference length for shear (m)`,
     `================== Parameters for Binary TurbSim FF [WindType=3] ==============`,
     `${pad(q(p.FileName_BTS))} FileName_BTS    - TurbSim binary wind field file (.bts)`,
+    `================== Parameters for User-Defined wind [WindType=6] ==============`,
+    `${pad(q(p.UserFile))} UserFile        - Path to user-defined DLL wind file`,
     `================== Parameters for Binary Bladed-style FF [WindType=4] =========`,
     `${pad(q(p.FilenameRoot))} FilenameRoot    - Root name of Bladed FF wind file`,
     `${pad(b(p.TowerFile))} TowerFile       - Have tower file (.twr) (flag)`,
@@ -442,6 +453,8 @@ function patchInflowWindContent(originalContent, p) {
     // Bladed
     FilenameRoot:   q(p.FilenameRoot),
     TowerFile:      b(p.TowerFile),
+    // User DLL
+    UserFile:       q(p.UserFile),
     // HAWC2 files
     FileName_u:     q(p.FileName_u),
     FileName_v:     q(p.FileName_v),
@@ -514,6 +527,21 @@ function patchInflowWindContent(originalContent, p) {
 
     return `${leadingWS}${paddedNew}${afterValue}`;
   }).join("\n");
+}
+
+// ── Field label with info popover ────────────────────────────────────────────
+// Defined at module level — NOT inside the component — so React can correctly
+// identify it as the same component type across parent re-renders. Defining it
+// inside the component would create a new function reference every render,
+// causing React to unmount+remount the InfoPopover subtree and reset its open
+// state, making the ⓘ button appear broken.
+function Lbl({ children, k }) {
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      {children}
+      <InfoPopover content={INFO[k]} accentColor={ACCENT} />
+    </span>
+  );
 }
 
 // ── Wind visualisation SVG ─────────────────────────────────────────────────────
@@ -836,14 +864,14 @@ export default function InflowWindPanel({
     } catch {}
   };
 
-  // ── Derived display values ─────────────────────────────────────────────────
-  const Lbl = ({ children, k }) => (
-    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-      {children}
-      <InfoPopover content={INFO[k]} accentColor={ACCENT} />
-    </span>
-  );
+  const browseUserFile = async () => {
+    try {
+      const f = await openDialog({ multiple: false, filters: [{ name: "User DLL", extensions: ["dll", "so", "dylib"] }] });
+      if (f) setP(prev => ({ ...prev, UserFile: f }));
+    } catch {}
+  };
 
+  // ── Derived display values ─────────────────────────────────────────────────
   const wt = WIND_TYPES.find(t => t.value === p.WindType);
 
   const displayPath = filePath
@@ -862,6 +890,10 @@ export default function InflowWindPanel({
     ] : p.WindType === 2 ? [
       { k: "Ref height", v: `${p.RefHt_Uni} m` },
       { k: "Ref length", v: `${p.RefLength} m` },
+      { k: "Prop. dir",  v: `${p.PropagationDir}°` },
+      { k: "Upflow",     v: `${p.VFlowAng}°` },
+    ] : p.WindType === 6 ? [
+      { k: "DLL file",   v: p.UserFile !== "none" ? p.UserFile.split(/[\\/]/).pop() : "—" },
       { k: "Prop. dir",  v: `${p.PropagationDir}°` },
       { k: "Upflow",     v: `${p.VFlowAng}°` },
     ] : p.WindType === 4 || p.WindType === 7 ? [
@@ -995,7 +1027,8 @@ export default function InflowWindPanel({
 
             {/* ── Steady params ──────────────────────────────────────────── */}
             {p.WindType === 1 && (
-              <div className={s.grid2} style={{ marginTop: 14 }}>
+              <div className={s.sourceCard}>
+              <div className={s.grid2}>
                 <label className={s.field}>
                   <span className={s.fieldLabel}><Lbl k="HWindSpeed">Wind speed</Lbl></span>
                   <div className={s.inputRow}>
@@ -1015,11 +1048,12 @@ export default function InflowWindPanel({
                   <input className={s.inp} type="number" value={p.PLexp} onChange={setNum("PLexp")} step="0.01" />
                 </label>
               </div>
+              </div>
             )}
 
             {/* ── Uniform wind params ────────────────────────────────────── */}
             {p.WindType === 2 && (
-              <div style={{ marginTop: 14, marginBottom: 22 }}>
+              <div className={s.sourceCard}>
                 <label className={s.field}>
                   <span className={s.fieldLabel}><Lbl k="Filename_Uni">Wind file (.wnd)</Lbl></span>
                   <div className={s.fileRow}>
@@ -1052,7 +1086,7 @@ export default function InflowWindPanel({
 
             {/* ── TurbSim BTS params ─────────────────────────────────────── */}
             {p.WindType === 3 && (
-              <div style={{ marginTop: 14, marginBottom: 22 }}>
+              <div className={s.sourceCard}>
                 <label className={s.field}>
                   <span className={s.fieldLabel}><Lbl k="FileName_BTS">Wind field file (.bts)</Lbl></span>
                   <div className={s.fileRow}>
@@ -1091,12 +1125,12 @@ export default function InflowWindPanel({
 
             {/* ── Bladed FF params (type 4 and 7) ───────────────────────── */}
             {(p.WindType === 4 || p.WindType === 7) && (
-              <div style={{ marginTop: 14, marginBottom: 22 }}>
+              <div className={s.sourceCard}>
                 <label className={s.field}>
                   <span className={s.fieldLabel}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <InfoPopover content={INFO.FilenameRoot} accentColor={ACCENT} />
                       {p.WindType === 4 ? "Root filename (.wnd/.sum)" : "Scaling values file"}
+                      <InfoPopover content={INFO.FilenameRoot} accentColor={ACCENT} />
                     </span>
                   </span>
                   <div className={s.fileRow}>
@@ -1129,7 +1163,7 @@ export default function InflowWindPanel({
 
             {/* ── HAWC2 params (type 5) ──────────────────────────────────── */}
             {p.WindType === 5 && (
-              <div style={{ marginTop: 14, marginBottom: 22 }}>
+              <div className={s.sourceCard}>
                 {/* File pickers */}
                 {[
                   { key: "FileName_u", label: "u-component file (.bin)", exts: ["bin"] },
@@ -1267,6 +1301,33 @@ export default function InflowWindPanel({
                     </label>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* ── User DLL params (type 6) ───────────────────────────────── */}
+            {p.WindType === 6 && (
+              <div className={s.sourceCard}>
+                <div className={s.field}>
+                  <span className={s.fieldLabel}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      DLL wind file
+                      <InfoPopover content={INFO.UserFile} accentColor={ACCENT} />
+                    </span>
+                  </span>
+                  <div className={s.fileRow}>
+                    <input className={s.inp} type="text"
+                      value={p.UserFile === "none" ? "" : p.UserFile}
+                      onChange={e => setP(prev => ({ ...prev, UserFile: e.target.value || "none" }))}
+                      placeholder="Path to user-defined DLL…" />
+                    <button className={s.browseBtn} onClick={browseUserFile} title="Browse" type="button">
+                      <FolderOpen size={13} strokeWidth={1.8} />
+                    </button>
+                  </div>
+                </div>
+                <p className={s.hint} style={{ marginTop: 8 }}>
+                  WindType=6 requires a DLL implementing the InflowWind user-defined wind interface.
+                  Configure DLL-specific parameters directly in the .dat file.
+                </p>
               </div>
             )}
 

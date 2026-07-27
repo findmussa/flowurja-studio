@@ -490,6 +490,15 @@
 .writeBtn:hover:not(:disabled) { background: #2563EB; }
 .writeBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ── Source card (context-aware wind type params) ───────────── */
+.sourceCard {
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 12px;
+  padding: 14px 16px 16px;
+  margin: 10px 0 6px;
+}
+
 /* ── Stats sidebar ──────────────────────────────────────────── */
 .statsPanel {
   width: 250px;
