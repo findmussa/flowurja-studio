@@ -31,7 +31,7 @@ export default function RawFileModal({
 }) {
   const [closing,      setClosing]      = useState(false);
   const [showWarning,  setShowWarning]  = useState(false);
-  const [editing,      setEditing]      = useState(!!onApply);
+  const [editing,      setEditing]      = useState(false);
   const [editContent,  setEditContent]  = useState(content);
   const [saving,       setSaving]       = useState(false);
   const [saveError,    setSaveError]    = useState("");
@@ -42,14 +42,7 @@ export default function RawFileModal({
     setTimeout(onClose, 200);
   };
 
-  const handleEditClick = () => {
-    if (onApply) {
-      setEditing(true);
-      setEditContent(content);
-    } else {
-      setShowWarning(true);
-    }
-  };
+  const handleEditClick = () => setShowWarning(true);
 
   const handleEditAnyway = () => {
     setShowWarning(false);
