@@ -594,6 +594,7 @@ let _loggedTurbsimPath = null;
 // ── Main component ────────────────────────────────────────────────────────────
 export default function TurbSimPanel({ onLog, project, moduleFiles }) {
   const [tab,     setTab]   = useState("dashboard");
+  const tabDirRef = useRef(1);
   const [p,       setP]     = useState(DEFAULT);
   const [running, setRunning] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
@@ -1023,7 +1024,12 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
 
       <div className={s.tabBar}>
         {TABS.map(t => (
-          <button key={t.id} className={`${s.tab} ${tab===t.id?s.tabActive:""}`} onClick={() => setTab(t.id)}>
+          <button key={t.id} className={`${s.tab} ${tab===t.id?s.tabActive:""}`} onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }}>
             {t.label}
           </button>
         ))}
@@ -1242,7 +1248,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           )}
 
           {tab === "wind" && (
-            <div key="wind" className={s.form}>
+            <div key="wind" className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Reference wind conditions</SectionHead>
               <div className={s.grid2}>
                 <SliderField label="Mean wind speed (URef)" unit="m/s" infoKey="URef"
@@ -1308,7 +1314,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           )}
 
           {tab === "spectral" && (
-            <div key="spectral" className={s.form}>
+            <div key="spectral" className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Turbulence model</SectionHead>
 
               <div className={s.grid2}>
@@ -1371,7 +1377,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           )}
 
           {tab === "grid" && (
-            <div key="grid" className={s.form}>
+            <div key="grid" className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Spatial grid</SectionHead>
               <div className={s.grid2}>
                 <Field label="NumGrid_Z" unit="nodes" infoKey="NumGrid_Z">
@@ -1416,7 +1422,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           )}
 
           {tab === "runtime" && (
-            <div key="runtime" className={s.form}>
+            <div key="runtime" className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Scaling</SectionHead>
               <Field label="ScaleIEC" infoKey="ScaleIEC">
                 <select value={p.ScaleIEC} onChange={e => setP(prev => ({ ...prev, ScaleIEC: Number(e.target.value) }))}>
