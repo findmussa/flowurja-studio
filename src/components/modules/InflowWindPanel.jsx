@@ -718,14 +718,63 @@ function buildInflowWindContent(p) {
 
 // ── Sub-components (all at module level — never inside the component) ─────────
 
+// Frosted-glass tooltip portal — matches InfoPopover card style exactly
+function DisabledHintPortal({ text, rect }) {
+  const popRef = useRef(null);
+  const W = 280;
+  let left = rect.left;
+  if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8;
+  if (left < 8) left = 8;
+  const [top, setTop] = useState(rect.bottom + 6);
+
+  useEffect(() => {
+    if (!popRef.current) return;
+    const r = popRef.current.getBoundingClientRect();
+    if (r.bottom > window.innerHeight - 8) setTop(rect.top - r.height - 6);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return createPortal(
+    <div
+      ref={popRef}
+      style={{
+        position: "fixed", top, left, zIndex: 99998, width: W,
+        background: "var(--bg-popover, rgba(255,255,255,0.82))",
+        WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+        backdropFilter: "blur(20px) saturate(1.8)",
+        border: "0.5px solid var(--bd-popover, rgba(0,0,0,0.10))",
+        borderRadius: 10,
+        padding: "10px 12px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)",
+        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+        fontSize: 12, lineHeight: 1.5,
+        color: "var(--tx-2)",
+        pointerEvents: "none",
+      }}
+    >
+      {text}
+    </div>,
+    document.body,
+  );
+}
+
 function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
   const missingSet = useContext(MissingCtx);
-  const key = fieldKey || label.match(/\(([A-Za-z_][A-Za-z_0-9]*)\)\s*$/)?.[1];
+  const [hintRect, setHintRect] = useState(null);
+  const fieldRef  = useRef(null);
+  const key       = fieldKey || label.match(/\(([A-Za-z_][A-Za-z_0-9]*)\)\s*$/)?.[1];
   const isMissing = key && missingSet.size > 0 && missingSet.has(key);
+
+  const showHint = () => {
+    if (disabledHint && fieldRef.current)
+      setHintRect(fieldRef.current.getBoundingClientRect());
+  };
+
   return (
     <div
+      ref={fieldRef}
       className={`${s.field} ${disabledHint ? s.fieldDisabled : ""}`}
-      title={disabledHint}
+      onMouseEnter={showHint}
+      onMouseLeave={() => setHintRect(null)}
     >
       <div className={s.fieldHeader}>
         <label className={s.fieldLabel}>
@@ -743,6 +792,9 @@ function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
         {children}
       </div>
       {hint && <span className={s.hint}>{hint}</span>}
+      {disabledHint && hintRect && (
+        <DisabledHintPortal text={disabledHint} rect={hintRect} />
+      )}
     </div>
   );
 }
