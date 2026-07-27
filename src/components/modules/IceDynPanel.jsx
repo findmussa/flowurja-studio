@@ -460,6 +460,7 @@ function IceSchematic({ iceModel }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function IceDynPanel({ onLog, project, filePathFromProject, onDirtyChange, onRegisterSave, simRunning = false }) {
   const [tab,          setTab]          = useState("overview");
+  const tabDirRef = useRef(1);
   const [p,            _setP]           = useState(DEFAULT);
   const [filePath,     setFilePath]     = useState("");
   const [isDirtyFlag,  setIsDirtyFlag]  = useState(false);
@@ -556,7 +557,7 @@ export default function IceDynPanel({ onLog, project, filePathFromProject, onDir
   // ── Tab renders ───────────────────────────────────────────────────────────
 
   const renderOverview = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       {/* Module callout */}
       <div className={s.callout}>
         <strong>IceDyn</strong> is an arctic / sub-arctic module used for structures experiencing
@@ -645,7 +646,7 @@ export default function IceDynPanel({ onLog, project, filePathFromProject, onDir
   const renderIceProps = () => {
     const model = p.IceModel;
     return (
-      <div className={s.form}>
+      <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
 
         {/* Section: Ice Geometry */}
         <SectionHead>Ice Geometry</SectionHead>
@@ -749,7 +750,7 @@ export default function IceDynPanel({ onLog, project, filePathFromProject, onDir
   };
 
   const renderOutput = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Output Options</SectionHead>
       <div className={s.grid2}>
         <SelField
@@ -911,7 +912,12 @@ export default function IceDynPanel({ onLog, project, filePathFromProject, onDir
         {TABS.map(t => (
           <button key={t.id}
             className={[s.tab, tab === t.id ? s.tabActive : ""].join(" ")}
-            onClick={() => setTab(t.id)} type="button">
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }} type="button">
             {t.label}
           </button>
         ))}

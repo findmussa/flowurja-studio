@@ -505,6 +505,7 @@ function TurbineSchematic() {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function ServoDynPanel({ onLog, project, filePathFromProject, onDirtyChange, onRegisterSave, simRunning = false }) {
   const [tab,      setTab]      = useState("quick");
+  const tabDirRef = useRef(1);
   const [p,        _setP]       = useState(DEFAULT);
   const [filePath, setFilePath] = useState("");
   const [isDirtyFlag, setIsDirtyFlag] = useState(false);
@@ -639,7 +640,7 @@ export default function ServoDynPanel({ onLog, project, filePathFromProject, onD
 
   // ── Tabs ────────────────────────────────────────────────────────────────────
   const renderQuick = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <div className={s.callout}>
         Most-used control parameters — full settings on other tabs.
       </div>
@@ -730,7 +731,7 @@ export default function ServoDynPanel({ onLog, project, filePathFromProject, onD
   );
 
   const renderPitch = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Pitch Control</SectionHead>
       <div className={s.grid2}>
         <SelField label="Pitch control mode (PCMode)" value={p.PCMode} onChange={v => set("PCMode", v)}
@@ -807,7 +808,7 @@ export default function ServoDynPanel({ onLog, project, filePathFromProject, onD
   );
 
   const renderModels = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <div className={s.callout}>
         ⚡ Active: <strong style={{ marginLeft:4 }}>{vsCtrlName}</strong> torque control,&nbsp;
         <strong>{genModelName}</strong> generator model.
@@ -894,7 +895,7 @@ export default function ServoDynPanel({ onLog, project, filePathFromProject, onD
   );
 
   const renderYaw = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Nacelle-Yaw Control</SectionHead>
       <div className={s.grid2}>
         <SelField label="Yaw control mode (YCMode)" value={p.YCMode} onChange={v => set("YCMode", v)}
@@ -1005,7 +1006,7 @@ export default function ServoDynPanel({ onLog, project, filePathFromProject, onD
   );
 
   const renderInterface = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <Collapsible title="Bladed-style DLL Interface" defaultOpen={p.PCMode === 5 || p.VSContrl === 5 || p.YCMode === 5}>
         <div className={s.grid1} style={{ marginBottom: 12 }}>
           {[
@@ -1185,7 +1186,12 @@ export default function ServoDynPanel({ onLog, project, filePathFromProject, onD
         {TABS.map(t => (
           <button key={t.id}
             className={[s.tab, tab === t.id ? s.tabActive : ""].join(" ")}
-            onClick={() => setTab(t.id)} type="button">
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }} type="button">
             {t.label}
           </button>
         ))}

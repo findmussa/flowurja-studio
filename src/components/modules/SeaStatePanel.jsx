@@ -697,6 +697,7 @@ export default function SeaStatePanel({
   simRunning = false,
 }) {
   const [tab,         setTab]         = useState("quick");
+  const tabDirRef = useRef(1);
   const [p,           _setP]          = useState(DEFAULT);
   const [filePath,    setFilePath]    = useState("");
   const [isDirtyFlag, setIsDirtyFlag] = useState(false);
@@ -793,7 +794,7 @@ export default function SeaStatePanel({
   const renderQuick = () => {
     const wm = p.WaveMod;
     return (
-      <div className={s.form}>
+      <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
         <div className={s.callout}>
           Wave kinematics are defined here and passed to HydroDyn. WtrDens and WtrDpth here
           override the .fst values when not set to <strong>"default"</strong>. The guided
@@ -870,7 +871,7 @@ export default function SeaStatePanel({
     const wm  = p.WaveMod;
     const wdm = p.WaveDirMod;
     return (
-      <div className={s.form}>
+      <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
         <SectionHead>Environmental Conditions</SectionHead>
         <div className={s.grid3}>
           <FieldRow label="Water density (WtrDens)" unit="kg/m³"
@@ -1155,7 +1156,7 @@ export default function SeaStatePanel({
     const cm = p.CurrMod;
     const stdActive = cm === 1;
     return (
-      <div className={s.form}>
+      <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
         <SectionHead>Current Model</SectionHead>
         <div className={s.grid2}>
           <FieldRow label="Current model (CurrMod)" info={INFO.CurrMod}>
@@ -1258,7 +1259,7 @@ export default function SeaStatePanel({
 
   // ── Tab: Output ─────────────────────────────────────────────────────────────
   const renderOutput = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Output Options</SectionHead>
       <div className={s.grid2}>
         <FieldRow label="Output destination (OutSwtch)" info={INFO.OutSwtch}>
@@ -1408,7 +1409,12 @@ export default function SeaStatePanel({
         {TABS.map(t => (
           <button key={t.id}
             className={[s.tab, tab === t.id ? s.tabActive : ""].join(" ")}
-            onClick={() => setTab(t.id)} type="button">
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }} type="button">
             {t.label}
           </button>
         ))}

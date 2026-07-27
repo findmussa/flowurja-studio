@@ -758,6 +758,7 @@ function TurbineSchematic({ tipRad, towerHt, twr2Shft, rotSpeed }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ElastoDynPanel({ onLog, project, filePathFromProject, onDirtyChange, onRegisterSave, simRunning = false }) {
   const [tab,      setTab]      = useState("quick");
+  const tabDirRef = useRef(1);
   const [p,        _setP]       = useState(DEFAULT);
   const [filePath, setFilePath] = useState("");
   const [isDirtyFlag, setIsDirtyFlag] = useState(false);
@@ -999,7 +1000,12 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
           <button
             key={t.id}
             className={`${s.tab} ${tab === t.id ? s.tabActive : ""}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }}
           >
             {t.label}
           </button>
@@ -1039,7 +1045,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
 
           {/* ── Quick Access tab ──────────────────────────── */}
           {tab === "quick" && (
-            <div className={s.form}>
+            <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <div className={s.callout}>
                 Most-used parameters for day-to-day simulations — full control on other tabs.
               </div>
@@ -1120,7 +1126,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
 
           {/* ── Geometry tab ──────────────────────────────── */}
           {tab === "geometry" && (
-            <div className={s.form}>
+            <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Rotor</SectionHead>
               <div className={s.grid2}>
                 <Field label="Number of blades (NumBl)">
@@ -1215,7 +1221,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
 
           {/* ── DOFs tab ──────────────────────────────────── */}
           {tab === "dofs" && (
-            <div className={s.form}>
+            <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Degrees of freedom</SectionHead>
 
               <DofGroup title="Blade">
@@ -1314,7 +1320,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
 
           {/* ── Mass & Drive tab ──────────────────────────── */}
           {tab === "mass" && (
-            <div className={s.form}>
+            <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Hub</SectionHead>
               <div className={s.grid2}>
                 <Field label="Hub mass (HubMass)" unit="kg"
@@ -1486,7 +1492,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
 
           {/* ── Files & Output tab ────────────────────────── */}
           {tab === "files" && (
-            <div className={s.form}>
+            <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Integration</SectionHead>
               <div className={s.grid2}>
                 <Field label="Integration method (Method)">

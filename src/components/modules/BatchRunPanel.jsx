@@ -291,6 +291,7 @@ export default function BatchRunPanel({
 
   // UI state
   const [tab,           setTab]           = useState("define");
+  const tabDirRef = useRef(1);
   const [cases,         setCases]         = useState([]);
   const [workers,       setWorkers]       = useState(() => {
     try { return Number(localStorage.getItem("fws-default-workers")) || 2; }
@@ -630,6 +631,7 @@ export default function BatchRunPanel({
 
     setRunStatus("running");
     setRunStartTime(Date.now());
+    tabDirRef.current = 1;
     setTab("run");
 
     const runWorker = async (idx) => {
@@ -655,6 +657,7 @@ export default function BatchRunPanel({
     await Promise.all(Array.from({ length: workers }, (_, i) => runWorker(i)));
 
     setRunStatus("done");
+    tabDirRef.current = 1;
     setTab("results");
     onLog?.("ok", `Batch "${batchName}" finished.`);
   }, [ofBinary, workers, runSingleCase, onLog]);
@@ -762,6 +765,7 @@ export default function BatchRunPanel({
     setRunStatus("idle");
     setBatchStatus({});
     setExpandedLogId(null);
+    tabDirRef.current = -1;
     setTab("define");
   };
 
@@ -859,7 +863,12 @@ export default function BatchRunPanel({
           <button
             key={t.id}
             className={[s.tab, tab === t.id ? s.tabActive : ""].join(" ")}
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }}
           >
             {t.label}
             {t.badge && (
@@ -882,7 +891,7 @@ export default function BatchRunPanel({
 
         {/* ════════ DEFINE TAB ════════ */}
         {tab === "define" && (
-          <>
+          <div key="define" className={s.tabEnter} style={{ "--tab-dir": tabDirRef.current }}>
             {/* ── Alerts ── */}
             {!ofBinary && (
               <div className={s.calloutWarn}>
@@ -1236,12 +1245,12 @@ export default function BatchRunPanel({
                 <span>No cases yet — import from a project sweep, build steady-wind cases, or pick .bts files above.</span>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* ════════ RUN TAB ════════ */}
         {tab === "run" && (
-          <>
+          <div key="run" className={s.tabEnter} style={{ "--tab-dir": tabDirRef.current }}>
             {totalRun === 0 ? (
               <div className={s.emptyState}>
                 <Play size={32} strokeWidth={1.2} className={s.emptyStateIcon} />
@@ -1469,12 +1478,12 @@ export default function BatchRunPanel({
                 </div>
               </>
             )}
-          </>
+          </div>
         )}
 
         {/* ════════ RESULTS TAB ════════ */}
         {tab === "results" && (
-          <>
+          <div key="results" className={s.tabEnter} style={{ "--tab-dir": tabDirRef.current }}>
             {totalRun === 0 ? (
               <div className={s.emptyState}>
                 <FileText size={32} strokeWidth={1.2} className={s.emptyStateIcon} />
@@ -1629,7 +1638,7 @@ export default function BatchRunPanel({
                 </div>
               </>
             )}
-          </>
+          </div>
         )}
 
       </div>

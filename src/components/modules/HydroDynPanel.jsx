@@ -447,6 +447,7 @@ function OffshoreSchematic() {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function HydroDynPanel({ onLog, project, filePathFromProject, onDirtyChange, onRegisterSave, simRunning = false }) {
   const [tab,           setTab]           = useState("overview");
+  const tabDirRef = useRef(1);
   const [p,             _setP]            = useState(DEFAULT);
   const [filePath,      setFilePath]      = useState("");
   const [isDirtyFlag,   setIsDirtyFlag]   = useState(false);
@@ -550,7 +551,7 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
 
   // ── Tab renders ───────────────────────────────────────────────────────────
   const renderOverview = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <div className={s.callout}>
         HydroDyn computes hydrodynamic loads on the substructure. Wave and current
         conditions are defined in the <strong>SeaState</strong> module (in the .fst file).
@@ -639,7 +640,7 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
   );
 
   const renderPotentialFlow = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       {p.PotMod === 0 && (
         <div className={s.calloutInfo}>
           Potential-flow model is disabled (PotMod = 0). Enable it above to configure
@@ -825,7 +826,7 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
   );
 
   const renderStrip = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Strip Theory (Morison)</SectionHead>
       <div className={s.grid2}>
         <SelField
@@ -881,7 +882,7 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
   );
 
   const renderOutput = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Output Options</SectionHead>
       <div className={s.grid2}>
         <Field label="Output destination (OutSwtch)"
@@ -983,7 +984,12 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
         {TABS.map(t => (
           <button key={t.id}
             className={[s.tab, tab === t.id ? s.tabActive : ""].join(" ")}
-            onClick={() => setTab(t.id)} type="button">
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }} type="button">
             {t.label}
           </button>
         ))}

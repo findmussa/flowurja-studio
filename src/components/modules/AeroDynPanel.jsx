@@ -720,6 +720,7 @@ function TurbineSchematic() {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function AeroDynPanel({ onLog, project, filePathFromProject, onDirtyChange, onRegisterSave, simRunning = false }) {
   const [tab,      setTab]      = useState("quick");
+  const tabDirRef = useRef(1);
   const [p,        _setP]       = useState(DEFAULT);
   const [filePath, setFilePath] = useState("");
   const [isDirtyFlag, setIsDirtyFlag] = useState(false);
@@ -865,7 +866,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
 
   // ── Tabs content ──────────────────────────────────────────────────────────
   const renderQuick = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <div className={s.callout}>
         Most-used aerodynamic settings for day-to-day simulations — full control on other tabs.
       </div>
@@ -923,7 +924,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
   );
 
   const renderGeneral = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>General Options</SectionHead>
       <div className={s.grid2}>
         <SelField label="Wake / Induction" value={p.WakeMod} onChange={v => set("WakeMod", v)}
@@ -998,7 +999,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
   );
 
   const renderModels = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <div className={s.callout}>
         ⚡ Active: <strong style={{ marginLeft: 4 }}>{wakeName}</strong>&nbsp;wake model,&nbsp;
         <strong>{aeroName}</strong>&nbsp;aerodynamics.
@@ -1077,7 +1078,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
   );
 
   const renderBlades = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Blade Aerodynamic Property Files</SectionHead>
       <div className={s.toggleGrid} style={{ marginBottom: 16 }}>
         <Toggle label="Include aerodynamic pitching moment (UseBlCm)" value={p.UseBlCm}
@@ -1153,7 +1154,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
   );
 
   const renderOutput = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Tower Definition</SectionHead>
       <div className={s.grid1}>
         <Field label="Number of tower nodes (NumTwrNds)">
@@ -1330,7 +1331,12 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         {TABS.map(t => (
           <button key={t.id}
             className={[s.tab, tab === t.id ? s.tabActive : ""].join(" ")}
-            onClick={() => setTab(t.id)} type="button">
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }} type="button">
             {t.label}
           </button>
         ))}

@@ -478,6 +478,7 @@ export default function SubDynPanel({
   simRunning = false,
 }) {
   const [tab,          setTab]          = useState("overview");
+  const tabDirRef = useRef(1);
   const [p,            _setP]           = useState(DEFAULT);
   const [filePath,     setFilePath]     = useState("");
   const [isDirtyFlag,  setIsDirtyFlag]  = useState(false);
@@ -584,7 +585,7 @@ export default function SubDynPanel({
   // ── Tab renders ─────────────────────────────────────────────────────────────
 
   const renderOverview = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <div className={s.callout}>
         SubDyn computes substructure dynamics for fixed-bottom offshore wind turbines
         using Craig-Bampton (CB) reduction or Guyan static condensation. The structural
@@ -670,7 +671,7 @@ export default function SubDynPanel({
   );
 
   const renderFEM = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Finite Element Model</SectionHead>
       <div className={s.grid2}>
         <SelField
@@ -803,7 +804,7 @@ export default function SubDynPanel({
   );
 
   const renderOutput = () => (
-    <div className={s.form}>
+    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
       <SectionHead>Output Flags</SectionHead>
       <div className={s.toggleGrid}>
         <Toggle
@@ -988,7 +989,12 @@ export default function SubDynPanel({
           <button
             key={t.id}
             className={[s.tab, tab === t.id ? s.tabActive : ""].join(" ")}
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              const oldIdx = TABS.findIndex(x => x.id === tab);
+              const newIdx = TABS.findIndex(x => x.id === t.id);
+              tabDirRef.current = newIdx >= oldIdx ? 1 : -1;
+              setTab(t.id);
+            }}
             type="button"
           >
             {t.label}
