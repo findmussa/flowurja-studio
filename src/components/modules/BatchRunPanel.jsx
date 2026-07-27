@@ -891,7 +891,7 @@ export default function BatchRunPanel({
 
         {/* ════════ DEFINE TAB ════════ */}
         {tab === "define" && (
-          <div key="define" className={s.tabEnter} style={{ "--tab-dir": tabDirRef.current }}>
+          <div key="define" className={s.tabEnterFirst}>
             {/* ── Alerts ── */}
             {!ofBinary && (
               <div className={s.calloutWarn}>

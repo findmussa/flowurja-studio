@@ -640,7 +640,7 @@ export default function ServoDynPanel({ onLog, project, filePathFromProject, onD
 
   // ── Tabs ────────────────────────────────────────────────────────────────────
   const renderQuick = () => (
-    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+    <div className={`${s.form} ${s.tabEnterFirst}`}>
       <div className={s.callout}>
         Most-used control parameters — full settings on other tabs.
       </div>

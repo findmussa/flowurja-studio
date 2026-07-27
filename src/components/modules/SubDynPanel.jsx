@@ -585,7 +585,7 @@ export default function SubDynPanel({
   // ── Tab renders ─────────────────────────────────────────────────────────────
 
   const renderOverview = () => (
-    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+    <div className={`${s.form} ${s.tabEnterFirst}`}>
       <div className={s.callout}>
         SubDyn computes substructure dynamics for fixed-bottom offshore wind turbines
         using Craig-Bampton (CB) reduction or Guyan static condensation. The structural

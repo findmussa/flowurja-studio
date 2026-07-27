@@ -866,7 +866,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
 
   // ── Tabs content ──────────────────────────────────────────────────────────
   const renderQuick = () => (
-    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+    <div className={`${s.form} ${s.tabEnterFirst}`}>
       <div className={s.callout}>
         Most-used aerodynamic settings for day-to-day simulations — full control on other tabs.
       </div>

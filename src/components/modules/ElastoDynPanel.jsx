@@ -1045,7 +1045,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
 
           {/* ── Quick Access tab ──────────────────────────── */}
           {tab === "quick" && (
-            <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+            <div className={`${s.form} ${s.tabEnterFirst}`}>
               <div className={s.callout}>
                 Most-used parameters for day-to-day simulations — full control on other tabs.
               </div>

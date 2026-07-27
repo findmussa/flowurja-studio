@@ -794,7 +794,7 @@ export default function SeaStatePanel({
   const renderQuick = () => {
     const wm = p.WaveMod;
     return (
-      <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+      <div className={`${s.form} ${s.tabEnterFirst}`}>
         <div className={s.callout}>
           Wave kinematics are defined here and passed to HydroDyn. WtrDens and WtrDpth here
           override the .fst values when not set to <strong>"default"</strong>. The guided

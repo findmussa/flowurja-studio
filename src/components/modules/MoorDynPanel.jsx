@@ -588,7 +588,7 @@ export default function MoorDynPanel({
 
   // ── Tab renders ─────────────────────────────────────────────────────────────
   const renderOverview = () => (
-    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+    <div className={`${s.form} ${s.tabEnterFirst}`}>
       {!filePath ? (
         <div className={s.calloutInfo}>
           Open a MoorDyn .dat file to view and edit solver settings. For floating

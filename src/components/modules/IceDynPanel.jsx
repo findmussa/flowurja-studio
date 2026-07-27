@@ -557,7 +557,7 @@ export default function IceDynPanel({ onLog, project, filePathFromProject, onDir
   // ── Tab renders ───────────────────────────────────────────────────────────
 
   const renderOverview = () => (
-    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+    <div className={`${s.form} ${s.tabEnterFirst}`}>
       {/* Module callout */}
       <div className={s.callout}>
         <strong>IceDyn</strong> is an arctic / sub-arctic module used for structures experiencing

@@ -551,7 +551,7 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
 
   // ── Tab renders ───────────────────────────────────────────────────────────
   const renderOverview = () => (
-    <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+    <div className={`${s.form} ${s.tabEnterFirst}`}>
       <div className={s.callout}>
         HydroDyn computes hydrodynamic loads on the substructure. Wave and current
         conditions are defined in the <strong>SeaState</strong> module (in the .fst file).
