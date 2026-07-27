@@ -724,7 +724,12 @@ function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
   const key = fieldKey || label.match(/\(([A-Za-z_][A-Za-z_0-9]*)\)\s*$/)?.[1];
   const isMissing = key && missingSet.size > 0 && missingSet.has(key);
   return (
-    <div className={s.field}>
+    <div
+      className={`${s.field} ${disabledHint ? s.fieldDisabled : ""}`}
+      style={{ position: "relative" }}
+      onMouseEnter={() => disabledHint && setHintVisible(true)}
+      onMouseLeave={() => setHintVisible(false)}
+    >
       <div className={s.fieldHeader}>
         <label className={s.fieldLabel}>
           {label}{unit && <span className={s.unit}> {unit}</span>}
@@ -737,18 +742,13 @@ function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
           />
         )}
       </div>
-      <div
-        className={isMissing ? s.fieldDefaulted : undefined}
-        style={{ position: "relative" }}
-        onMouseEnter={() => disabledHint && setHintVisible(true)}
-        onMouseLeave={() => setHintVisible(false)}
-      >
+      <div className={isMissing ? s.fieldDefaulted : undefined}>
         {children}
-        {disabledHint && hintVisible && (
-          <div className={s.disabledHint}>{disabledHint}</div>
-        )}
       </div>
       {hint && <span className={s.hint}>{hint}</span>}
+      {disabledHint && hintVisible && (
+        <div className={s.disabledHint}>{disabledHint}</div>
+      )}
     </div>
   );
 }
@@ -1745,18 +1745,21 @@ export default function InflowWindPanel({
                   </Field>
                 </div>
 
-                <Collapsible title="Pulse gates (SensorType=1 only)" defaultOpen={p.SensorType === 1}>
-                  <div className={s.grid2}>
-                    <Field label="Number of gates (NumPulseGate)" info={INFO.NumPulseGate} fieldKey="NumPulseGate">
-                      <input className={s.inp} type="number" value={p.NumPulseGate}
-                        onChange={setNum("NumPulseGate")} min="0" step="1" />
-                    </Field>
-                    <Field label="Gate spacing (PulseSpacing)" unit="m" info={INFO.PulseSpacing} fieldKey="PulseSpacing">
-                      <input className={s.inp} type="number" value={p.PulseSpacing}
-                        onChange={setNum("PulseSpacing")} step="1" />
-                    </Field>
-                  </div>
-                </Collapsible>
+                {p.SensorType === 1 && (
+                  <>
+                    <p className={s.sectionHead}>Pulse Gates</p>
+                    <div className={s.grid2}>
+                      <Field label="Number of gates (NumPulseGate)" info={INFO.NumPulseGate} fieldKey="NumPulseGate">
+                        <input className={s.inp} type="number" value={p.NumPulseGate}
+                          onChange={setNum("NumPulseGate")} min="0" step="1" />
+                      </Field>
+                      <Field label="Gate spacing (PulseSpacing)" unit="m" info={INFO.PulseSpacing} fieldKey="PulseSpacing">
+                        <input className={s.inp} type="number" value={p.PulseSpacing}
+                          onChange={setNum("PulseSpacing")} step="1" />
+                      </Field>
+                    </div>
+                  </>
+                )}
 
                 <p className={s.sectionHead}>Focal Point</p>
                 <div className={s.grid3}>
@@ -1868,25 +1871,22 @@ export default function InflowWindPanel({
                   </Field>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, marginBottom: 4 }}>
-                  <p className={s.sectionHead} style={{ margin: 0 }}>
-                    Output Channels (OutList)
-                    <InfoPopover content={INFO.OutList} accentColor={ACCENT} />
-                  </p>
-                  <div style={{ flex: 1 }} />
-                  <button
-                    className={s.pickVarsBtn}
-                    type="button"
-                    onClick={() => setShowOutVarModal(true)}
-                  >
-                    <List size={11} strokeWidth={2} />
-                    Pick variables
-                  </button>
-                </div>
+                <p className={s.sectionHead} style={{ marginTop: 10, marginBottom: 6 }}>
+                  Output Channels (OutList)
+                  <InfoPopover content={INFO.OutList} accentColor={ACCENT} />
+                </p>
                 <p className={s.hint} style={{ marginBottom: 8 }}>
                   One channel name per line. Quotes are optional — added automatically on save.
-                  Common channels: Wind1VelX · Wind1VelY · Wind1VelZ
                 </p>
+                <button
+                  className={s.pickVarsBtn}
+                  type="button"
+                  onClick={() => setShowOutVarModal(true)}
+                  style={{ marginBottom: 8, alignSelf: "flex-start" }}
+                >
+                  <List size={11} strokeWidth={2} />
+                  Pick variables
+                </button>
                 <textarea
                   className={s.outListArea}
                   value={p.OutList}

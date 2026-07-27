@@ -791,36 +791,46 @@
   line-height: 1.2;
 }
 
+/* ── Disabled field (whole field fades out) ─────────────────── */
+.fieldDisabled {
+  opacity: 0.38;
+  transition: opacity 0.15s;
+  cursor: not-allowed;
+}
+.fieldDisabled:hover {
+  opacity: 0.70;
+}
+.fieldDisabled input,
+.fieldDisabled select,
+.fieldDisabled textarea,
+.fieldDisabled button:not(:focus) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* ── Disabled-field hover hint ──────────────────────────────── */
 .disabledHint {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 5px);
   left: 0;
-  right: 0;
-  background: var(--bg-popover, rgba(30,30,36,0.96));
-  border: 0.5px solid var(--bd-popover, rgba(255,255,255,0.10));
-  color: var(--tx-popover, rgba(255,255,255,0.85));
-  font-size: 11.5px;
-  line-height: 1.5;
-  padding: 7px 10px;
-  border-radius: 8px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   z-index: 200;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd);
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--tx-2);
+  line-height: 1.45;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
   pointer-events: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
-  animation: hintIn 0.15s ease both;
+  animation: hintIn 0.14s ease both;
 }
 
 @keyframes hintIn {
   from { opacity: 0; transform: translateY(3px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .disabledHint {
-    background: rgba(30,30,36,0.92);
-  }
 }
 
 /* ── Pick variables button ──────────────────────────────────── */
