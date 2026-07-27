@@ -28,6 +28,7 @@ export default function RawFileModal({
   onClose,
   onSaved,
   onApply,
+  warnSoftware = "OpenFAST",
 }) {
   const [closing,      setClosing]      = useState(false);
   const [showWarning,  setShowWarning]  = useState(false);
@@ -241,9 +242,9 @@ export default function RawFileModal({
               </div>
               <h3 className={s.warnTitle}>Edit with care</h3>
               <p className={s.warnBody}>
-                <code className={s.warnCode}>{filename}</code> uses strict whitespace and
-                formatting rules. Incorrect spacing, missing values, or broken comments can
-                cause OpenFAST to fail silently or crash.
+                This file uses strict whitespace and formatting rules.
+                Incorrect spacing, missing values, or broken comments can
+                cause {warnSoftware} to fail silently or crash.
               </p>
               <p className={s.warnBody} style={{ marginTop: 6 }}>
                 Only edit if you know exactly what you're changing.

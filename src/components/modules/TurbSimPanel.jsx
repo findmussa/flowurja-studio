@@ -969,6 +969,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           filename={`${effectivePrefix}.inp`}
           onClose={() => setShowRaw(false)}
           onApply={handleApply}
+          warnSoftware="TurbSim"
         />
       )}
 
