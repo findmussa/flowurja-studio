@@ -34,6 +34,12 @@
   -webkit-app-region: no-drag;
 }
 
+.desc {
+  font-size: 12px;
+  color: var(--tx-5);
+  -webkit-app-region: no-drag;
+}
+
 .badge {
   font-size: 10px;
   font-weight: 600;
@@ -154,6 +160,100 @@
   min-height: 0;
 }
 
+/* ── Tab bar ─────────────────────────────────────────────────── */
+.tabBar {
+  display: flex;
+  gap: 2px;
+  padding: 6px 12px 0;
+  border-bottom: 0.5px solid var(--bd-subtle);
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 5px 14px;
+  border-radius: 7px 7px 0 0;
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--tx-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.13s, background 0.13s;
+}
+.tab:hover:not(.tabActive) {
+  color: var(--tx-2);
+  background: var(--bg-hover);
+}
+
+.tabActive {
+  color: #378ADD;
+  background: var(--bg-hover);
+  font-weight: 500;
+}
+.tabActive::after {
+  content: "";
+  position: absolute;
+  bottom: -0.5px;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: #378ADD;
+  border-radius: 2px 2px 0 0;
+}
+
+/* ── Tab animations ──────────────────────────────────────────── */
+@keyframes tabSlide {
+  from { opacity: 0; transform: translateX(calc(var(--tab-dir, 1) * 12px)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.tabEnter {
+  animation: tabSlide 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes tabUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tabEnterFirst {
+  animation: tabUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Missing-field banner ────────────────────────────────────── */
+.absentBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 6px 20px;
+  background: rgba(217,119,6,0.06);
+  border-bottom: 0.5px solid rgba(217,119,6,0.18);
+  font-size: 11px;
+  color: rgba(180,100,4,0.90);
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.absentList {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+}
+
+.absentFieldBtn {
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline dashed;
+  padding: 0;
+}
+
 /* ── Scroll / form area ─────────────────────────────────────── */
 .scroll {
   flex: 1;
@@ -161,14 +261,14 @@
   min-height: 0;
 }
 
-@keyframes formEnter {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+.formArea {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .form {
   padding: 18px 20px 32px;
-  animation: formEnter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* ── Section header ─────────────────────────────────────────── */
@@ -243,6 +343,13 @@
   gap: 5px;
 }
 
+/* ── Field header (label + badge + info button row) ─────────── */
+.fieldHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .fieldLabel {
   font-size: 13px;
   font-weight: 500;
@@ -252,6 +359,42 @@
   align-items: center;
   gap: 4px;
 }
+
+/* ── Default / missing badges ────────────────────────────────── */
+.defaultBadge {
+  font-size: 9.5px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  color: var(--tx-5);
+  background: var(--bg-muted);
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 3px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+.fieldDefaulted input,
+.fieldDefaulted select,
+.fieldDefaulted textarea {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+/* ── Callout ─────────────────────────────────────────────────── */
+.callout {
+  background: rgba(55,138,221,0.06);
+  border: 0.5px solid rgba(55,138,221,0.18);
+  border-radius: 8px;
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: rgba(55,138,221,0.90);
+  line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .callout { color: rgba(110,178,248,0.90); }
+}
+:root[data-theme="dark"] .callout { color: rgba(110,178,248,0.90); }
 
 .hint {
   font-size: 11px;
@@ -432,6 +575,74 @@
 
 .toggleRow:has(button:disabled) { opacity: 0.4; cursor: not-allowed; }
 .toggleRow:has(button:disabled) .toggle { cursor: not-allowed; }
+
+.toggleNote {
+  font-size: 11px;
+  color: var(--tx-5);
+  font-style: italic;
+}
+
+.toggleGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+/* ── Collapsible ─────────────────────────────────────────────── */
+.collapsible {
+  border: 0.5px solid var(--bd-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.collapsibleHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-muted);
+  border: none;
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--tx-3);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.collapsibleHead:hover {
+  background: var(--bg-hover);
+  color: var(--tx-2);
+}
+
+.collapsibleBody {
+  padding: 14px 12px;
+}
+
+/* ── OutList textarea ────────────────────────────────────────── */
+.outListArea {
+  width: 100%;
+  min-height: 120px;
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--tx-2);
+  background: var(--bg-surface);
+  border: 0.5px solid var(--bd-input);
+  border-radius: 7px;
+  padding: 8px 10px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  box-sizing: border-box;
+}
+.outListArea:focus {
+  border-color: rgba(55,138,221,0.50);
+  box-shadow: 0 0 0 2.5px rgba(55,138,221,0.12);
+}
 
 /* ── Auto-name output display ───────────────────────────────── */
 .outputRow {
