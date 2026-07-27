@@ -1004,7 +1004,7 @@ export default function InflowWindPanel({
                 </button>
               ))}
             </div>
-            <p className={s.typeDesc}>{wt?.desc}</p>
+            <p key={p.WindType} className={s.typeDesc}>{wt?.desc}</p>
 
             {/* VelInterpCubic — shown but disabled for WindType=1 */}
             <div className={s.field}

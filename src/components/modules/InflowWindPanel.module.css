@@ -161,8 +161,14 @@
   min-height: 0;
 }
 
+@keyframes formEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .form {
   padding: 18px 20px 32px;
+  animation: formEnter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* ── Section header ─────────────────────────────────────────── */
@@ -213,12 +219,6 @@
   border-color: rgba(55,138,221,0.45) !important;
   color: #378ADD !important;
   font-weight: 600;
-}
-
-.typeDesc {
-  font-size: 12px;
-  color: var(--tx-4);
-  margin: 0 0 4px;
 }
 
 /* ── Grid ───────────────────────────────────────────────────── */
@@ -491,12 +491,30 @@
 .writeBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── Source card (context-aware wind type params) ───────────── */
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes typeDescEnter {
+  from { opacity: 0; transform: translateX(6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 .sourceCard {
   background: var(--bg-surface);
   border: 0.5px solid var(--bd-subtle);
   border-radius: 12px;
   padding: 14px 16px 16px;
   margin: 10px 0 6px;
+  animation: cardEnter 0.30s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.typeDesc {
+  font-size: 12px;
+  color: var(--tx-4);
+  margin: 0 0 4px;
+  animation: typeDescEnter 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* ── Stats sidebar ──────────────────────────────────────────── */
