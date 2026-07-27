@@ -1167,6 +1167,7 @@
   border-radius: 9px;
   overflow: hidden;
   height: 32px;
+  width: fit-content;
 }
 .stepperBtn {
   width: 32px; height: 32px;
