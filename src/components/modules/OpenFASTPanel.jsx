@@ -847,6 +847,9 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   const setE = k => e  => setP(prev => ({ ...prev, [k]: e.target.value }));
   // SeaState → HydroDyn cascade: turning off SeaState must also disable HydroDyn
   const setCompSeaSt = v => setP(prev => ({ ...prev, CompSeaSt: v, ...(v === 0 ? { CompHydro: 0 } : {}) }));
+  // Derived flags used for dependency dimming across tabs
+  const isOffshore = p.CompSeaSt > 0 || p.CompHydro > 0 || p.CompSub > 0 || p.MHK > 0;
+  const isMHK = p.MHK > 0;
 
   const browseFile = async key => {
     try {
@@ -1291,24 +1294,24 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                 <Field label="Speed of sound (SpdSound)" unit="m/s" info={{ param: "SpdSound", desc: "Speed of sound in the working fluid. Used for compressibility corrections in aerodynamic modules.", range: "> 0", unit: "m/s", default: "335.0" }}>
                   <input type="number" value={p.SpdSound} step={1} min={0} onChange={setN("SpdSound")} />
                 </Field>
-                <Field label="Water density (WtrDens)" unit="kg/m³" info={{ param: "WtrDens", desc: "Density of water. Used by HydroDyn and SubDyn for buoyancy and hydrodynamic load calculations.", range: "> 0", unit: "kg/m³", default: "1025.0", note: "Offshore / MHK simulations only." }}>
-                  <input type="number" value={p.WtrDens} step={1} min={0} onChange={setN("WtrDens")} />
+                <Field label="Water density (WtrDens)" unit="kg/m³" title={!isOffshore ? "Enable SeaState, HydroDyn, SubDyn, or MHK mode to activate water properties." : undefined} info={{ param: "WtrDens", desc: "Density of water. Used by HydroDyn and SubDyn for buoyancy and hydrodynamic load calculations.", range: "> 0", unit: "kg/m³", default: "1025.0", note: "Offshore / MHK simulations only." }}>
+                  <input type="number" value={p.WtrDens} step={1} min={0} onChange={setN("WtrDens")} disabled={!isOffshore} />
                   <p className={s.hint}>Offshore / MHK only</p>
                 </Field>
-                <Field label="Water depth (WtrDpth)" unit="m" info={{ param: "WtrDpth", desc: "Water depth below still water level, positive downward.", range: "> 0", unit: "m", note: "Used by HydroDyn for wave kinematics and loading. Offshore / MHK only." }}>
-                  <input type="number" value={p.WtrDpth} step={1} min={0} onChange={setN("WtrDpth")} />
+                <Field label="Water depth (WtrDpth)" unit="m" title={!isOffshore ? "Enable SeaState, HydroDyn, SubDyn, or MHK mode to activate water properties." : undefined} info={{ param: "WtrDpth", desc: "Water depth below still water level, positive downward.", range: "> 0", unit: "m", note: "Used by HydroDyn for wave kinematics and loading. Offshore / MHK only." }}>
+                  <input type="number" value={p.WtrDpth} step={1} min={0} onChange={setN("WtrDpth")} disabled={!isOffshore} />
                   <p className={s.hint}>Offshore / MHK only</p>
                 </Field>
-                <Field label="Atm. pressure (Patm)" unit="Pa" info={{ param: "Patm", desc: "Atmospheric pressure.", range: "> 0", unit: "Pa", default: "103500.0", note: "Used only for MHK turbine cavitation index checks." }}>
-                  <input type="number" value={p.Patm} step={100} min={0} onChange={setN("Patm")} />
+                <Field label="Atm. pressure (Patm)" unit="Pa" title={!isMHK ? "Used only for MHK turbine cavitation checks. Enable MHK mode in the Modules tab." : undefined} info={{ param: "Patm", desc: "Atmospheric pressure.", range: "> 0", unit: "Pa", default: "103500.0", note: "Used only for MHK turbine cavitation index checks." }}>
+                  <input type="number" value={p.Patm} step={100} min={0} onChange={setN("Patm")} disabled={!isMHK} />
                   <p className={s.hint}>MHK cavitation check only</p>
                 </Field>
-                <Field label="Vapour pressure (Pvap)" unit="Pa" info={{ param: "Pvap", desc: "Vapour pressure of the working fluid.", range: "≥ 0", unit: "Pa", default: "1700.0", note: "Used only for MHK cavitation inception checks." }}>
-                  <input type="number" value={p.Pvap} step={10} min={0} onChange={setN("Pvap")} />
+                <Field label="Vapour pressure (Pvap)" unit="Pa" title={!isMHK ? "Used only for MHK turbine cavitation checks. Enable MHK mode in the Modules tab." : undefined} info={{ param: "Pvap", desc: "Vapour pressure of the working fluid.", range: "≥ 0", unit: "Pa", default: "1700.0", note: "Used only for MHK cavitation inception checks." }}>
+                  <input type="number" value={p.Pvap} step={10} min={0} onChange={setN("Pvap")} disabled={!isMHK} />
                   <p className={s.hint}>MHK cavitation check only</p>
                 </Field>
-                <Field label="MSL to SWL offset (MSL2SWL)" unit="m" info={{ param: "MSL2SWL", desc: "Vertical offset from mean sea level (MSL) to still water level (SWL), positive upward.", unit: "m", default: "0.0", note: "Offshore simulations only." }}>
-                  <input type="number" value={p.MSL2SWL} step={0.1} onChange={setN("MSL2SWL")} />
+                <Field label="MSL to SWL offset (MSL2SWL)" unit="m" title={!isOffshore ? "Enable SeaState, HydroDyn, SubDyn, or MHK mode to activate water properties." : undefined} info={{ param: "MSL2SWL", desc: "Vertical offset from mean sea level (MSL) to still water level (SWL), positive upward.", unit: "m", default: "0.0", note: "Offshore simulations only." }}>
+                  <input type="number" value={p.MSL2SWL} step={0.1} onChange={setN("MSL2SWL")} disabled={!isOffshore} />
                   <p className={s.hint}>Positive upward; offshore only</p>
                 </Field>
               </div>
@@ -1336,7 +1339,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                 )}
                 <div className={s.grid1}>
                   {[["BDBldFile1","Blade 1"],["BDBldFile2","Blade 2"],["BDBldFile3","Blade 3"]].map(([key, label]) => (
-                    <Field key={key} label={label}>
+                    <Field key={key} label={label} title={p.CompElast !== 2 ? "Active only when CompElast = 2 (ElastoDyn + BeamDyn blades). Change the ElastoDyn selector above to unlock." : undefined}>
                       <div className={s.fileRow}>
                         <input type="text" value={p[key]} onChange={e => setP(prev => ({ ...prev, [key]: e.target.value }))} disabled={p.CompElast !== 2} />
                         <button className={s.browseBtn} onClick={() => browseFile(key)} disabled={p.CompElast !== 2}><FolderOpen size={12} strokeWidth={1.8} /> Browse</button>
