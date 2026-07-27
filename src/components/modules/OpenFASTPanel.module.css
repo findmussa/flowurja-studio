@@ -1030,6 +1030,24 @@
 .field input:disabled,
 .field select:disabled { cursor: not-allowed; }
 
+/* Applied via JS when field has a disabledHint title — matches InflowWind fieldDisabled */
+.fieldDisabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  position: relative;
+}
+.fieldDisabled:hover { opacity: 0.70; }
+.fieldDisabled input,
+.fieldDisabled select { cursor: not-allowed; pointer-events: none; }
+
+.toggleRowDisabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  position: relative;
+}
+.toggleRowDisabled:hover { opacity: 0.70; }
+.toggleRowDisabled button { cursor: not-allowed; }
+
 /* ── Module toggle rows ────────────────────────────────── */
 .moduleList { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
 .moduleGrid {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -352,26 +353,81 @@ function SectionHead({ children }) { return <p className={s.sectionHead}>{childr
 
 const OF_ACCENT = "#0891B2";
 
+// Frosted-glass disabled-hint tooltip — matches InfoPopover card style
+function DisabledHintPortal({ text, rect }) {
+  const popRef = useRef(null);
+  const W = 280;
+  let left = rect.left;
+  if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8;
+  if (left < 8) left = 8;
+  const [top, setTop] = useState(rect.bottom + 6);
+
+  useEffect(() => {
+    if (!popRef.current) return;
+    const r = popRef.current.getBoundingClientRect();
+    if (r.bottom > window.innerHeight - 8) setTop(rect.top - r.height - 6);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return createPortal(
+    <div
+      ref={popRef}
+      style={{
+        position: "fixed", top, left, zIndex: 99998, width: W,
+        background: "var(--bg-popover, rgba(255,255,255,0.82))",
+        WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+        backdropFilter: "blur(20px) saturate(1.8)",
+        border: "0.5px solid var(--bd-popover, rgba(0,0,0,0.10))",
+        borderRadius: 10,
+        padding: "10px 12px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)",
+        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+        fontSize: 12, lineHeight: 1.5,
+        color: "var(--tx-2)",
+        pointerEvents: "none",
+      }}
+    >
+      {text}
+    </div>,
+    document.body,
+  );
+}
+
 function Field({ label, unit, info, title, children }) {
+  const [hintRect, setHintRect] = useState(null);
+  const fieldRef = useRef(null);
   return (
-    <div className={s.field} title={title}>
+    <div
+      ref={fieldRef}
+      className={`${s.field} ${title ? s.fieldDisabled : ""}`}
+      onMouseEnter={() => title && fieldRef.current && setHintRect(fieldRef.current.getBoundingClientRect())}
+      onMouseLeave={() => setHintRect(null)}
+    >
       <div className={s.fieldHeader}>
         <label className={s.fieldLabel}>{label}{unit && <span className={s.unit}> {unit}</span>}</label>
         {info && <InfoPopover accentColor={OF_ACCENT} content={typeof info === "string" ? { desc: info } : info} />}
       </div>
       {children}
+      {title && hintRect && <DisabledHintPortal text={title} rect={hintRect} />}
     </div>
   );
 }
 
 function Toggle({ label, value, onChange, info, disabled, title }) {
+  const [hintRect, setHintRect] = useState(null);
+  const rowRef = useRef(null);
   return (
-    <div className={s.toggleRow} title={title}>
+    <div
+      ref={rowRef}
+      className={`${s.toggleRow} ${title ? s.toggleRowDisabled : ""}`}
+      onMouseEnter={() => title && rowRef.current && setHintRect(rowRef.current.getBoundingClientRect())}
+      onMouseLeave={() => setHintRect(null)}
+    >
       <button type="button" disabled={disabled} className={`${s.toggle} ${value ? s.toggleOn : ""}`} onClick={() => onChange(!value)}>
         <span className={s.toggleThumb} />
       </button>
       <span className={s.toggleLabel}>{label}</span>
       {info && <InfoPopover accentColor={OF_ACCENT} content={typeof info === "string" ? { desc: info } : info} />}
+      {title && hintRect && <DisabledHintPortal text={title} rect={hintRect} />}
     </div>
   );
 }
