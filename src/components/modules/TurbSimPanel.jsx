@@ -1033,7 +1033,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
         <div className={s.formArea}>
 
           {tab === "dashboard" && (
-            <div className={s.dashTab}>
+            <div key="dashboard" className={s.dashTab}>
 
               {/* ── Row 1: Key parameters (left) | Isoline hero (right) ── */}
               <div className={s.dashRow}>
@@ -1242,7 +1242,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           )}
 
           {tab === "wind" && (
-            <div className={s.form}>
+            <div key="wind" className={s.form}>
               <SectionHead>Reference wind conditions</SectionHead>
               <div className={s.grid2}>
                 <SliderField label="Mean wind speed (URef)" unit="m/s" infoKey="URef"
@@ -1308,7 +1308,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           )}
 
           {tab === "spectral" && (
-            <div className={s.form}>
+            <div key="spectral" className={s.form}>
               <SectionHead>Turbulence model</SectionHead>
 
               <div className={s.grid2}>
@@ -1371,7 +1371,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           )}
 
           {tab === "grid" && (
-            <div className={s.form}>
+            <div key="grid" className={s.form}>
               <SectionHead>Spatial grid</SectionHead>
               <div className={s.grid2}>
                 <Field label="NumGrid_Z" unit="nodes" infoKey="NumGrid_Z">
@@ -1416,7 +1416,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
           )}
 
           {tab === "runtime" && (
-            <div className={s.form}>
+            <div key="runtime" className={s.form}>
               <SectionHead>Scaling</SectionHead>
               <Field label="ScaleIEC" infoKey="ScaleIEC">
                 <select value={p.ScaleIEC} onChange={e => setP(prev => ({ ...prev, ScaleIEC: Number(e.target.value) }))}>
