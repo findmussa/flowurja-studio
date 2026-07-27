@@ -1006,25 +1006,6 @@ export default function InflowWindPanel({
             </div>
             <p key={p.WindType} className={s.typeDesc}>{wt?.desc}</p>
 
-            {/* VelInterpCubic — shown but disabled for WindType=1 */}
-            <div className={s.field}
-              style={{ marginTop: 8 }}
-              title={p.WindType === 1 ? "Not used for WindType=1 (Steady). Enable with wind types 2–7 for cubic temporal interpolation." : undefined}
-            >
-              <span className={s.fieldLabel}>
-                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  Cubic time interpolation
-                  <InfoPopover content={INFO.VelInterpCubic} accentColor={ACCENT} />
-                </span>
-              </span>
-              <Toggle
-                value={p.VelInterpCubic}
-                onChange={v => setP(prev => ({ ...prev, VelInterpCubic: v }))}
-                label="VelInterpCubic"
-                disabled={p.WindType === 1}
-              />
-            </div>
-
             {/* ── Steady params ──────────────────────────────────────────── */}
             {p.WindType === 1 && (
               <div className={s.sourceCard}>
@@ -1331,8 +1312,27 @@ export default function InflowWindPanel({
               </div>
             )}
 
+            {/* VelInterpCubic — below the context-aware card, disabled for WindType=1 */}
+            <div className={s.field}
+              style={{ marginTop: 8, marginBottom: 4 }}
+              title={p.WindType === 1 ? "Not used for WindType=1 (Steady). Enable with wind types 2–7 for cubic temporal interpolation." : undefined}
+            >
+              <span className={s.fieldLabel}>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  Cubic time interpolation
+                  <InfoPopover content={INFO.VelInterpCubic} accentColor={ACCENT} />
+                </span>
+              </span>
+              <Toggle
+                value={p.VelInterpCubic}
+                onChange={v => setP(prev => ({ ...prev, VelInterpCubic: v }))}
+                label="VelInterpCubic"
+                disabled={p.WindType === 1}
+              />
+            </div>
+
             {/* Flow Direction */}
-            <p className={s.sectionHead} style={{ marginTop: p.WindType === 1 ? 0 : 4 }}>
+            <p className={s.sectionHead} style={{ marginTop: 10 }}>
               Flow Direction
             </p>
             <div className={s.grid2}>
