@@ -600,7 +600,11 @@ export default function App() {
     const noCtx = (e) => e.preventDefault();
     document.addEventListener("contextmenu", noCtx);
 
-    const win = getCurrentWindow();
+    // getCurrentWindow() throws outside Tauri (browser dev mode) — skip gracefully
+    let win;
+    try { win = getCurrentWindow(); } catch {
+      return () => document.removeEventListener("contextmenu", noCtx);
+    }
     let unlistenResize;
     let unlistenClose;
     let unlistenQuit;

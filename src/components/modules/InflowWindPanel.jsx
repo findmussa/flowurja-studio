@@ -80,13 +80,61 @@ const INFO = {
     desc:  "Reference length used to non-dimensionalise the horizontal and vertical shear columns in the Uniform wind file.",
     unit:  "m",
   },
+  VelInterpCubic: {
+    param: "VelInterpCubic",
+    desc:  "When True, uses cubic (rather than linear) interpolation in time for the wind velocity lookup. Cubic is smoother but costs ~30% more CPU. Not used for WindType=1 (Steady).",
+    default: "False",
+  },
+  FilenameRoot: {
+    param: "FilenameRoot",
+    desc:  "Root name of the Bladed-style wind files. For WindType=4 InflowWind appends '.wnd' (binary) and '.sum' (header). For WindType=7 this is the name of the file containing wind scaling values.",
+  },
+  TowerFile: {
+    param: "TowerFile",
+    desc:  "When True, InflowWind reads a tower wind file (<RootName>.twr) that provides wind speed at tower stations for aerodynamic tower loading. Ignored for WindType=7.",
+    default: "False",
+  },
+  FileName_u: {
+    param: "FileName_u",
+    desc:  "HAWC2 binary file containing the longitudinal (u) component of the fluctuating wind field.",
+  },
+  nx: {
+    param: "nx",
+    desc:  "Number of grid points in the x (streamwise) direction in the HAWC2 wind box.",
+  },
+  ScaleMethod: {
+    param: "ScaleMethod",
+    desc:  "Turbulence scaling method for HAWC2 files: 0 = no scaling (use raw values), 1 = direct scale factors (SFx/SFy/SFz), 2 = scale to achieve target standard deviation (SigmaFx/SigmaFy/SigmaFz).",
+    range: "0, 1, 2",
+    default: "1",
+  },
+  URef: {
+    param: "URef",
+    desc:  "Mean u-component wind speed at the HAWC2 reference height. Added to the fluctuating field to produce the total wind field.",
+    unit:  "m/s",
+  },
+  WindProfile: {
+    param: "WindProfile",
+    desc:  "Mean wind profile type for the HAWC2 mean wind: 0 = constant (use URef everywhere), 1 = logarithmic (requires Z0), 2 = power law (requires PLExp_Hawc).",
+    range: "0=constant, 1=log, 2=power law",
+    default: "1",
+  },
+  Z0: {
+    param: "Z0",
+    desc:  "Surface roughness length for the logarithmic HAWC2 mean wind profile. Typical offshore: 0.03 m; typical onshore: 0.05–0.5 m.",
+    unit:  "m",
+    default: "0.03",
+  },
 };
 
-// ── Wind types (HAWC2 / type 5 omitted — niche, complex, not yet supported) ──
+// ── Wind types ────────────────────────────────────────────────────────────────
 const WIND_TYPES = [
-  { value: 1, label: "Steady",      desc: "Constant mean speed + power law shear" },
-  { value: 3, label: "TurbSim BTS", desc: "Binary full-field wind file from TurbSim (.bts)" },
-  { value: 2, label: "Uniform",     desc: "Time-varying uniform wind from .wnd file" },
+  { value: 1, label: "Steady",         desc: "Constant mean speed + power law shear" },
+  { value: 3, label: "TurbSim BTS",    desc: "Binary full-field wind file from TurbSim (.bts)" },
+  { value: 2, label: "Uniform",        desc: "Time-varying uniform wind from .wnd file" },
+  { value: 4, label: "Bladed FF",      desc: "Binary Bladed-style full-field wind (.wnd + .sum)" },
+  { value: 5, label: "HAWC2",          desc: "HAWC-format binary wind files (u/v/w components)" },
+  { value: 7, label: "Native Bladed",  desc: "Native Bladed FF with wind scaling values file" },
 ];
 
 // ── Auto-name helper ──────────────────────────────────────────────────────────
@@ -103,6 +151,13 @@ function autoFilename(windType, p) {
     const base = p.FileName_BTS.trim().split(/[\\/]/).pop().replace(/\.bts$/i, "");
     return `IFW_${base}.dat`;
   }
+  if ((windType === 4 || windType === 7) && p.FilenameRoot.trim() && p.FilenameRoot !== "none") {
+    const base = p.FilenameRoot.trim().split(/[\\/]/).pop().replace(/\.(wnd|sum)$/i, "");
+    return windType === 7 ? `IFW_NBladed_${base}.dat` : `IFW_Bladed_${base}.dat`;
+  }
+  if (windType === 4) return "IFW_Bladed.dat";
+  if (windType === 5) return "IFW_HAWC2.dat";
+  if (windType === 7) return "IFW_NativeBladed.dat";
   return "InflowWind.dat";
 }
 
@@ -111,17 +166,43 @@ const DEFAULT = {
   WindType:       3,
   PropagationDir: 0.0,
   VFlowAng:       0.0,
+  VelInterpCubic: false,
   NWindVel:       1,
   WindVxiList:    0.0,
   WindVyiList:    0.0,
   WindVziList:    90.0,
+  // Steady (type 1)
   HWindSpeed:     12.0,
   RefHt:          90.0,
   PLexp:          0.2,
-  FileName_BTS:   "",
+  // Uniform (type 2)
   Filename_Uni:   "none",
   RefHt_Uni:      90.0,
   RefLength:      126.0,
+  // TurbSim BTS (type 3)
+  FileName_BTS:   "",
+  // Bladed FF (type 4 / Native Bladed type 7)
+  FilenameRoot:   "none",
+  TowerFile:      false,
+  // HAWC2 (type 5) — file paths
+  FileName_u:     "none",
+  FileName_v:     "none",
+  FileName_w:     "none",
+  // HAWC2 grid
+  nx: 64, ny: 32, nz: 32,
+  dx: 25.0, dy: 2.0, dz: 2.0,
+  RefHt_Hawc:     90.0,
+  // HAWC2 turbulence scaling
+  ScaleMethod:    1,
+  SFx: 1.0, SFy: 1.0, SFz: 1.0,
+  SigmaFx: 1.2, SigmaFy: 0.8, SigmaFz: 0.2,
+  // HAWC2 mean wind profile
+  URef:           12.0,
+  WindProfile:    1,
+  PLExp_Hawc:     0.2,
+  Z0:             0.03,
+  XOffset:        0,
+  // Output
   SumPrint:       false,
 };
 
@@ -169,17 +250,51 @@ function parsedToState(kv) {
     WindType:       num("WindType",       DEFAULT.WindType),
     PropagationDir: num("PropagationDir", DEFAULT.PropagationDir),
     VFlowAng:       num("VFlowAng",       DEFAULT.VFlowAng),
+    VelInterpCubic: bool("VelInterpCubic",DEFAULT.VelInterpCubic),
     NWindVel:       num("NWindVel",       DEFAULT.NWindVel),
     WindVxiList:    num("WindVxiList",    DEFAULT.WindVxiList),
     WindVyiList:    num("WindVyiList",    DEFAULT.WindVyiList),
     WindVziList:    num("WindVziList",    DEFAULT.WindVziList),
+    // Steady
     HWindSpeed:     num("HWindSpeed",     DEFAULT.HWindSpeed),
     RefHt:          num("RefHt",          DEFAULT.RefHt),
     PLexp:          num("PLexp",          DEFAULT.PLexp),
-    FileName_BTS:   str("FileName_BTS",   DEFAULT.FileName_BTS),
+    // Uniform
     Filename_Uni:   str("Filename_Uni",   DEFAULT.Filename_Uni),
     RefHt_Uni:      num("RefHt_Uni",      DEFAULT.RefHt_Uni),
     RefLength:      num("RefLength",      DEFAULT.RefLength),
+    // BTS
+    FileName_BTS:   str("FileName_BTS",   DEFAULT.FileName_BTS),
+    // Bladed
+    FilenameRoot:   str("FilenameRoot",   DEFAULT.FilenameRoot),
+    TowerFile:      bool("TowerFile",     DEFAULT.TowerFile),
+    // HAWC2 files
+    FileName_u:     str("FileName_u",     DEFAULT.FileName_u),
+    FileName_v:     str("FileName_v",     DEFAULT.FileName_v),
+    FileName_w:     str("FileName_w",     DEFAULT.FileName_w),
+    // HAWC2 grid
+    nx:          num("nx",          DEFAULT.nx),
+    ny:          num("ny",          DEFAULT.ny),
+    nz:          num("nz",          DEFAULT.nz),
+    dx:          num("dx",          DEFAULT.dx),
+    dy:          num("dy",          DEFAULT.dy),
+    dz:          num("dz",          DEFAULT.dz),
+    RefHt_Hawc:  num("RefHt_Hawc",  DEFAULT.RefHt_Hawc),
+    // HAWC2 turbulence scaling
+    ScaleMethod: num("ScaleMethod", DEFAULT.ScaleMethod),
+    SFx:         num("SFx",         DEFAULT.SFx),
+    SFy:         num("SFy",         DEFAULT.SFy),
+    SFz:         num("SFz",         DEFAULT.SFz),
+    SigmaFx:     num("SigmaFx",     DEFAULT.SigmaFx),
+    SigmaFy:     num("SigmaFy",     DEFAULT.SigmaFy),
+    SigmaFz:     num("SigmaFz",     DEFAULT.SigmaFz),
+    // HAWC2 mean wind
+    URef:        num("URef",        DEFAULT.URef),
+    WindProfile: num("WindProfile", DEFAULT.WindProfile),
+    PLExp_Hawc:  num("PLExp_Hawc",  DEFAULT.PLExp_Hawc),
+    Z0:          num("Z0",          DEFAULT.Z0),
+    XOffset:     num("XOffset",     DEFAULT.XOffset),
+    // Output
     SumPrint:       bool("SumPrint",      DEFAULT.SumPrint),
     __rawKV__: kv,
   };
@@ -198,6 +313,11 @@ function buildInflowWindContent(p) {
     "HWindSpeed","RefHt","PLexp",
     "Filename_Uni","RefHt_Uni","RefLength",
     "FileName_BTS",
+    "FilenameRoot","TowerFile",
+    "FileName_u","FileName_v","FileName_w",
+    "nx","ny","nz","dx","dy","dz","RefHt_Hawc",
+    "ScaleMethod","SFx","SFy","SFz","SigmaFx","SigmaFy","SigmaFz",
+    "URef","WindProfile","PLExp_Hawc","Z0","XOffset",
     "SumPrint","Echo",
   ]);
   const rawKV = p.__rawKV__ || {};
@@ -213,7 +333,7 @@ function buildInflowWindContent(p) {
     `${pad(r(p.WindType))} WindType        - Wind model {1=Steady;2=Uniform;3=TurbSim BTS;4=Bladed;5=HAWC2;6=User DLL;7=User File} (-)`,
     `${pad(r(p.PropagationDir))} PropagationDir  - Wind propagation direction — meteorological convention (degrees)`,
     `${pad(r(p.VFlowAng))} VFlowAng        - Upflow angle (degrees, about y-axis)`,
-    `${pad(b(false))} VelInterpCubic  - Cubic temporal interpolation (flag)`,
+    `${pad(b(p.VelInterpCubic))} VelInterpCubic  - Cubic temporal interpolation (flag)`,
     `${pad(r(p.NWindVel))} NWindVel        - Number of wind velocity output points [0–9] (-)`,
     `${pad(r(p.WindVxiList))} WindVxiList     - X-coordinates for wind velocity output (m)`,
     `${pad(r(p.WindVyiList))} WindVyiList     - Y-coordinates for wind velocity output (m)`,
@@ -229,36 +349,44 @@ function buildInflowWindContent(p) {
     `================== Parameters for Binary TurbSim FF [WindType=3] ==============`,
     `${pad(q(p.FileName_BTS))} FileName_BTS    - TurbSim binary wind field file (.bts)`,
     `================== Parameters for Binary Bladed-style FF [WindType=4] =========`,
-    `${pad(q("none"))} FilenameRoot    - Root name of Bladed FF wind file`,
-    `${pad(b(false))} TowerFile       - Have tower file (.twr) (flag)`,
+    `${pad(q(p.FilenameRoot))} FilenameRoot    - Root name of Bladed FF wind file`,
+    `${pad(b(p.TowerFile))} TowerFile       - Have tower file (.twr) (flag)`,
     `================== Parameters for HAWC-format binary files [WindType=5] =======`,
-    `${pad(q("none"))} FileName_u      - u-component wind file (.bin)`,
-    `${pad(q("none"))} FileName_v      - v-component wind file (.bin)`,
-    `${pad(q("none"))} FileName_w      - w-component wind file (.bin)`,
-    `${pad("64")} nx              - grids in x (-)`,
-    `${pad("32")} ny              - grids in y (-)`,
-    `${pad("32")} nz              - grids in z (-)`,
-    `${pad("25")} dx              - x grid spacing (m)`,
-    `${pad("2")} dy              - y grid spacing (m)`,
-    `${pad("2")} dz              - z grid spacing (m)`,
-    `${pad(r(p.WindVziList))} RefHt_Hawc      - HAWC reference height (m)`,
-    `${pad("1")} ScaleMethod     - Turbulence scaling method (-)`,
-    `${pad("1")} SFx             - x scaling factor (-)`,
-    `${pad("1")} SFy             - y scaling factor (-)`,
-    `${pad("1")} SFz             - z scaling factor (-)`,
-    `${pad("12")} SigmaFx         - x turbulence std dev target (m/s)`,
-    `${pad("8")} SigmaFy         - y turbulence std dev target (m/s)`,
-    `${pad("2")} SigmaFz         - z turbulence std dev target (m/s)`,
-    `${pad(r(p.HWindSpeed))} URef            - Mean u-component at reference height (m/s)`,
-    `${pad("1")} WindProfile     - Wind profile type (0=const; 1=log; 2=power law) (-)`,
-    `${pad(r(p.PLexp))} PLExp_Hawc      - Power law exponent for HAWC (-)`,
-    `${pad("0.01")} Z0              - Surface roughness length (m)`,
-    `${pad("0")} XOffset         - Initial x offset (m)`,
+    `${pad(q(p.FileName_u))} FileName_u      - u-component wind file (.bin)`,
+    `${pad(q(p.FileName_v))} FileName_v      - v-component wind file (.bin)`,
+    `${pad(q(p.FileName_w))} FileName_w      - w-component wind file (.bin)`,
+    `${pad(r(p.nx))} nx              - grids in x (-)`,
+    `${pad(r(p.ny))} ny              - grids in y (-)`,
+    `${pad(r(p.nz))} nz              - grids in z (-)`,
+    `${pad(r(p.dx))} dx              - x grid spacing (m)`,
+    `${pad(r(p.dy))} dy              - y grid spacing (m)`,
+    `${pad(r(p.dz))} dz              - z grid spacing (m)`,
+    `${pad(r(p.RefHt_Hawc))} RefHt_Hawc      - HAWC reference height (m)`,
+    `${pad(r(p.ScaleMethod))} ScaleMethod     - Turbulence scaling method (-)`,
+    `${pad(r(p.SFx))} SFx             - x scaling factor (-)`,
+    `${pad(r(p.SFy))} SFy             - y scaling factor (-)`,
+    `${pad(r(p.SFz))} SFz             - z scaling factor (-)`,
+    `${pad(r(p.SigmaFx))} SigmaFx         - x turbulence std dev target (m/s)`,
+    `${pad(r(p.SigmaFy))} SigmaFy         - y turbulence std dev target (m/s)`,
+    `${pad(r(p.SigmaFz))} SigmaFz         - z turbulence std dev target (m/s)`,
+    `${pad(r(p.URef))} URef            - Mean u-component at reference height (m/s)`,
+    `${pad(r(p.WindProfile))} WindProfile     - Wind profile type (0=const; 1=log; 2=power law) (-)`,
+    `${pad(r(p.PLExp_Hawc))} PLExp_Hawc      - Power law exponent for HAWC (-)`,
+    `${pad(r(p.Z0))} Z0              - Surface roughness length (m)`,
+    `${pad(r(p.XOffset))} XOffset         - Initial x offset (m)`,
     `================== LIDAR Parameters ==========================================`,
-    `${pad("0")} SensorType      - Lidar sensor type (0=None) (-)`,
-    `${pad("0")} NumPulseGate    - Lidar measurement gates (-)`,
-    `${pad("1")} MeasurementInterval - Time between measurements (s)`,
-    `${pad(b(false))} ConsiderHubMotion - Consider hub motion impact on lidar (flag)`,
+    `${pad("0")} SensorType          - Lidar sensor type (0=None) (-)`,
+    `${pad("0")} NumPulseGate        - Number of lidar measurement gates (-)`,
+    `${pad("30")} PulseSpacing        - Distance between range gates (m)`,
+    `${pad("0")} NumBeam             - Number of lidar beams (0-5)`,
+    `${pad("-200")} FocalDistanceX      - Focal distance X (m)`,
+    `${pad("0")} FocalDistanceY      - Focal distance Y (m)`,
+    `${pad("0")} FocalDistanceZ      - Focal distance Z (m)`,
+    `${pad("0.0 0.0 0.0")} RotorApexOffsetPos  - Offset of lidar from hub height (m)`,
+    `${pad("0")} URefLid             - Reference wind speed for lidar (m/s)`,
+    `${pad("0.25")} MeasurementInterval - Time between measurements (s)`,
+    `${pad(b(false))} LidRadialVel        - Return radial component (flag)`,
+    `${pad("1")} ConsiderHubMotion   - Consider hub motion impact on lidar (flag)`,
     `================== OUTPUT ====================================================`,
     `${pad(b(p.SumPrint))} SumPrint        - Print summary to <RootName>.IfW.sum (flag)`,
     `              OutList         - Output channels`,
@@ -291,22 +419,56 @@ function patchInflowWindContent(originalContent, p) {
   const r = v => { const n = Number(v); return isNaN(n) ? String(v) : String(n); };
   const q = v => `"${v}"`;
 
-  // Map of key → new formatted value (only the keys we actually expose in the UI)
+  // Map of key → new formatted value (all keys exposed in the UI)
   const VALUE_MAP = {
     WindType:       r(p.WindType),
     PropagationDir: r(p.PropagationDir),
     VFlowAng:       r(p.VFlowAng),
+    VelInterpCubic: b(p.VelInterpCubic),
     NWindVel:       r(p.NWindVel),
     WindVxiList:    r(p.WindVxiList),
     WindVyiList:    r(p.WindVyiList),
     WindVziList:    r(p.WindVziList),
+    // Steady
     HWindSpeed:     r(p.HWindSpeed),
     RefHt:          r(p.RefHt),
     PLexp:          r(p.PLexp),
-    FileName_BTS:   q(p.FileName_BTS),
+    // Uniform
     Filename_Uni:   q(p.Filename_Uni),
     RefHt_Uni:      r(p.RefHt_Uni),
     RefLength:      r(p.RefLength),
+    // BTS
+    FileName_BTS:   q(p.FileName_BTS),
+    // Bladed
+    FilenameRoot:   q(p.FilenameRoot),
+    TowerFile:      b(p.TowerFile),
+    // HAWC2 files
+    FileName_u:     q(p.FileName_u),
+    FileName_v:     q(p.FileName_v),
+    FileName_w:     q(p.FileName_w),
+    // HAWC2 grid
+    nx:          r(p.nx),
+    ny:          r(p.ny),
+    nz:          r(p.nz),
+    dx:          r(p.dx),
+    dy:          r(p.dy),
+    dz:          r(p.dz),
+    RefHt_Hawc:  r(p.RefHt_Hawc),
+    // HAWC2 turbulence scaling
+    ScaleMethod: r(p.ScaleMethod),
+    SFx:         r(p.SFx),
+    SFy:         r(p.SFy),
+    SFz:         r(p.SFz),
+    SigmaFx:     r(p.SigmaFx),
+    SigmaFy:     r(p.SigmaFy),
+    SigmaFz:     r(p.SigmaFz),
+    // HAWC2 mean wind
+    URef:        r(p.URef),
+    WindProfile: r(p.WindProfile),
+    PLExp_Hawc:  r(p.PLExp_Hawc),
+    Z0:          r(p.Z0),
+    XOffset:     r(p.XOffset),
+    // Output
     SumPrint:       b(p.SumPrint),
   };
 
@@ -421,13 +583,14 @@ function WindVizSVG({ windType, windSpeed, plExp }) {
 }
 
 // ── Toggle ────────────────────────────────────────────────────────────────────
-function Toggle({ value, onChange, label }) {
+function Toggle({ value, onChange, label, disabled }) {
   return (
     <div className={s.toggleRow}>
       <button
         type="button"
+        disabled={disabled}
         className={`${s.toggle} ${value ? s.on : ""}`}
-        onClick={() => onChange(!value)}
+        onClick={() => !disabled && onChange(!value)}
       >
         <span className={s.toggleThumb} />
       </button>
@@ -485,7 +648,7 @@ export default function InflowWindPanel({
   // works correctly for the revert-detection / isDirty logic.
   const setNum = key => e => setP(prev => ({ ...prev, [key]: Number(e.target.value) }));
 
-  const autoName         = useMemo(() => autoFilename(p.WindType, p), [p.WindType, p.HWindSpeed, p.FileName_BTS, p.Filename_Uni]); // eslint-disable-line react-hooks/exhaustive-deps
+  const autoName         = useMemo(() => autoFilename(p.WindType, p), [p.WindType, p.HWindSpeed, p.FileName_BTS, p.Filename_Uni, p.FilenameRoot]); // eslint-disable-line react-hooks/exhaustive-deps
   const effectiveDatName = customDatName.trim() || autoName;
 
   // ── File operations ────────────────────────────────────────────────────────
@@ -659,6 +822,20 @@ export default function InflowWindPanel({
     } catch {}
   };
 
+  const browseBladed = async () => {
+    try {
+      const f = await openDialog({ multiple: false, filters: [{ name: "Bladed wind file", extensions: ["wnd", "sum"] }] });
+      if (f) setP(prev => ({ ...prev, FilenameRoot: f.replace(/\.(wnd|sum)$/i, "") }));
+    } catch {}
+  };
+
+  const browseHawc = async (key, exts) => {
+    try {
+      const f = await openDialog({ multiple: false, filters: [{ name: "HAWC2 wind component", extensions: exts }] });
+      if (f) setP(prev => ({ ...prev, [key]: f }));
+    } catch {}
+  };
+
   // ── Derived display values ─────────────────────────────────────────────────
   const Lbl = ({ children, k }) => (
     <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -687,6 +864,16 @@ export default function InflowWindPanel({
       { k: "Ref length", v: `${p.RefLength} m` },
       { k: "Prop. dir",  v: `${p.PropagationDir}°` },
       { k: "Upflow",     v: `${p.VFlowAng}°` },
+    ] : p.WindType === 4 || p.WindType === 7 ? [
+      { k: "Prop. dir",  v: `${p.PropagationDir}°` },
+      { k: "Upflow",     v: `${p.VFlowAng}°` },
+      { k: "Tower file", v: p.TowerFile ? "Yes" : "No" },
+    ] : p.WindType === 5 ? [
+      { k: "Grid",       v: `${p.nx}×${p.ny}×${p.nz}` },
+      { k: "Spacing",    v: `${p.dx}×${p.dy}×${p.dz} m` },
+      { k: "U ref",      v: `${p.URef} m/s` },
+      { k: "Profile",    v: p.WindProfile === 0 ? "Constant" : p.WindProfile === 1 ? "Log" : "Power law" },
+      { k: "Prop. dir",  v: `${p.PropagationDir}°` },
     ] : [
       { k: "Prop. dir",  v: `${p.PropagationDir}°` },
       { k: "Upflow",     v: `${p.VFlowAng}°` },
@@ -787,6 +974,25 @@ export default function InflowWindPanel({
             </div>
             <p className={s.typeDesc}>{wt?.desc}</p>
 
+            {/* VelInterpCubic — shown but disabled for WindType=1 */}
+            <div className={s.field}
+              style={{ marginTop: 8 }}
+              title={p.WindType === 1 ? "Not used for WindType=1 (Steady). Enable with wind types 2–7 for cubic temporal interpolation." : undefined}
+            >
+              <span className={s.fieldLabel}>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  Cubic time interpolation
+                  <InfoPopover content={INFO.VelInterpCubic} accentColor={ACCENT} />
+                </span>
+              </span>
+              <Toggle
+                value={p.VelInterpCubic}
+                onChange={v => setP(prev => ({ ...prev, VelInterpCubic: v }))}
+                label="VelInterpCubic"
+                disabled={p.WindType === 1}
+              />
+            </div>
+
             {/* ── Steady params ──────────────────────────────────────────── */}
             {p.WindType === 1 && (
               <div className={s.grid2} style={{ marginTop: 14 }}>
@@ -880,6 +1086,187 @@ export default function InflowWindPanel({
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── Bladed FF params (type 4 and 7) ───────────────────────── */}
+            {(p.WindType === 4 || p.WindType === 7) && (
+              <div style={{ marginTop: 14, marginBottom: 22 }}>
+                <label className={s.field}>
+                  <span className={s.fieldLabel}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <InfoPopover content={INFO.FilenameRoot} accentColor={ACCENT} />
+                      {p.WindType === 4 ? "Root filename (.wnd/.sum)" : "Scaling values file"}
+                    </span>
+                  </span>
+                  <div className={s.fileRow}>
+                    <input className={s.inp} type="text"
+                      value={p.FilenameRoot === "none" ? "" : p.FilenameRoot}
+                      onChange={e => setP(prev => ({ ...prev, FilenameRoot: e.target.value || "none" }))}
+                      placeholder={p.WindType === 4 ? "Root path (no extension)…" : "Path to scaling values file…"} />
+                    <button className={s.browseBtn} onClick={browseBladed} title="Browse" type="button">
+                      <FolderOpen size={13} strokeWidth={1.8} />
+                    </button>
+                  </div>
+                </label>
+                {p.WindType === 4 && (
+                  <div className={s.field} style={{ marginTop: 10 }}>
+                    <span className={s.fieldLabel}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        Tower file
+                        <InfoPopover content={INFO.TowerFile} accentColor={ACCENT} />
+                      </span>
+                    </span>
+                    <Toggle
+                      value={p.TowerFile}
+                      onChange={v => setP(prev => ({ ...prev, TowerFile: v }))}
+                      label="Include tower wind data (.twr)"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── HAWC2 params (type 5) ──────────────────────────────────── */}
+            {p.WindType === 5 && (
+              <div style={{ marginTop: 14, marginBottom: 22 }}>
+                {/* File pickers */}
+                {[
+                  { key: "FileName_u", label: "u-component file (.bin)", exts: ["bin"] },
+                  { key: "FileName_v", label: "v-component file (.bin)", exts: ["bin"] },
+                  { key: "FileName_w", label: "w-component file (.bin)", exts: ["bin"] },
+                ].map(({ key, label, exts }) => (
+                  <label key={key} className={s.field}>
+                    <span className={s.fieldLabel}>{label}</span>
+                    <div className={s.fileRow}>
+                      <input className={s.inp} type="text"
+                        value={p[key] === "none" ? "" : p[key]}
+                        onChange={e => setP(prev => ({ ...prev, [key]: e.target.value || "none" }))}
+                        placeholder={`Path to ${label}…`} />
+                      <button className={s.browseBtn} onClick={() => browseHawc(key, exts)} title="Browse" type="button">
+                        <FolderOpen size={13} strokeWidth={1.8} />
+                      </button>
+                    </div>
+                  </label>
+                ))}
+
+                {/* Grid dimensions */}
+                <p className={s.sectionHead} style={{ marginTop: 14 }}>Wind Box Grid</p>
+                <div className={s.grid3}>
+                  {[
+                    { k: "nx", label: "nx (x points)" },
+                    { k: "ny", label: "ny (y points)" },
+                    { k: "nz", label: "nz (z points)" },
+                  ].map(({ k, label }) => (
+                    <label key={k} className={s.field}>
+                      <span className={s.fieldLabel}>{label}</span>
+                      <input className={s.inp} type="number" value={p[k]} onChange={setNum(k)} min="1" step="1" />
+                    </label>
+                  ))}
+                  {[
+                    { k: "dx", label: "dx (m)", u: "m" },
+                    { k: "dy", label: "dy (m)", u: "m" },
+                    { k: "dz", label: "dz (m)", u: "m" },
+                  ].map(({ k, label, u }) => (
+                    <label key={k} className={s.field}>
+                      <span className={s.fieldLabel}>{label}</span>
+                      <div className={s.inputRow}>
+                        <input className={s.inp} type="number" value={p[k]} onChange={setNum(k)} step="0.5" />
+                        <span className={s.unit}>{u}</span>
+                      </div>
+                    </label>
+                  ))}
+                  <label className={s.field}>
+                    <span className={s.fieldLabel}>RefHt_Hawc</span>
+                    <div className={s.inputRow}>
+                      <input className={s.inp} type="number" value={p.RefHt_Hawc} onChange={setNum("RefHt_Hawc")} />
+                      <span className={s.unit}>m</span>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Turbulence scaling */}
+                <p className={s.sectionHead} style={{ marginTop: 14 }}>
+                  Turbulence Scaling
+                  <InfoPopover content={INFO.ScaleMethod} accentColor={ACCENT} />
+                </p>
+                <label className={s.field}>
+                  <span className={s.fieldLabel}>Scale method</span>
+                  <select className={s.inp} value={p.ScaleMethod} onChange={setNum("ScaleMethod")}>
+                    <option value={0}>0 — None (raw values)</option>
+                    <option value={1}>1 — Direct scale factors (SF)</option>
+                    <option value={2}>2 — Target standard deviation (Sigma)</option>
+                  </select>
+                </label>
+                {p.ScaleMethod === 1 && (
+                  <div className={s.grid3} style={{ marginTop: 8 }}>
+                    {["SFx","SFy","SFz"].map(k => (
+                      <label key={k} className={s.field}>
+                        <span className={s.fieldLabel}>{k}</span>
+                        <input className={s.inp} type="number" value={p[k]} onChange={setNum(k)} step="0.1" />
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {p.ScaleMethod === 2 && (
+                  <div className={s.grid3} style={{ marginTop: 8 }}>
+                    {[
+                      { k: "SigmaFx", label: "σFx" },
+                      { k: "SigmaFy", label: "σFy" },
+                      { k: "SigmaFz", label: "σFz" },
+                    ].map(({ k, label }) => (
+                      <label key={k} className={s.field}>
+                        <span className={s.fieldLabel}>{label} (m/s)</span>
+                        <div className={s.inputRow}>
+                          <input className={s.inp} type="number" value={p[k]} onChange={setNum(k)} step="0.1" />
+                          <span className={s.unit}>m/s</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Mean wind profile */}
+                <p className={s.sectionHead} style={{ marginTop: 14 }}>
+                  Mean Wind Profile
+                  <InfoPopover content={INFO.WindProfile} accentColor={ACCENT} />
+                </p>
+                <div className={s.grid2}>
+                  <label className={s.field}>
+                    <span className={s.fieldLabel}>
+                      U ref <InfoPopover content={INFO.URef} accentColor={ACCENT} />
+                    </span>
+                    <div className={s.inputRow}>
+                      <input className={s.inp} type="number" value={p.URef} onChange={setNum("URef")} step="0.5" />
+                      <span className={s.unit}>m/s</span>
+                    </div>
+                  </label>
+                  <label className={s.field}>
+                    <span className={s.fieldLabel}>Profile type</span>
+                    <select className={s.inp} value={p.WindProfile} onChange={setNum("WindProfile")}>
+                      <option value={0}>0 — Constant</option>
+                      <option value={1}>1 — Logarithmic</option>
+                      <option value={2}>2 — Power law</option>
+                    </select>
+                  </label>
+                  {p.WindProfile === 2 && (
+                    <label className={s.field}>
+                      <span className={s.fieldLabel}>PLExp_Hawc (α)</span>
+                      <input className={s.inp} type="number" value={p.PLExp_Hawc} onChange={setNum("PLExp_Hawc")} step="0.01" />
+                    </label>
+                  )}
+                  {p.WindProfile === 1 && (
+                    <label className={s.field}>
+                      <span className={s.fieldLabel}>
+                        Z0 <InfoPopover content={INFO.Z0} accentColor={ACCENT} />
+                      </span>
+                      <div className={s.inputRow}>
+                        <input className={s.inp} type="number" value={p.Z0} onChange={setNum("Z0")} step="0.001" />
+                        <span className={s.unit}>m</span>
+                      </div>
+                    </label>
+                  )}
+                </div>
               </div>
             )}
 
