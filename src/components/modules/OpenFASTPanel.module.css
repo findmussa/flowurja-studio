@@ -1130,7 +1130,7 @@
   transition: left 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.20);
 }
 .toggle.toggleOn .toggleThumb { left: 15px; }
-.toggleLabel { font-size: 13px; color: var(--tx-2); flex: 1; }
+.toggleLabel { font-size: 13px; color: var(--tx-2); }
 .toggleRow:has(button:disabled) { opacity: 0.4; cursor: not-allowed; }
 .toggleRow:has(button:disabled) .toggle { cursor: not-allowed; }
 
