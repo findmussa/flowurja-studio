@@ -365,7 +365,7 @@ function Field({ label, unit, info, children }) {
 function Toggle({ label, value, onChange, info }) {
   return (
     <div className={s.toggleRow}>
-      <button className={`${s.toggle} ${value ? s.toggleOn : ""}`} onClick={() => onChange(!value)}>
+      <button type="button" className={`${s.toggle} ${value ? s.toggleOn : ""}`} onClick={() => onChange(!value)}>
         <span className={s.toggleThumb} />
       </button>
       <span className={s.toggleLabel}>{label}</span>
@@ -1383,7 +1383,7 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
 
       {/* ── Linearize tab ────────────────────────────────────────────── */}
       {tab === "linearize" && (
-        <div key={tab} className={`${s.formArea} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
+        <div key={tab} className={`${s.formArea} ${s.tabEnterRight}`}>
           <div className={s.form}>
             <SectionHead>Linearization</SectionHead>
             <div className={s.toggleGrid}>

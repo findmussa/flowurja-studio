@@ -1828,6 +1828,16 @@
   animation: tabEnter 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* Linearize tab: static right-to-left slide (no CSS custom property so re-renders
+   don't accidentally restart the animation via WKWebView's setProperty path). */
+@keyframes tabEnterRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.tabEnterRight {
+  animation: tabEnterRight 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* ── Dashboard row 4 (full-width binary card) ── */
 .runTab > .runCard {
   animation: rowIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -1837,6 +1847,7 @@
 /* ── Reduced-motion: disable all panel animations ── */
 @media (prefers-reduced-motion: reduce) {
   .tabEnter,
+  .tabEnterRight,
   .runCardsRow,
   .runTab > .runCard,
   .depNode,
