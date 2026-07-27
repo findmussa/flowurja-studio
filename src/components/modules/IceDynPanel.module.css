@@ -85,7 +85,7 @@
   border-bottom: 0.5px solid var(--bd-subtle);
   background: var(--bg-muted);
   flex-shrink: 0;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .fileBarLoaded {
   background: rgba(75,156,211,0.05);
@@ -153,7 +153,7 @@
   font-family: inherit;
   color: var(--tx-4);
   cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  transition: color 0.12s, background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
 }
 .tab:hover { color: var(--tx-2); background: var(--bg-hover); }
@@ -290,7 +290,7 @@
   font-family: inherit;
   color: var(--tx-1);
   outline: none;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   width: 100%;
   box-sizing: border-box;
 }
@@ -309,7 +309,7 @@
   font-family: inherit;
   color: var(--tx-1);
   outline: none;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -330,7 +330,7 @@
   font-family: inherit;
   color: var(--tx-1);
   outline: none;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -384,7 +384,7 @@
   background: var(--bd-input);
   border: none;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   flex-shrink: 0;
 }
 .toggle.on { background: #4B9CD3; }
@@ -433,7 +433,7 @@
   color: var(--tx-3);
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .collapsibleHead:hover { background: var(--bg-hover); color: var(--tx-2); }
 
@@ -614,7 +614,7 @@
   background: rgba(75,156,211,0.08);
   color: #4B9CD3;
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   flex-shrink: 0;
 }
 .channelAdd:hover { background: rgba(75,156,211,0.16); }
@@ -633,7 +633,7 @@
   padding: 8px 10px;
   resize: vertical;
   outline: none;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-sizing: border-box;
 }
 .outListArea:focus {

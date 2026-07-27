@@ -284,7 +284,7 @@
   padding: 4px 8px;
   font-family: inherit;
   border-radius: 6px;
-  transition: color 0.12s, background 0.12s;
+  transition: color 0.12s, background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-app-region: no-drag;
 }
 .skipBtn:hover {
@@ -306,7 +306,7 @@
   padding: 0;
   margin-bottom: 14px;
   align-self: flex-start;
-  transition: color 0.1s;
+  transition: color 0.1s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .wizardBack:hover { color: var(--tx-2); }
 
@@ -350,7 +350,7 @@
   color: var(--tx-1);
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .fieldInput:focus {
   border-color: rgba(14,109,130,0.55);
@@ -400,7 +400,7 @@
   cursor: pointer;
   margin-bottom: 7px;
   background: var(--bg-surface);
-  transition: border-color 0.12s, background 0.12s;
+  transition: border-color 0.12s, background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   text-align: left;
   box-sizing: border-box;
 }
@@ -419,7 +419,7 @@
   flex-shrink: 0;
   margin-top: 2px;
   position: relative;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .modeOptionActive .radioCircle { border-color: #0F6D82; }
 .modeOptionActive .radioCircle::after {

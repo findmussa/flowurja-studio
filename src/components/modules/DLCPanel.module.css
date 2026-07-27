@@ -116,7 +116,7 @@
   font-family: inherit;
   color: var(--tx-1);
   outline: none;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .inp:focus {
   border-color: rgba(217,119,6,0.55);
@@ -171,7 +171,7 @@
   border: 0.5px solid var(--bd-subtle);
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .dlcRow:hover { background: var(--bg-surface-hov); }
 
@@ -261,7 +261,7 @@
   font-family: inherit;
   color: var(--tx-1);
   outline: none;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .batchLabelInput:focus { border-color: rgba(217,119,6,0.5); }
 .batchLabelInput::placeholder { color: var(--tx-6); }
@@ -297,7 +297,7 @@
   font-weight: 500;
   color: var(--tx-2);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .genBtn:hover:not(:disabled) { background: var(--bg-surface-hov); }
 .genBtn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -316,7 +316,7 @@
   font-weight: 500;
   color: #fff;
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .runBtn:hover:not(:disabled) { background: #B45309; }
 .runBtn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -390,7 +390,7 @@
   font-family: inherit;
   color: var(--tx-4);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .clearBtn:hover:not(:disabled) {
   background: rgba(220,53,69,0.08);
@@ -412,7 +412,7 @@
   border-bottom: 0.5px solid var(--bd-subtle);
   font-size: 12px;
   color: var(--tx-3);
-  transition: background 0.1s;
+  transition: background 0.1s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .caseRow:last-child { border-bottom: none; }
 .caseRow:hover { background: var(--bg-hover); }
@@ -454,7 +454,7 @@
   font-family: inherit;
   color: var(--tx-4);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .showMoreBtn:hover { background: var(--bg-hover); color: var(--tx-2); }
 
@@ -476,7 +476,7 @@
   cursor: pointer;
   flex-shrink: 0;
   -webkit-app-region: no-drag;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .hintChip:hover { background: rgba(217,119,6,0.16); }
 
@@ -561,7 +561,7 @@
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .propApplyBtn:hover { background: #b45309; }
 
@@ -580,7 +580,7 @@
   cursor: pointer;
   flex-shrink: 0;
   opacity: 0.55;
-  transition: opacity 0.12s, background 0.12s;
+  transition: opacity 0.12s, background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .propDismissBtn:hover { opacity: 1; background: rgba(217,119,6,0.14); }
 
@@ -623,7 +623,7 @@
   font-family: inherit;
   color: var(--tx-4);
   cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  transition: color 0.12s, background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
 }
 .tab:hover { color: var(--tx-2); background: var(--bg-hover); }
@@ -693,7 +693,7 @@
   padding: 10px 12px;
   background: var(--bg-input);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .paramCell:hover { background: var(--bg-hover); }
 .paramLabel {
@@ -747,7 +747,7 @@
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s, border-color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .dlcPill:hover { background: var(--bg-surface-hov); }
 .dlcPillActive {
@@ -820,7 +820,7 @@
   max-width: 55%;
   aspect-ratio: 100 / 140;
   color: var(--tx-4);
-  transition: color 0.6s;
+  transition: color 0.6s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .dlcTurbineRunning { color: #D97706; }
 

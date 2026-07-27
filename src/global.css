@@ -164,6 +164,15 @@ button, input, select, textarea, label, a, [role="button"] {
   -webkit-app-region: no-drag;
 }
 
+/* ── Global spring press for all buttons ─────────────────────────────────── */
+button {
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+button:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 0.07s;
+}
+
 /* ── Form elements ────────────────────────────────────────────────────────── */
 input[type="text"],
 input[type="number"],

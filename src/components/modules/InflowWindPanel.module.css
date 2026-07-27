@@ -81,7 +81,7 @@
   font-size: 11.5px;
   font-family: inherit;
   color: var(--tx-3);
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-app-region: no-drag;
 }
 .eyeBtn:hover { background: var(--bg-hover-md); }
@@ -95,7 +95,7 @@
   border-bottom: 0.5px solid var(--bd-subtle);
   background: var(--bg-muted);
   flex-shrink: 0;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .fileBarLoaded {
@@ -204,7 +204,7 @@
   font-family: inherit;
   color: var(--tx-2);
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s, border-color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .typeBtn:hover { background: var(--bg-surface-hov); }
 
@@ -271,7 +271,7 @@
   font-family: inherit;
   color: var(--tx-1);
   outline: none;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .inp:focus {
   border-color: rgba(55,138,221,0.55);
@@ -304,7 +304,7 @@
   cursor: pointer;
   flex-shrink: 0;
   color: var(--tx-3);
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .browseBtn:hover { background: var(--bg-surface-hov); }
 
@@ -331,7 +331,7 @@
   color: var(--tx-3);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .scanBtn:hover:not(:disabled) { background: var(--bg-surface-hov); }
 .scanBtn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -396,7 +396,7 @@
   cursor: pointer;
   padding: 0;
   position: relative;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   flex-shrink: 0;
 }
 
@@ -475,7 +475,7 @@
   font-weight: 500;
   color: #fff;
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .writeBtn:hover:not(:disabled) { background: #2563EB; }
 .writeBtn:disabled { opacity: 0.4; cursor: not-allowed; }

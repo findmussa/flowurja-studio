@@ -61,7 +61,7 @@
   -webkit-app-region: no-drag;
   background: transparent;
   z-index: 10;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .resizeHandle:hover { background: var(--bg-hover); }
 

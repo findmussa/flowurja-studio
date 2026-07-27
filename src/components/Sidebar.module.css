@@ -304,7 +304,7 @@
   padding: 0;
   flex-shrink: 0;
   opacity: 0;
-  transition: opacity 0.12s, background 0.12s, color 0.12s;
+  transition: opacity 0.12s, background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .modelItem:hover .modelDeleteBtn { opacity: 1; }
 .modelDeleteBtn:hover { background: rgba(239,68,68,0.12); color: #EF4444; }

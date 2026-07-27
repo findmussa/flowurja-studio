@@ -65,7 +65,7 @@
   border-radius: 50%;
   flex-shrink: 0;
   position: relative;
-  transition: background 0.35s ease;
+  transition: background 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .dot::after {
   content: "";
@@ -100,7 +100,7 @@
   width: 22px; height: 22px;
   border: none; background: none; cursor: pointer;
   border-radius: 5px; color: var(--tx-5);
-  transition: background 0.12s, color 0.12s; flex-shrink: 0;
+  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0;
 }
 .iconBtn:hover { background: var(--bg-hover); color: var(--tx-2); }
 
