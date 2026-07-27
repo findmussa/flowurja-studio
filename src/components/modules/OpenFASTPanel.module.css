@@ -975,6 +975,7 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  -webkit-app-region: no-drag;
 }
 
 /* ── Form / grid ───────────────────────────────────────── */
@@ -1020,6 +1021,15 @@
 .unit { font-size: 12px; color: var(--tx-4); }
 .hint { font-size: 11.5px; color: var(--tx-5); margin-top: 3px; line-height: 1.4; }
 
+/* Dim the whole field (label + control) when its input or select is disabled */
+.field:has(input:disabled),
+.field:has(select:disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.field input:disabled,
+.field select:disabled { cursor: not-allowed; }
+
 /* ── Module toggle rows ────────────────────────────────── */
 .moduleList { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
 .moduleGrid {
@@ -1031,12 +1041,23 @@
   display: flex; flex-direction: column; gap: 0;
   border: 0.5px solid var(--bd-subtle); border-radius: 9px;
   overflow: hidden; background: var(--bg-raised);
-  transition: border-color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: border-color 0.12s, opacity 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .moduleRow.moduleActive {
   border-color: rgba(8,145,178,0.35);
   background: rgba(8,145,178,0.04);
 }
+/* Dependency-locked: the module cannot be enabled until another module is on */
+.moduleRow.moduleRowLocked {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.moduleRow.moduleRowLocked .compSeg { pointer-events: none; }
+.moduleRowSub.lockedText { color: #d97706; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .moduleRowSub.lockedText { color: #fbbf24; }
+}
+:root[data-theme="dark"] .moduleRowSub.lockedText { color: #fbbf24; }
 
 .moduleRowHead { display: flex; align-items: center; gap: 10px; padding: 9px 13px; cursor: default; }
 .moduleRowHeadCompact { flex-direction: column; align-items: flex-start; gap: 7px; }
@@ -1091,6 +1112,7 @@
   transition: background 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .browseBtn:hover { background: var(--bg-hover); }
+.browseBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── Toggle rows ───────────────────────────────────────── */
 .toggleGrid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
@@ -1108,6 +1130,8 @@
 }
 .toggle.toggleOn .toggleThumb { left: 15px; }
 .toggleLabel { font-size: 13px; color: var(--tx-2); flex: 1; }
+.toggleRow:has(button:disabled) { opacity: 0.4; cursor: not-allowed; }
+.toggleRow:has(button:disabled) .toggle { cursor: not-allowed; }
 
 /* ── File row ──────────────────────────────────────────── */
 .fileRow { display: flex; gap: 6px; align-items: center; }
@@ -1829,10 +1853,12 @@
 }
 
 /* Linearize tab: static right-to-left slide (no CSS custom property so re-renders
-   don't accidentally restart the animation via WKWebView's setProperty path). */
+   don't accidentally restart the animation via WKWebView's setProperty path).
+   No opacity change — opacity:0 in fill-mode:both makes elements non-interactive
+   in WKWebView's -webkit-app-region:drag context. */
 @keyframes tabEnterRight {
-  from { opacity: 0; transform: translateX(12px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { transform: translateX(12px); }
+  to   { transform: translateX(0); }
 }
 .tabEnterRight {
   animation: tabEnterRight 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;

@@ -362,10 +362,10 @@ function Field({ label, unit, info, children }) {
   );
 }
 
-function Toggle({ label, value, onChange, info }) {
+function Toggle({ label, value, onChange, info, disabled }) {
   return (
     <div className={s.toggleRow}>
-      <button type="button" className={`${s.toggle} ${value ? s.toggleOn : ""}`} onClick={() => onChange(!value)}>
+      <button type="button" disabled={disabled} className={`${s.toggle} ${value ? s.toggleOn : ""}`} onClick={() => onChange(!value)}>
         <span className={s.toggleThumb} />
       </button>
       <span className={s.toggleLabel}>{label}</span>
@@ -387,11 +387,13 @@ function Collapsible({ title, children }) {
   );
 }
 
-function CompSelector({ options, value, onChange }) {
+function CompSelector({ options, value, onChange, disabled }) {
   return (
     <div className={s.compSeg}>
       {options.map((label, i) => (
-        <button key={i} className={`${s.compBtn} ${value === i ? s.compBtnActive : ""}`} onClick={() => onChange(i)}>
+        <button key={i} disabled={disabled}
+          className={`${s.compBtn} ${value === i ? s.compBtnActive : ""}`}
+          onClick={() => onChange(i)}>
           {label}
         </button>
       ))}
@@ -399,18 +401,23 @@ function CompSelector({ options, value, onChange }) {
   );
 }
 
-function ModuleRow({ title, compOptions, value, onChange, fileKey, fileValue, onFileChange, onBrowse, compact }) {
+function ModuleRow({ title, compOptions, value, onChange, fileKey, fileValue, onFileChange, onBrowse, compact, lockedReason }) {
   const active = value > 0;
   return (
-    <div className={`${s.moduleRow} ${active ? s.moduleActive : ""}`}>
+    <div
+      className={`${s.moduleRow} ${active ? s.moduleActive : ""} ${lockedReason ? s.moduleRowLocked : ""}`}
+      title={lockedReason || undefined}
+    >
       <div className={`${s.moduleRowHead} ${compact ? s.moduleRowHeadCompact : ""}`}>
         <div className={s.moduleRowLabel}>
           <span className={s.moduleRowTitle}>{title}</span>
-          <span className={`${s.moduleRowSub} ${active ? s.activeText : ""}`}>{active ? compOptions[value] : "disabled"}</span>
+          <span className={`${s.moduleRowSub} ${active && !lockedReason ? s.activeText : ""} ${lockedReason ? s.lockedText : ""}`}>
+            {lockedReason ? "locked" : active ? compOptions[value] : "disabled"}
+          </span>
         </div>
-        <CompSelector options={compOptions} value={value} onChange={onChange} />
+        <CompSelector options={compOptions} value={value} onChange={onChange} disabled={!!lockedReason} />
       </div>
-      {active && fileKey && (
+      {active && fileKey && !lockedReason && (
         <div className={s.moduleFilePath}>
           <input type="text" className={s.fileInp} value={fileValue} onChange={e => onFileChange(e.target.value)} />
           <button className={s.browseBtn} onClick={onBrowse}><FolderOpen size={12} strokeWidth={1.8} /> Browse</button>
@@ -838,6 +845,8 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
   const set  = k => v  => setP(prev => ({ ...prev, [k]: v }));
   const setN = k => e  => setP(prev => ({ ...prev, [k]: Number(e.target.value) }));
   const setE = k => e  => setP(prev => ({ ...prev, [k]: e.target.value }));
+  // SeaState → HydroDyn cascade: turning off SeaState must also disable HydroDyn
+  const setCompSeaSt = v => setP(prev => ({ ...prev, CompSeaSt: v, ...(v === 0 ? { CompHydro: 0 } : {}) }));
 
   const browseFile = async key => {
     try {
@@ -1312,19 +1321,25 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                 <ModuleRow compact title="InflowWind"         compOptions={COMP_INFLOW}  value={p.CompInflow}  onChange={set("CompInflow")}  fileKey="InflowFile"  fileValue={p.InflowFile}  onFileChange={v => setP(prev => ({ ...prev, InflowFile:  v }))} onBrowse={() => browseFile("InflowFile")}  />
                 <ModuleRow compact title="AeroDyn"            compOptions={COMP_AERO}    value={p.CompAero}    onChange={set("CompAero")}    fileKey="AeroFile"    fileValue={p.AeroFile}    onFileChange={v => setP(prev => ({ ...prev, AeroFile:    v }))} onBrowse={() => browseFile("AeroFile")}    />
                 <ModuleRow compact title="ServoDyn"           compOptions={COMP_SERVO}   value={p.CompServo}   onChange={set("CompServo")}   fileKey="ServoFile"   fileValue={p.ServoFile}   onFileChange={v => setP(prev => ({ ...prev, ServoFile:   v }))} onBrowse={() => browseFile("ServoFile")}   />
-                <ModuleRow compact title="SeaState"           compOptions={COMP_SEAST}   value={p.CompSeaSt}   onChange={set("CompSeaSt")}   fileKey="SeaStFile"   fileValue={p.SeaStFile}   onFileChange={v => setP(prev => ({ ...prev, SeaStFile:   v }))} onBrowse={() => browseFile("SeaStFile")}   />
-                <ModuleRow compact title="HydroDyn"           compOptions={COMP_HYDRO}   value={p.CompHydro}   onChange={set("CompHydro")}   fileKey="HydroFile"   fileValue={p.HydroFile}   onFileChange={v => setP(prev => ({ ...prev, HydroFile:   v }))} onBrowse={() => browseFile("HydroFile")}   />
+                <ModuleRow compact title="SeaState"           compOptions={COMP_SEAST}   value={p.CompSeaSt}   onChange={setCompSeaSt}       fileKey="SeaStFile"   fileValue={p.SeaStFile}   onFileChange={v => setP(prev => ({ ...prev, SeaStFile:   v }))} onBrowse={() => browseFile("SeaStFile")}   />
+                <ModuleRow compact title="HydroDyn"           compOptions={COMP_HYDRO}   value={p.CompHydro}   onChange={set("CompHydro")}   fileKey="HydroFile"   fileValue={p.HydroFile}   onFileChange={v => setP(prev => ({ ...prev, HydroFile:   v }))} onBrowse={() => browseFile("HydroFile")}
+                  lockedReason={p.CompSeaSt === 0 ? "HydroDyn requires SeaState (CompSeaSt ≥ 1). Enable SeaState first." : undefined} />
                 <ModuleRow compact title="SubDyn"             compOptions={COMP_SUB}     value={p.CompSub}     onChange={set("CompSub")}     fileKey="SubFile"     fileValue={p.SubFile}     onFileChange={v => setP(prev => ({ ...prev, SubFile:     v }))} onBrowse={() => browseFile("SubFile")}     />
                 <ModuleRow compact title="MoorDyn / Mooring"  compOptions={COMP_MOORING} value={p.CompMooring} onChange={set("CompMooring")} fileKey="MooringFile" fileValue={p.MooringFile} onFileChange={v => setP(prev => ({ ...prev, MooringFile: v }))} onBrowse={() => browseFile("MooringFile")} />
                 <ModuleRow compact title="IceFloe / IceDyn"   compOptions={COMP_ICE}     value={p.CompIce}     onChange={set("CompIce")}     fileKey="IceFile"     fileValue={p.IceFile}     onFileChange={v => setP(prev => ({ ...prev, IceFile:     v }))} onBrowse={() => browseFile("IceFile")}     />
               </div>
-              <Collapsible title="BeamDyn blade files (when CompElast = 2)">
+              <Collapsible title="BeamDyn blade files (CompElast = 2)">
+                {p.CompElast !== 2 && (
+                  <p className={s.hint} style={{ marginBottom: 12 }}>
+                    Active only when CompElast = 2 (ElastoDyn + BeamDyn blades). Change the ElastoDyn selector above to unlock.
+                  </p>
+                )}
                 <div className={s.grid1}>
                   {[["BDBldFile1","Blade 1"],["BDBldFile2","Blade 2"],["BDBldFile3","Blade 3"]].map(([key, label]) => (
                     <Field key={key} label={label}>
                       <div className={s.fileRow}>
-                        <input type="text" value={p[key]} onChange={e => setP(prev => ({ ...prev, [key]: e.target.value }))} />
-                        <button className={s.browseBtn} onClick={() => browseFile(key)}><FolderOpen size={12} strokeWidth={1.8} /> Browse</button>
+                        <input type="text" value={p[key]} onChange={e => setP(prev => ({ ...prev, [key]: e.target.value }))} disabled={p.CompElast !== 2} />
+                        <button className={s.browseBtn} onClick={() => browseFile(key)} disabled={p.CompElast !== 2}><FolderOpen size={12} strokeWidth={1.8} /> Browse</button>
                       </div>
                     </Field>
                   ))}
@@ -1355,14 +1370,14 @@ export default function OpenFASTPanel({ onLog, project, tabRequest, onModuleFile
                   </div>
                 </Field>
                 <Field label="Column format (OutFmt)" info={{ param: "OutFmt", desc: "Fortran format specifier for each numeric output column.", default: '"ES10.3E2"', note: "The result must be exactly 10 characters wide (e.g. ES10.3E2, F10.4)." }}>
-                  <input type="text" value={p.OutFmt} onChange={setE("OutFmt")} />
-                  <p className={s.hint}>Fortran format spec — result must be 10 chars wide</p>
+                  <input type="text" value={p.OutFmt} onChange={setE("OutFmt")} disabled={p.OutFileFmt === 2} />
+                  <p className={s.hint}>Text output only — inactive when format is Binary</p>
                 </Field>
               </div>
               <SectionHead>Flags</SectionHead>
               <div className={s.toggleGrid}>
                 <Toggle label="Write .sum summary file (SumPrint)" value={p.SumPrint} onChange={set("SumPrint")} info={{ param: "SumPrint", desc: "Write a summary file (<RootName>.sum) containing model properties, DOF configuration, and time-integration info.", default: "FALSE" }} />
-                <Toggle label="Tab-delimited text output (TabDelim)" value={p.TabDelim} onChange={set("TabDelim")} info={{ param: "TabDelim", desc: "Separate output columns with tab characters instead of spaces.", default: "TRUE", note: "Makes the .out file directly importable into Excel and most scientific data tools." }} />
+                <Toggle label="Tab-delimited text output (TabDelim)" value={p.TabDelim} onChange={set("TabDelim")} disabled={p.OutFileFmt === 2} info={{ param: "TabDelim", desc: "Separate output columns with tab characters instead of spaces.", default: "TRUE", note: "Makes the .out file directly importable into Excel and most scientific data tools." }} />
               </div>
               <SectionHead>Timing</SectionHead>
               <div className={s.grid2}>
