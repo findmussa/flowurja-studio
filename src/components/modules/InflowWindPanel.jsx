@@ -720,15 +720,12 @@ function buildInflowWindContent(p) {
 
 function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
   const missingSet = useContext(MissingCtx);
-  const [hintVisible, setHintVisible] = useState(false);
   const key = fieldKey || label.match(/\(([A-Za-z_][A-Za-z_0-9]*)\)\s*$/)?.[1];
   const isMissing = key && missingSet.size > 0 && missingSet.has(key);
   return (
     <div
       className={`${s.field} ${disabledHint ? s.fieldDisabled : ""}`}
-      style={{ position: "relative" }}
-      onMouseEnter={() => disabledHint && setHintVisible(true)}
-      onMouseLeave={() => setHintVisible(false)}
+      title={disabledHint}
     >
       <div className={s.fieldHeader}>
         <label className={s.fieldLabel}>
@@ -746,9 +743,6 @@ function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
         {children}
       </div>
       {hint && <span className={s.hint}>{hint}</span>}
-      {disabledHint && hintVisible && (
-        <div className={s.disabledHint}>{disabledHint}</div>
-      )}
     </div>
   );
 }

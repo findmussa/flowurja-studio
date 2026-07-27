@@ -808,30 +808,7 @@
   pointer-events: none;
 }
 
-/* ── Disabled-field hover hint ──────────────────────────────── */
-.disabledHint {
-  position: absolute;
-  bottom: calc(100% + 5px);
-  left: 0;
-  z-index: 200;
-  background: var(--bg-surface);
-  border: 0.5px solid var(--bd);
-  border-radius: 8px;
-  padding: 7px 11px;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--tx-2);
-  line-height: 1.45;
-  white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
-  pointer-events: none;
-  animation: hintIn 0.14s ease both;
-}
-
-@keyframes hintIn {
-  from { opacity: 0; transform: translateY(3px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* Native browser title= attribute handles the disabled-field tooltip. */
 
 /* ── Pick variables button ──────────────────────────────────── */
 .pickVarsBtn {
