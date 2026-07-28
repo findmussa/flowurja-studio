@@ -123,9 +123,10 @@ function parseSubDynFile(content) {
     }
 
     // Detect output channel section — standard modules use "OUTPUT CHANNELS",
-    // SubDyn uses "SSOutList" embedded in a dashed divider line. Must check
-    // BEFORE the divider-skip so the dashes don't hide the SSOutList keyword.
-    if ((/OUTPUT\s+CHANNEL/i.test(line) || /\bSSOutList\b/i.test(line)) && !line.startsWith("!")) {
+    // SubDyn uses "SSOutList" or "SDOutList" (variant depends on file version)
+    // embedded in a dashed divider line. Must check BEFORE the divider-skip
+    // so the dashes don't hide the keyword.
+    if ((/OUTPUT\s+CHANNEL/i.test(line) || /\bS[DS]OutList\b/i.test(line)) && !line.startsWith("!")) {
       inOutChannels = true;
       continue;
     }
@@ -266,7 +267,7 @@ function buildSubDynContent(originalContent, p) {
       continue;
     }
 
-    if ((/OUTPUT\s+CHANNEL/i.test(trimmed) || /\bSSOutList\b/i.test(trimmed)) && !trimmed.startsWith("!")) {
+    if ((/OUTPUT\s+CHANNEL/i.test(trimmed) || /\bS[DS]OutList\b/i.test(trimmed)) && !trimmed.startsWith("!")) {
       result.push(rawLine);
       inOutChannels = true;
       outListInserted = false;
