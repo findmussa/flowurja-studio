@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { Layers, FolderOpen, Eye, Save, ChevronDown, ChevronRight, List } from "lucide-react";
+import { Layers, FolderOpen, Eye, Save, ChevronDown, ChevronRight } from "lucide-react";
 import RawFileModal from "../RawFileModal";
 import InfoPopover from "../InfoPopover";
 import s from "./SubDynPanel.module.css";
@@ -421,258 +421,6 @@ function Collapsible({ title, children, defaultOpen = false }) {
   );
 }
 
-// ── SubDyn output variables (OpenFAST 4.2.0) ─────────────────────────────────
-const SD_OUT_VARS = [
-  { group: "Interface Reactions (Transition Piece)", vars: [
-    { name: "ReactFXss",  unit: "N",    desc: "Interface X-force at transition piece (SubDyn body frame)" },
-    { name: "ReactFYss",  unit: "N",    desc: "Interface Y-force at transition piece (SubDyn body frame)" },
-    { name: "ReactFZss",  unit: "N",    desc: "Interface Z-force at transition piece (SubDyn body frame)" },
-    { name: "ReactMXss",  unit: "N·m",  desc: "Interface X-moment at transition piece (SubDyn body frame)" },
-    { name: "ReactMYss",  unit: "N·m",  desc: "Interface Y-moment at transition piece (SubDyn body frame)" },
-    { name: "ReactMZss",  unit: "N·m",  desc: "Interface Z-moment at transition piece (SubDyn body frame)" },
-  ]},
-  { group: "Member 1 — Kinematics (NMOutputs, Node 1)", vars: [
-    { name: "M1N1TDX",   unit: "m",    desc: "Member 1 node 1 translational displacement — X" },
-    { name: "M1N1TDY",   unit: "m",    desc: "Member 1 node 1 translational displacement — Y" },
-    { name: "M1N1TDZ",   unit: "m",    desc: "Member 1 node 1 translational displacement — Z" },
-    { name: "M1N1RDX",   unit: "deg",  desc: "Member 1 node 1 rotational deflection — X" },
-    { name: "M1N1RDY",   unit: "deg",  desc: "Member 1 node 1 rotational deflection — Y" },
-    { name: "M1N1RDZ",   unit: "deg",  desc: "Member 1 node 1 rotational deflection — Z" },
-    { name: "M1N1VelX",  unit: "m/s",  desc: "Member 1 node 1 translational velocity — X" },
-    { name: "M1N1VelY",  unit: "m/s",  desc: "Member 1 node 1 translational velocity — Y" },
-    { name: "M1N1VelZ",  unit: "m/s",  desc: "Member 1 node 1 translational velocity — Z" },
-    { name: "M1N1AccX",  unit: "m/s²", desc: "Member 1 node 1 translational acceleration — X" },
-    { name: "M1N1AccY",  unit: "m/s²", desc: "Member 1 node 1 translational acceleration — Y" },
-    { name: "M1N1AccZ",  unit: "m/s²", desc: "Member 1 node 1 translational acceleration — Z" },
-  ]},
-  { group: "Member 1 — Internal Forces/Moments (element frame)", vars: [
-    { name: "M1N1FKxe",  unit: "N",    desc: "Member 1 node 1 axial/shear force — x (element local frame)" },
-    { name: "M1N1FKye",  unit: "N",    desc: "Member 1 node 1 shear force — y (element local frame)" },
-    { name: "M1N1FKze",  unit: "N",    desc: "Member 1 node 1 shear force — z (element local frame)" },
-    { name: "M1N1MKxe",  unit: "N·m",  desc: "Member 1 node 1 torsion moment — x (element local frame)" },
-    { name: "M1N1MKye",  unit: "N·m",  desc: "Member 1 node 1 fore-aft bending moment — y (element local frame)" },
-    { name: "M1N1MKze",  unit: "N·m",  desc: "Member 1 node 1 side-to-side bending moment — z (element local frame)" },
-  ]},
-  { group: "Member 2 — Kinematics (NMOutputs, Node 1)", vars: [
-    { name: "M2N1TDX",   unit: "m",    desc: "Member 2 node 1 translational displacement — X" },
-    { name: "M2N1TDY",   unit: "m",    desc: "Member 2 node 1 translational displacement — Y" },
-    { name: "M2N1TDZ",   unit: "m",    desc: "Member 2 node 1 translational displacement — Z" },
-    { name: "M2N1RDX",   unit: "deg",  desc: "Member 2 node 1 rotational deflection — X" },
-    { name: "M2N1RDY",   unit: "deg",  desc: "Member 2 node 1 rotational deflection — Y" },
-    { name: "M2N1RDZ",   unit: "deg",  desc: "Member 2 node 1 rotational deflection — Z" },
-    { name: "M2N1VelX",  unit: "m/s",  desc: "Member 2 node 1 translational velocity — X" },
-    { name: "M2N1VelY",  unit: "m/s",  desc: "Member 2 node 1 translational velocity — Y" },
-    { name: "M2N1VelZ",  unit: "m/s",  desc: "Member 2 node 1 translational velocity — Z" },
-    { name: "M2N1AccX",  unit: "m/s²", desc: "Member 2 node 1 translational acceleration — X" },
-    { name: "M2N1AccY",  unit: "m/s²", desc: "Member 2 node 1 translational acceleration — Y" },
-    { name: "M2N1AccZ",  unit: "m/s²", desc: "Member 2 node 1 translational acceleration — Z" },
-  ]},
-  { group: "Member 2 — Internal Forces/Moments (element frame)", vars: [
-    { name: "M2N1FKxe",  unit: "N",    desc: "Member 2 node 1 axial/shear force — x (element local frame)" },
-    { name: "M2N1FKye",  unit: "N",    desc: "Member 2 node 1 shear force — y (element local frame)" },
-    { name: "M2N1FKze",  unit: "N",    desc: "Member 2 node 1 shear force — z (element local frame)" },
-    { name: "M2N1MKxe",  unit: "N·m",  desc: "Member 2 node 1 torsion moment — x (element local frame)" },
-    { name: "M2N1MKye",  unit: "N·m",  desc: "Member 2 node 1 fore-aft bending moment — y (element local frame)" },
-    { name: "M2N1MKze",  unit: "N·m",  desc: "Member 2 node 1 side-to-side bending moment — z (element local frame)" },
-  ]},
-  { group: "Joint 1 Outputs (NJOutputs ≥ 1)", vars: [
-    { name: "J1TDX",     unit: "m",    desc: "Joint 1 translational displacement — X" },
-    { name: "J1TDY",     unit: "m",    desc: "Joint 1 translational displacement — Y" },
-    { name: "J1TDZ",     unit: "m",    desc: "Joint 1 translational displacement — Z" },
-    { name: "J1RDX",     unit: "deg",  desc: "Joint 1 rotational deflection — X" },
-    { name: "J1RDY",     unit: "deg",  desc: "Joint 1 rotational deflection — Y" },
-    { name: "J1RDZ",     unit: "deg",  desc: "Joint 1 rotational deflection — Z" },
-    { name: "J1VelX",    unit: "m/s",  desc: "Joint 1 translational velocity — X" },
-    { name: "J1VelY",    unit: "m/s",  desc: "Joint 1 translational velocity — Y" },
-    { name: "J1VelZ",    unit: "m/s",  desc: "Joint 1 translational velocity — Z" },
-    { name: "J1AccX",    unit: "m/s²", desc: "Joint 1 translational acceleration — X" },
-    { name: "J1AccY",    unit: "m/s²", desc: "Joint 1 translational acceleration — Y" },
-    { name: "J1AccZ",    unit: "m/s²", desc: "Joint 1 translational acceleration — Z" },
-  ]},
-  { group: "Joint 2 Outputs (NJOutputs ≥ 2)", vars: [
-    { name: "J2TDX",     unit: "m",    desc: "Joint 2 translational displacement — X" },
-    { name: "J2TDY",     unit: "m",    desc: "Joint 2 translational displacement — Y" },
-    { name: "J2TDZ",     unit: "m",    desc: "Joint 2 translational displacement — Z" },
-    { name: "J2RDX",     unit: "deg",  desc: "Joint 2 rotational deflection — X" },
-    { name: "J2RDY",     unit: "deg",  desc: "Joint 2 rotational deflection — Y" },
-    { name: "J2RDZ",     unit: "deg",  desc: "Joint 2 rotational deflection — Z" },
-    { name: "J2VelX",    unit: "m/s",  desc: "Joint 2 translational velocity — X" },
-    { name: "J2VelY",    unit: "m/s",  desc: "Joint 2 translational velocity — Y" },
-    { name: "J2VelZ",    unit: "m/s",  desc: "Joint 2 translational velocity — Z" },
-    { name: "J2AccX",    unit: "m/s²", desc: "Joint 2 translational acceleration — X" },
-    { name: "J2AccY",    unit: "m/s²", desc: "Joint 2 translational acceleration — Y" },
-    { name: "J2AccZ",    unit: "m/s²", desc: "Joint 2 translational acceleration — Z" },
-  ]},
-];
-
-// ── SdOutVarModal ─────────────────────────────────────────────────────────────
-function SdOutVarModal({ current, onClose, onApply }) {
-  const [selected, setSelected] = useState(() => {
-    const names = (current || "").split("\n")
-      .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
-    return new Set(names);
-  });
-  const [query, setQuery]         = useState("");
-  const [visible, setVisible]     = useState(false);
-  const [collapsed, setCollapsed] = useState(new Set());
-
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
-
-  const toggleGroup = (group) => {
-    const next = new Set(collapsed);
-    if (next.has(group)) next.delete(group); else next.add(group);
-    setCollapsed(next);
-  };
-
-  const handleClose = () => {
-    setVisible(false);
-    setTimeout(onClose, 220);
-  };
-
-  const handleApply = () => {
-    const lines = [...selected].map(n => `"${n}"`).join("\n");
-    onApply(lines);
-    handleClose();
-  };
-
-  const q = query.trim().toLowerCase();
-  const filtered = SD_OUT_VARS.map(g => ({
-    ...g,
-    vars: q ? g.vars.filter(v =>
-      v.name.toLowerCase().includes(q) ||
-      v.desc.toLowerCase().includes(q) ||
-      v.unit.toLowerCase().includes(q)
-    ) : g.vars,
-  })).filter(g => g.vars.length > 0);
-
-  return createPortal(
-    <div
-      className={[s.modalOverlay, visible ? s.modalOverlayVisible : ""].join(" ")}
-      onMouseDown={e => { if (e.target === e.currentTarget) handleClose(); }}
-    >
-      <div className={[s.modal, visible ? s.modalVisible : ""].join(" ")}>
-        <div className={s.modalHeader}>
-          <span style={{ fontWeight: 600, fontSize: 14, color: "var(--tx-1)" }}>
-            SubDyn Output Variables
-          </span>
-          <span className={s.modalCount}>
-            {selected.size} channel{selected.size !== 1 ? "s" : ""} selected
-          </span>
-          <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
-        </div>
-
-        <div className={s.modalSearch}>
-          <div className={s.modalSearchBox}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.45, flexShrink: 0 }}>
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              className={s.modalSearchInput}
-              placeholder="Search channels…"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              autoFocus
-            />
-          </div>
-        </div>
-
-        <div className={s.modalBody}>
-          {filtered.length === 0 && (
-            <div className={s.varNoMatch}>No channels match "{query}"</div>
-          )}
-          {filtered.map(({ group, vars }) => {
-            const total    = SD_OUT_VARS.find(g => g.group === group)?.vars.length ?? vars.length;
-            const selCount = vars.filter(v => selected.has(v.name)).length;
-            const allSel   = selCount === vars.length && vars.length > 0;
-            const someSel  = selCount > 0 && !allSel;
-            const isCollapsed = collapsed.has(group);
-            return (
-              <div key={group} className={s.varGroup}>
-                <div className={s.varGroupHead} onClick={() => toggleGroup(group)}>
-                  <button
-                    type="button"
-                    className={[s.groupCheck, allSel ? s.groupCheckAll : someSel ? s.groupCheckSome : ""].join(" ")}
-                    onClick={e => {
-                      e.stopPropagation();
-                      const next = new Set(selected);
-                      if (allSel) vars.forEach(v => next.delete(v.name));
-                      else vars.forEach(v => next.add(v.name));
-                      setSelected(next);
-                    }}
-                  >
-                    {(allSel || someSel) && (
-                      <svg viewBox="0 0 10 10" width="10" height="10">
-                        <polyline
-                          points={allSel ? "1.5,5 4,7.5 8.5,2.5" : "2,5 8,5"}
-                          fill="none"
-                          stroke={ACCENT}
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
-                  </button>
-                  <span className={s.groupLabel}>{group}</span>
-                  <span className={s.varGroupCount}>{selCount}/{total}</span>
-                  <ChevronRight
-                    size={12} strokeWidth={2}
-                    className={[s.groupChevron, !isCollapsed ? s.groupChevronOpen : ""].join(" ")}
-                  />
-                </div>
-                <div className={[s.varGroupBody, isCollapsed ? s.varGroupBodyCollapsed : ""].join(" ")}>
-                  <div className={s.varGroupBodyInner}>
-                    {vars.map(v => {
-                      const on = selected.has(v.name);
-                      return (
-                        <div
-                          key={v.name}
-                          className={[s.varRow, on ? s.varRowOn : ""].join(" ")}
-                          onClick={() => {
-                            const next = new Set(selected);
-                            if (on) next.delete(v.name); else next.add(v.name);
-                            setSelected(next);
-                          }}
-                        >
-                          <span className={[s.varCheck, on ? s.varCheck__mark : ""].join(" ")}>
-                            {on && (
-                              <svg viewBox="0 0 10 10" width="10" height="10">
-                                <polyline
-                                  points="1.5,5 4,7.5 8.5,2.5"
-                                  fill="none"
-                                  stroke={ACCENT}
-                                  strokeWidth="1.8"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            )}
-                          </span>
-                          <span className={s.varName}>{v.name}</span>
-                          <span className={s.varUnit}>{v.unit}</span>
-                          <span className={s.varDesc}>{v.desc}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className={s.modalFooter}>
-          <button className={s.modalCancelBtn} onClick={handleClose} type="button">Cancel</button>
-          <button className={s.modalApplyBtn} onClick={handleApply} type="button">
-            Apply {selected.size} channel{selected.size !== 1 ? "s" : ""}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
 // ── Substructure column SVG schematic ─────────────────────────────────────────
 function SubstructureSchematic({ femModName, nmodesLabel, intMethodName, nJoints, nMembers, fileLoaded }) {
   const c = ACCENT;
@@ -750,7 +498,7 @@ export default function SubDynPanel({
   const [filePath,        setFilePath]        = useState("");
   const [isDirtyFlag,     setIsDirtyFlag]     = useState(false);
   const [rawOpen,         setRawOpen]         = useState(false);
-  const [showOutVarModal, setShowOutVarModal] = useState(false);
+
   const rawContent  = useRef("");
   const originalRef = useRef(null);
 
@@ -1138,25 +886,15 @@ export default function SubDynPanel({
       </div>
 
       <SectionHead>Output Channel List (OutList)</SectionHead>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <button type="button" className={s.pickVarsBtn} onClick={() => setShowOutVarModal(true)}>
-          <List size={12} strokeWidth={2} /> Pick variables…
-        </button>
-        <span style={{ fontSize: 11.5, color: "var(--tx-4)" }}>One quoted channel name per line</span>
-      </div>
+      <span style={{ fontSize: 11.5, color: "var(--tx-4)", display: "block", marginBottom: 6 }}>
+        Quoted channel strings, one per line — preserve signs and comments as-is
+      </span>
       <textarea
         className={s.outListArea}
         value={p.OutList}
         onChange={e => set("OutList", e.target.value)}
         spellCheck={false}
       />
-      {showOutVarModal && (
-        <SdOutVarModal
-          current={p.OutList}
-          onClose={() => setShowOutVarModal(false)}
-          onApply={(outList) => set("OutList", outList)}
-        />
-      )}
     </div>
   );
 
