@@ -620,6 +620,23 @@
   box-shadow: 0 0 0 2.5px rgba(127,119,221,0.12);
 }
 
+/* ── Disabled-field dimming (for context-dependent fields) ──────────── */
+.fieldDisabled {
+  opacity: 0.38;
+  transition: opacity 0.15s;
+  cursor: not-allowed;
+}
+.fieldDisabled:hover {
+  opacity: 0.70;
+}
+.fieldDisabled input,
+.fieldDisabled select,
+.fieldDisabled textarea,
+.fieldDisabled button:not(:focus) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* ── Pick-vars button ───────────────────────────────────────────────── */
 .pickVarsBtn {
   display: flex;

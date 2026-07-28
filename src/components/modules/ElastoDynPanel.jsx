@@ -139,8 +139,82 @@ const ED_OUT_VARS = [
   },
 ];
 
+// ── Blade node output variable database ──────────────────────────────────────
+const ED_NODE_VARS = [
+  {
+    group: "Translational Deflection",
+    vars: [
+      { name: "TDx", unit: "m",   desc: "Local flapwise translational deflection (relative to undeflected position)" },
+      { name: "TDy", unit: "m",   desc: "Local edgewise translational deflection (relative to undeflected position)" },
+      { name: "TDz", unit: "m",   desc: "Local axial translational deflection (relative to undeflected position)" },
+    ],
+  },
+  {
+    group: "Rotational Deflection",
+    vars: [
+      { name: "RDx", unit: "deg", desc: "Local flapwise rotational deflection (relative to undeflected position)" },
+      { name: "RDy", unit: "deg", desc: "Local edgewise rotational deflection (relative to undeflected position)" },
+      { name: "RDz", unit: "deg", desc: "Local torsional rotational deflection (relative to undeflected position)" },
+    ],
+  },
+  {
+    group: "Translational Velocity",
+    vars: [
+      { name: "TVx", unit: "m/s",   desc: "Local flapwise translational velocity" },
+      { name: "TVy", unit: "m/s",   desc: "Local edgewise translational velocity" },
+      { name: "TVz", unit: "m/s",   desc: "Local axial translational velocity" },
+    ],
+  },
+  {
+    group: "Rotational Velocity",
+    vars: [
+      { name: "RVx", unit: "deg/s", desc: "Local flapwise rotational velocity" },
+      { name: "RVy", unit: "deg/s", desc: "Local edgewise rotational velocity" },
+      { name: "RVz", unit: "deg/s", desc: "Local torsional rotational velocity" },
+    ],
+  },
+  {
+    group: "Translational Acceleration",
+    vars: [
+      { name: "TAx", unit: "m/s²",   desc: "Local flapwise translational acceleration" },
+      { name: "TAy", unit: "m/s²",   desc: "Local edgewise translational acceleration" },
+      { name: "TAz", unit: "m/s²",   desc: "Local axial translational acceleration" },
+    ],
+  },
+  {
+    group: "Rotational Acceleration",
+    vars: [
+      { name: "RAx", unit: "deg/s²", desc: "Local flapwise rotational acceleration" },
+      { name: "RAy", unit: "deg/s²", desc: "Local edgewise rotational acceleration" },
+      { name: "RAz", unit: "deg/s²", desc: "Local torsional rotational acceleration" },
+    ],
+  },
+  {
+    group: "Internal Loads (Body Frame)",
+    vars: [
+      { name: "FxL", unit: "kN",   desc: "Flapwise shear force at node (blade body frame, x)" },
+      { name: "FyL", unit: "kN",   desc: "Edgewise shear force at node (blade body frame, y)" },
+      { name: "FzL", unit: "kN",   desc: "Axial force at node (blade body frame, z)" },
+      { name: "MxL", unit: "kN·m", desc: "Edgewise bending moment at node" },
+      { name: "MyL", unit: "kN·m", desc: "Flapwise bending moment at node" },
+      { name: "MzL", unit: "kN·m", desc: "Torsional moment at node" },
+    ],
+  },
+  {
+    group: "Internal Loads (Global Frame)",
+    vars: [
+      { name: "FxN", unit: "kN",   desc: "X-direction force at node (inertial/global frame)" },
+      { name: "FyN", unit: "kN",   desc: "Y-direction force at node (inertial/global frame)" },
+      { name: "FzN", unit: "kN",   desc: "Z-direction force at node (inertial/global frame)" },
+      { name: "MxN", unit: "kN·m", desc: "X-direction moment at node (inertial/global frame)" },
+      { name: "MyN", unit: "kN·m", desc: "Y-direction moment at node (inertial/global frame)" },
+      { name: "MzN", unit: "kN·m", desc: "Z-direction moment at node (inertial/global frame)" },
+    ],
+  },
+];
+
 // ── Inline output-variable picker modal (createPortal to escape scroll clip) ─
-function EdOutVarModal({ current, onClose, onApply }) {
+function EdOutVarModal({ current, onClose, onApply, vars = ED_OUT_VARS, title = "Output variable picker" }) {
   const [selected,  setSelected]  = useState(() => {
     const names = (current || "").split("\n")
       .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
@@ -173,7 +247,7 @@ function EdOutVarModal({ current, onClose, onApply }) {
     setSelected(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
 
   const q = query.toLowerCase();
-  const filteredGroups = ED_OUT_VARS.map(g => ({
+  const filteredGroups = vars.map(g => ({
     ...g,
     vars: q ? g.vars.filter(v =>
       v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q) || v.unit.toLowerCase().includes(q)
@@ -190,7 +264,7 @@ function EdOutVarModal({ current, onClose, onApply }) {
         onClick={e => e.stopPropagation()}
       >
         <div className={s.modalHeader}>
-          <span className={s.modalTitle}>Output variable picker</span>
+          <span className={s.modalTitle}>{title}</span>
           <span className={s.modalCount}>{selected.size} selected</span>
           <div style={{ flex: 1 }} />
           <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
@@ -287,8 +361,7 @@ function EdOutVarModal({ current, onClose, onApply }) {
 const MissingCtx = createContext(new Set());
 
 // Fields that exist in DEFAULT but have no corresponding UI input; never flag them.
-// (NodeOutList is stored as __NodeOut__ in rawKV; BldNd_* have no UI field.)
-const NO_UI_FIELDS = new Set(["NodeOutList", "BldNd_BladesOut", "BldNd_BlOutNd"]);
+const NO_UI_FIELDS = new Set([]);
 
 // Which tab each DEFAULT key lives on — used to jump to the right place from the banner.
 const FIELD_TAB = {
@@ -332,6 +405,7 @@ const FIELD_TAB = {
   OutFile:"files",  OutFmt:"files",
   SumPrint:"files", TabDelim:"files", Echo:"files",
   NTwGages:"files", TwrGagNd:"files", NBlGages:"files", BldGagNd:"files",
+  BldNd_BladesOut:"files", BldNd_BlOutNd:"files",
   Method:"files",   DT:"files",
 };
 
@@ -819,13 +893,64 @@ function SectionHead({ children }) {
   return <p className={s.sectionHead}>{children}</p>;
 }
 
-function Field({ label, unit, children, hint, info, fieldKey }) {
+function DisabledHintPortal({ text, rect }) {
+  const popRef = useRef(null);
+  const W = 280;
+  let left = rect.left;
+  if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8;
+  if (left < 8) left = 8;
+  const [top, setTop] = useState(rect.bottom + 6);
+
+  useEffect(() => {
+    if (!popRef.current) return;
+    const r = popRef.current.getBoundingClientRect();
+    if (r.bottom > window.innerHeight - 8) setTop(rect.top - r.height - 6);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return createPortal(
+    <div
+      ref={popRef}
+      style={{
+        position: "fixed", top, left, zIndex: 99998, width: W,
+        background: "var(--bg-popover, rgba(255,255,255,0.82))",
+        WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+        backdropFilter: "blur(20px) saturate(1.8)",
+        border: "0.5px solid var(--bd-popover, rgba(0,0,0,0.10))",
+        borderRadius: 10,
+        padding: "10px 12px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)",
+        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+        fontSize: 12, lineHeight: 1.5,
+        color: "var(--tx-2)",
+        pointerEvents: "none",
+      }}
+    >
+      {text}
+    </div>,
+    document.body,
+  );
+}
+
+function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
   const missingSet = useContext(MissingCtx);
+  const fieldRef   = useRef(null);
+  const [hintRect, setHintRect] = useState(null);
   // Auto-extract key from "(KeyName)" at end of label when no explicit fieldKey given
   const key = fieldKey || label.match(/\(([A-Za-z_][A-Za-z_0-9]*)\)\s*$/)?.[1];
   const isMissing = key && missingSet.size > 0 && missingSet.has(key);
+
+  const showHint = () => {
+    if (disabledHint && fieldRef.current)
+      setHintRect(fieldRef.current.getBoundingClientRect());
+  };
+
   return (
-    <div className={s.field}>
+    <div
+      ref={fieldRef}
+      className={`${s.field} ${disabledHint ? s.fieldDisabled : ""}`}
+      onMouseEnter={showHint}
+      onMouseLeave={() => setHintRect(null)}
+    >
       <div className={s.fieldHeader}>
         <label className={s.fieldLabel}>
           {label}{unit && <span className={s.unit}> {unit}</span>}
@@ -842,6 +967,9 @@ function Field({ label, unit, children, hint, info, fieldKey }) {
         {children}
       </div>
       {hint && <span className={s.hint}>{hint}</span>}
+      {disabledHint && hintRect && (
+        <DisabledHintPortal text={disabledHint} rect={hintRect} />
+      )}
     </div>
   );
 }
@@ -1034,8 +1162,9 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
   const [p,        _setP]       = useState(DEFAULT);
   const [filePath, setFilePath] = useState("");
   const [isDirtyFlag, setIsDirtyFlag] = useState(false);
-  const [showRaw,         setShowRaw]         = useState(false);
-  const [showOutVarModal, setShowOutVarModal] = useState(false);
+  const [showRaw,          setShowRaw]          = useState(false);
+  const [showOutVarModal,  setShowOutVarModal]  = useState(false);
+  const [showNodeVarModal, setShowNodeVarModal] = useState(false);
   const [rawContent, setRawContent] = useState("");
 
   // Ref holds a JSON snapshot of the last loaded/saved state.
@@ -1876,6 +2005,71 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
                   current={p.OutList}
                   onClose={() => setShowOutVarModal(false)}
                   onApply={outList => setP(prev => ({ ...prev, OutList: outList }))}
+                />
+              )}
+
+              <SectionHead>Blade node outputs (NodeOutList)</SectionHead>
+              <p className={s.hint} style={{ marginBottom: 10 }}>
+                Outputs time series at individual blade nodes — useful for distributed load and deflection analysis.
+              </p>
+              <div className={s.fieldGrid}>
+                <Field
+                  label="BldNd_BladesOut — blades to output"
+                  hint="0 = disabled; 1, 2, or 3 to output that many blades"
+                  fieldKey="BldNd_BladesOut"
+                >
+                  <input
+                    type="number"
+                    value={p.BldNd_BladesOut ?? 0}
+                    step={1} min={0} max={3}
+                    onChange={setN("BldNd_BladesOut")}
+                  />
+                </Field>
+                <Field
+                  label="BldNd_BlOutNd — node indices"
+                  hint={`"All" or space-separated node numbers (e.g. "1 5 10 20 30 36")`}
+                  fieldKey="BldNd_BlOutNd"
+                  disabledHint={(p.BldNd_BladesOut ?? 0) === 0
+                    ? "Set BldNd_BladesOut ≥ 1 to select which blade nodes to output"
+                    : undefined}
+                >
+                  <input
+                    type="text"
+                    value={p.BldNd_BlOutNd ?? "All"}
+                    onChange={setE("BldNd_BlOutNd")}
+                    disabled={(p.BldNd_BladesOut ?? 0) === 0}
+                  />
+                </Field>
+              </div>
+              <button
+                className={s.pickVarsBtn}
+                type="button"
+                onClick={() => (p.BldNd_BladesOut ?? 0) > 0 && setShowNodeVarModal(true)}
+                style={{
+                  marginBottom: 8, marginTop: 4, alignSelf: "flex-start",
+                  opacity: (p.BldNd_BladesOut ?? 0) === 0 ? 0.38 : 1,
+                  cursor:  (p.BldNd_BladesOut ?? 0) === 0 ? "not-allowed" : "pointer",
+                }}
+                title={(p.BldNd_BladesOut ?? 0) === 0 ? "Set BldNd_BladesOut ≥ 1 to enable" : undefined}
+              >
+                <List size={11} strokeWidth={2} />
+                Pick node variables
+              </button>
+              <textarea
+                className={s.outListArea}
+                value={p.NodeOutList}
+                onChange={setE("NodeOutList")}
+                spellCheck={false}
+                disabled={(p.BldNd_BladesOut ?? 0) === 0}
+                placeholder={(p.BldNd_BladesOut ?? 0) === 0 ? "Set BldNd_BladesOut ≥ 1 to enable node outputs" : 'e.g. "TDx"\n"TDy"\n"RDz"'}
+              />
+              {showNodeVarModal && (
+                <EdOutVarModal
+                  vars={ED_NODE_VARS}
+                  title="Blade node variable picker"
+                  current={p.NodeOutList}
+                  onClose={() => setShowNodeVarModal(false)}
+                  onApply={outList => setP(prev => ({ ...prev, NodeOutList: outList }))}
                 />
               )}
             </div>
