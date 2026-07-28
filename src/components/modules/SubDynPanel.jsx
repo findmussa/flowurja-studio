@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { Layers, FolderOpen, Eye, Save, ChevronDown, ChevronRight } from "lucide-react";
+import { Layers, FolderOpen, Eye, Save, ChevronDown, ChevronRight, List } from "lucide-react";
 import RawFileModal from "../RawFileModal";
 import InfoPopover from "../InfoPopover";
 import s from "./SubDynPanel.module.css";
@@ -318,26 +319,60 @@ function SectionHead({ children }) {
   return <h3 className={s.sectionHead}>{children}</h3>;
 }
 
-function Field({ label, unit, children, hint, popover }) {
+function DisabledHintPortal({ text, rect }) {
+  const tipW = 230;
+  const left = Math.min(rect.left + rect.width / 2 - tipW / 2, window.innerWidth - tipW - 10);
+  const top  = rect.top - 6;
+  return createPortal(
+    <div style={{
+      position: "fixed", left, top, transform: "translateY(-100%)",
+      width: tipW, background: "color-mix(in srgb, var(--bg-surface) 88%, transparent)",
+      backdropFilter: "blur(20px) saturate(1.8)", WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+      border: "0.5px solid var(--bd)", borderRadius: 9,
+      padding: "7px 10px", fontSize: 11.5, color: "var(--tx-3)",
+      lineHeight: 1.45, zIndex: 9999, pointerEvents: "none",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+    }}>
+      <span style={{ color: ACCENT, fontWeight: 600 }}>Disabled — </span>{text}
+    </div>,
+    document.body
+  );
+}
+
+function Field({ label, unit, children, hint, popover, disabled = false, disabledHint }) {
+  const rowRef = useRef(null);
+  const [hintRect, setHintRect] = useState(null);
+  const isOff = disabled || !!disabledHint;
   return (
-    <div className={s.field}>
+    <div ref={rowRef}
+      className={[s.field, isOff ? s.fieldDisabled : ""].join(" ")}
+      onMouseEnter={() => disabledHint && rowRef.current && setHintRect(rowRef.current.getBoundingClientRect())}
+      onMouseLeave={() => setHintRect(null)}>
       <div className={s.fieldHeader}>
         <span className={s.fieldLabel}>{label}</span>
         {unit && <span className={s.unit}>{unit}</span>}
         {popover && <InfoPopover content={popover} accentColor={ACCENT} />}
+        {disabled && !disabledHint && <span className={s.naTag}>n/a</span>}
       </div>
       {children}
       {hint && <span className={s.hint}>{hint}</span>}
+      {disabledHint && hintRect && <DisabledHintPortal text={disabledHint} rect={hintRect} />}
     </div>
   );
 }
 
-function Toggle({ label, value, onChange, note, popover }) {
+function Toggle({ label, value, onChange, note, popover, disabled = false, disabledHint }) {
+  const rowRef = useRef(null);
+  const [hintRect, setHintRect] = useState(null);
+  const isOff = disabled || !!disabledHint;
   return (
-    <div className={s.toggleRow}>
+    <div ref={rowRef}
+      className={[s.toggleRow, isOff ? s.fieldDisabled : ""].join(" ")}
+      onMouseEnter={() => disabledHint && rowRef.current && setHintRect(rowRef.current.getBoundingClientRect())}
+      onMouseLeave={() => setHintRect(null)}>
       <button
         className={[s.toggle, value ? s.on : ""].join(" ")}
-        onClick={() => onChange(!value)}
+        onClick={() => !isOff && onChange(!value)}
         type="button"
       >
         <span className={s.toggleThumb} />
@@ -345,13 +380,14 @@ function Toggle({ label, value, onChange, note, popover }) {
       <span className={s.toggleLabel}>{label}</span>
       {popover && <InfoPopover content={popover} accentColor={ACCENT} />}
       {note && <span className={s.toggleNote}>{note}</span>}
+      {disabledHint && hintRect && <DisabledHintPortal text={disabledHint} rect={hintRect} />}
     </div>
   );
 }
 
-function SelField({ label, value, onChange, options, hint, popover }) {
+function SelField({ label, value, onChange, options, hint, popover, disabledHint }) {
   return (
-    <Field label={label} hint={hint} popover={popover}>
+    <Field label={label} hint={hint} popover={popover} disabledHint={disabledHint}>
       <select
         className={s.select}
         value={value}
@@ -382,27 +418,255 @@ function Collapsible({ title, children, defaultOpen = false }) {
   );
 }
 
-// ── FieldDisabled wrapper ─────────────────────────────────────────────────────
-// Visually disables child fields when `disabled` is true.
-function FieldDisabled({ disabled, reason, children }) {
-  return (
-    <div style={disabled
-      ? { opacity: 0.38, pointerEvents: "none", position: "relative" }
-      : {}
-    }>
-      {children}
-      {disabled && reason && (
-        <p style={{
-          fontSize: 10.5,
-          fontStyle: "italic",
-          color: "var(--tx-4)",
-          marginTop: 4,
-          lineHeight: 1.4,
-        }}>
-          {reason}
-        </p>
-      )}
-    </div>
+// ── SubDyn output variables (OpenFAST 4.2.0) ─────────────────────────────────
+const SD_OUT_VARS = [
+  { group: "Interface Reactions (Transition Piece)", vars: [
+    { name: "ReactFXss",  unit: "N",    desc: "Interface X-force at transition piece (SubDyn body frame)" },
+    { name: "ReactFYss",  unit: "N",    desc: "Interface Y-force at transition piece (SubDyn body frame)" },
+    { name: "ReactFZss",  unit: "N",    desc: "Interface Z-force at transition piece (SubDyn body frame)" },
+    { name: "ReactMXss",  unit: "N·m",  desc: "Interface X-moment at transition piece (SubDyn body frame)" },
+    { name: "ReactMYss",  unit: "N·m",  desc: "Interface Y-moment at transition piece (SubDyn body frame)" },
+    { name: "ReactMZss",  unit: "N·m",  desc: "Interface Z-moment at transition piece (SubDyn body frame)" },
+  ]},
+  { group: "Member 1 — Kinematics (NMOutputs, Node 1)", vars: [
+    { name: "M1N1TDX",   unit: "m",    desc: "Member 1 node 1 translational displacement — X" },
+    { name: "M1N1TDY",   unit: "m",    desc: "Member 1 node 1 translational displacement — Y" },
+    { name: "M1N1TDZ",   unit: "m",    desc: "Member 1 node 1 translational displacement — Z" },
+    { name: "M1N1RDX",   unit: "deg",  desc: "Member 1 node 1 rotational deflection — X" },
+    { name: "M1N1RDY",   unit: "deg",  desc: "Member 1 node 1 rotational deflection — Y" },
+    { name: "M1N1RDZ",   unit: "deg",  desc: "Member 1 node 1 rotational deflection — Z" },
+    { name: "M1N1VelX",  unit: "m/s",  desc: "Member 1 node 1 translational velocity — X" },
+    { name: "M1N1VelY",  unit: "m/s",  desc: "Member 1 node 1 translational velocity — Y" },
+    { name: "M1N1VelZ",  unit: "m/s",  desc: "Member 1 node 1 translational velocity — Z" },
+    { name: "M1N1AccX",  unit: "m/s²", desc: "Member 1 node 1 translational acceleration — X" },
+    { name: "M1N1AccY",  unit: "m/s²", desc: "Member 1 node 1 translational acceleration — Y" },
+    { name: "M1N1AccZ",  unit: "m/s²", desc: "Member 1 node 1 translational acceleration — Z" },
+  ]},
+  { group: "Member 1 — Internal Forces (NMOutputs, Node 1)", vars: [
+    { name: "M1N1FKXs",  unit: "N",    desc: "Member 1 node 1 internal force — X (local frame)" },
+    { name: "M1N1FKYs",  unit: "N",    desc: "Member 1 node 1 internal force — Y (local frame)" },
+    { name: "M1N1FKZs",  unit: "N",    desc: "Member 1 node 1 internal force — Z (local frame)" },
+    { name: "M1N1MKXs",  unit: "N·m",  desc: "Member 1 node 1 internal moment — X (local frame)" },
+    { name: "M1N1MKYs",  unit: "N·m",  desc: "Member 1 node 1 internal moment — Y (local frame)" },
+    { name: "M1N1MKZs",  unit: "N·m",  desc: "Member 1 node 1 internal moment — Z (local frame)" },
+  ]},
+  { group: "Member 2 — Kinematics (NMOutputs, Node 1)", vars: [
+    { name: "M2N1TDX",   unit: "m",    desc: "Member 2 node 1 translational displacement — X" },
+    { name: "M2N1TDY",   unit: "m",    desc: "Member 2 node 1 translational displacement — Y" },
+    { name: "M2N1TDZ",   unit: "m",    desc: "Member 2 node 1 translational displacement — Z" },
+    { name: "M2N1RDX",   unit: "deg",  desc: "Member 2 node 1 rotational deflection — X" },
+    { name: "M2N1RDY",   unit: "deg",  desc: "Member 2 node 1 rotational deflection — Y" },
+    { name: "M2N1RDZ",   unit: "deg",  desc: "Member 2 node 1 rotational deflection — Z" },
+    { name: "M2N1VelX",  unit: "m/s",  desc: "Member 2 node 1 translational velocity — X" },
+    { name: "M2N1VelY",  unit: "m/s",  desc: "Member 2 node 1 translational velocity — Y" },
+    { name: "M2N1VelZ",  unit: "m/s",  desc: "Member 2 node 1 translational velocity — Z" },
+    { name: "M2N1AccX",  unit: "m/s²", desc: "Member 2 node 1 translational acceleration — X" },
+    { name: "M2N1AccY",  unit: "m/s²", desc: "Member 2 node 1 translational acceleration — Y" },
+    { name: "M2N1AccZ",  unit: "m/s²", desc: "Member 2 node 1 translational acceleration — Z" },
+  ]},
+  { group: "Member 2 — Internal Forces (NMOutputs, Node 1)", vars: [
+    { name: "M2N1FKXs",  unit: "N",    desc: "Member 2 node 1 internal force — X (local frame)" },
+    { name: "M2N1FKYs",  unit: "N",    desc: "Member 2 node 1 internal force — Y (local frame)" },
+    { name: "M2N1FKZs",  unit: "N",    desc: "Member 2 node 1 internal force — Z (local frame)" },
+    { name: "M2N1MKXs",  unit: "N·m",  desc: "Member 2 node 1 internal moment — X (local frame)" },
+    { name: "M2N1MKYs",  unit: "N·m",  desc: "Member 2 node 1 internal moment — Y (local frame)" },
+    { name: "M2N1MKZs",  unit: "N·m",  desc: "Member 2 node 1 internal moment — Z (local frame)" },
+  ]},
+  { group: "Joint 1 Outputs (NJOutputs ≥ 1)", vars: [
+    { name: "J1TDX",     unit: "m",    desc: "Joint 1 translational displacement — X" },
+    { name: "J1TDY",     unit: "m",    desc: "Joint 1 translational displacement — Y" },
+    { name: "J1TDZ",     unit: "m",    desc: "Joint 1 translational displacement — Z" },
+    { name: "J1RDX",     unit: "deg",  desc: "Joint 1 rotational deflection — X" },
+    { name: "J1RDY",     unit: "deg",  desc: "Joint 1 rotational deflection — Y" },
+    { name: "J1RDZ",     unit: "deg",  desc: "Joint 1 rotational deflection — Z" },
+    { name: "J1VelX",    unit: "m/s",  desc: "Joint 1 translational velocity — X" },
+    { name: "J1VelY",    unit: "m/s",  desc: "Joint 1 translational velocity — Y" },
+    { name: "J1VelZ",    unit: "m/s",  desc: "Joint 1 translational velocity — Z" },
+    { name: "J1AccX",    unit: "m/s²", desc: "Joint 1 translational acceleration — X" },
+    { name: "J1AccY",    unit: "m/s²", desc: "Joint 1 translational acceleration — Y" },
+    { name: "J1AccZ",    unit: "m/s²", desc: "Joint 1 translational acceleration — Z" },
+  ]},
+  { group: "Joint 2 Outputs (NJOutputs ≥ 2)", vars: [
+    { name: "J2TDX",     unit: "m",    desc: "Joint 2 translational displacement — X" },
+    { name: "J2TDY",     unit: "m",    desc: "Joint 2 translational displacement — Y" },
+    { name: "J2TDZ",     unit: "m",    desc: "Joint 2 translational displacement — Z" },
+    { name: "J2RDX",     unit: "deg",  desc: "Joint 2 rotational deflection — X" },
+    { name: "J2RDY",     unit: "deg",  desc: "Joint 2 rotational deflection — Y" },
+    { name: "J2RDZ",     unit: "deg",  desc: "Joint 2 rotational deflection — Z" },
+    { name: "J2VelX",    unit: "m/s",  desc: "Joint 2 translational velocity — X" },
+    { name: "J2VelY",    unit: "m/s",  desc: "Joint 2 translational velocity — Y" },
+    { name: "J2VelZ",    unit: "m/s",  desc: "Joint 2 translational velocity — Z" },
+    { name: "J2AccX",    unit: "m/s²", desc: "Joint 2 translational acceleration — X" },
+    { name: "J2AccY",    unit: "m/s²", desc: "Joint 2 translational acceleration — Y" },
+    { name: "J2AccZ",    unit: "m/s²", desc: "Joint 2 translational acceleration — Z" },
+  ]},
+];
+
+// ── SdOutVarModal ─────────────────────────────────────────────────────────────
+function SdOutVarModal({ current, onClose, onApply }) {
+  const [selected, setSelected] = useState(() => {
+    const names = (current || "").split("\n")
+      .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
+    return new Set(names);
+  });
+  const [query, setQuery]         = useState("");
+  const [visible, setVisible]     = useState(false);
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
+
+  const toggleGroup = (group) => {
+    const next = new Set(collapsed);
+    if (next.has(group)) next.delete(group); else next.add(group);
+    setCollapsed(next);
+  };
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 220);
+  };
+
+  const handleApply = () => {
+    const lines = [...selected].map(n => `"${n}"`).join("\n");
+    onApply(lines);
+    handleClose();
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = SD_OUT_VARS.map(g => ({
+    ...g,
+    vars: q ? g.vars.filter(v =>
+      v.name.toLowerCase().includes(q) ||
+      v.desc.toLowerCase().includes(q) ||
+      v.unit.toLowerCase().includes(q)
+    ) : g.vars,
+  })).filter(g => g.vars.length > 0);
+
+  return createPortal(
+    <div
+      className={[s.modalOverlay, visible ? s.modalOverlayVisible : ""].join(" ")}
+      onMouseDown={e => { if (e.target === e.currentTarget) handleClose(); }}
+    >
+      <div className={[s.modal, visible ? s.modalVisible : ""].join(" ")}>
+        <div className={s.modalHeader}>
+          <span style={{ fontWeight: 600, fontSize: 14, color: "var(--tx-1)" }}>
+            SubDyn Output Variables
+          </span>
+          <span className={s.modalCount}>
+            {selected.size} channel{selected.size !== 1 ? "s" : ""} selected
+          </span>
+          <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
+        </div>
+
+        <div className={s.modalSearch}>
+          <div className={s.modalSearchBox}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.45, flexShrink: 0 }}>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              className={s.modalSearchInput}
+              placeholder="Search channels…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className={s.modalBody}>
+          {filtered.length === 0 && (
+            <div className={s.varNoMatch}>No channels match "{query}"</div>
+          )}
+          {filtered.map(({ group, vars }) => {
+            const total    = SD_OUT_VARS.find(g => g.group === group)?.vars.length ?? vars.length;
+            const selCount = vars.filter(v => selected.has(v.name)).length;
+            const allSel   = selCount === vars.length && vars.length > 0;
+            const someSel  = selCount > 0 && !allSel;
+            const isCollapsed = collapsed.has(group);
+            return (
+              <div key={group} className={s.varGroup}>
+                <div className={s.varGroupHead} onClick={() => toggleGroup(group)}>
+                  <button
+                    type="button"
+                    className={[s.groupCheck, allSel ? s.groupCheckAll : someSel ? s.groupCheckSome : ""].join(" ")}
+                    onClick={e => {
+                      e.stopPropagation();
+                      const next = new Set(selected);
+                      if (allSel) vars.forEach(v => next.delete(v.name));
+                      else vars.forEach(v => next.add(v.name));
+                      setSelected(next);
+                    }}
+                  >
+                    {(allSel || someSel) && (
+                      <svg viewBox="0 0 10 10" width="10" height="10">
+                        <polyline
+                          points={allSel ? "1.5,5 4,7.5 8.5,2.5" : "2,5 8,5"}
+                          fill="none"
+                          stroke={ACCENT}
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                  <span className={s.groupLabel}>{group}</span>
+                  <span className={s.varGroupCount}>{selCount}/{total}</span>
+                  <ChevronRight
+                    size={12} strokeWidth={2}
+                    className={[s.groupChevron, !isCollapsed ? s.groupChevronOpen : ""].join(" ")}
+                  />
+                </div>
+                <div className={[s.varGroupBody, isCollapsed ? s.varGroupBodyCollapsed : ""].join(" ")}>
+                  <div className={s.varGroupBodyInner}>
+                    {vars.map(v => {
+                      const on = selected.has(v.name);
+                      return (
+                        <div
+                          key={v.name}
+                          className={[s.varRow, on ? s.varRowOn : ""].join(" ")}
+                          onClick={() => {
+                            const next = new Set(selected);
+                            if (on) next.delete(v.name); else next.add(v.name);
+                            setSelected(next);
+                          }}
+                        >
+                          <span className={[s.varCheck, on ? s.varCheck__mark : ""].join(" ")}>
+                            {on && (
+                              <svg viewBox="0 0 10 10" width="10" height="10">
+                                <polyline
+                                  points="1.5,5 4,7.5 8.5,2.5"
+                                  fill="none"
+                                  stroke={ACCENT}
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            )}
+                          </span>
+                          <span className={s.varName}>{v.name}</span>
+                          <span className={s.varUnit}>{v.unit}</span>
+                          <span className={s.varDesc}>{v.desc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className={s.modalFooter}>
+          <button className={s.modalCancelBtn} onClick={handleClose} type="button">Cancel</button>
+          <button className={s.modalApplyBtn} onClick={handleApply} type="button">
+            Apply {selected.size} channel{selected.size !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -477,12 +741,13 @@ export default function SubDynPanel({
   onRegisterSave,
   simRunning = false,
 }) {
-  const [tab,          setTab]          = useState("overview");
+  const [tab,             setTab]             = useState("overview");
   const tabDirRef = useRef(1);
-  const [p,            _setP]           = useState(DEFAULT);
-  const [filePath,     setFilePath]     = useState("");
-  const [isDirtyFlag,  setIsDirtyFlag]  = useState(false);
-  const [rawOpen,      setRawOpen]      = useState(false);
+  const [p,               _setP]              = useState(DEFAULT);
+  const [filePath,        setFilePath]        = useState("");
+  const [isDirtyFlag,     setIsDirtyFlag]     = useState(false);
+  const [rawOpen,         setRawOpen]         = useState(false);
+  const [showOutVarModal, setShowOutVarModal] = useState(false);
   const rawContent  = useRef("");
   const originalRef = useRef(null);
 
@@ -590,8 +855,8 @@ export default function SubDynPanel({
         SubDyn computes substructure dynamics for fixed-bottom offshore wind turbines
         using Craig-Bampton (CB) reduction or Guyan static condensation. The structural
         tables (joints, members, cross-sections, boundary conditions) are complex
-        multi-column data — they are <strong>preserved verbatim</strong> when saving.
-        Use <em>View</em> to inspect or edit them in the raw file.
+        multi-column data — they are preserved verbatim when saving.
+        Use View to inspect or edit them in the raw file.
       </div>
 
       <SectionHead>Simulation Control</SectionHead>
@@ -641,14 +906,7 @@ export default function SubDynPanel({
         <>
           <SectionHead>Structure Summary (from file)</SectionHead>
           <div className={s.calloutInfo}>
-            The file defines&nbsp;
-            <strong>{p.NJoints}</strong> joint{p.NJoints !== 1 ? "s" : ""},&nbsp;
-            <strong>{p.NMembers}</strong> member{p.NMembers !== 1 ? "s" : ""},&nbsp;
-            <strong>{p.NPropSets}</strong> cross-section property set{p.NPropSets !== 1 ? "s" : ""},&nbsp;
-            <strong>{p.NReact}</strong> base reaction joint{p.NReact !== 1 ? "s" : ""}, and&nbsp;
-            <strong>{p.NInterf}</strong> interface joint{p.NInterf !== 1 ? "s" : ""}.
-            Structural tables are complex multi-column data preserved verbatim in the file.
-            Use <em>View</em> to inspect or edit them in the raw text.
+            {`The file defines ${p.NJoints} joint${p.NJoints !== 1 ? "s" : ""}, ${p.NMembers} member${p.NMembers !== 1 ? "s" : ""}, ${p.NPropSets} cross-section property set${p.NPropSets !== 1 ? "s" : ""}, ${p.NReact} base reaction joint${p.NReact !== 1 ? "s" : ""}, and ${p.NInterf} interface joint${p.NInterf !== 1 ? "s" : ""}. Structural tables are complex multi-column data — they are preserved verbatim in the file. Use View to inspect or edit them in the raw text.`}
           </div>
 
           <div className={s.grid2}>
@@ -717,23 +975,19 @@ export default function SubDynPanel({
           />
         </Field>
 
-        <FieldDisabled
-          disabled={usingGuyan}
-          reason="Using Guyan reduction (Nmodes=0), modal damping not applicable."
+        <Field
+          label="Modal damping ratio (JDampings)"
+          unit="%"
+          hint="% of critical damping for each retained CB mode"
+          popover={INFO.JDampings}
+          disabledHint={usingGuyan ? "Set Nmodes > 0 to retain Craig-Bampton dynamic modes and enable per-mode damping ratios" : undefined}
         >
-          <Field
-            label="Modal damping ratio (JDampings)"
-            unit="%"
-            hint="% of critical damping for each retained CB mode"
-            popover={INFO.JDampings}
-          >
-            <input
-              className={s.inp}
-              value={p.JDampings}
-              onChange={e => set("JDampings", e.target.value)}
-            />
-          </Field>
-        </FieldDisabled>
+          <input
+            className={s.inp}
+            value={p.JDampings}
+            onChange={e => set("JDampings", e.target.value)}
+          />
+        </Field>
       </div>
 
       <SectionHead>Guyan Damping</SectionHead>
@@ -750,56 +1004,52 @@ export default function SubDynPanel({
           popover={INFO.GuyanDampMod}
         />
 
-        <FieldDisabled
-          disabled={!rayleighActive}
-          reason={p.GuyanDampMod === 0
-            ? "Enable Rayleigh damping (GuyanDampMod=1) to set coefficients."
-            : p.GuyanDampMod === 2
-              ? "Using user 6×6 matrix — Rayleigh coefficients not used."
-              : undefined}
-        >
-          <div className={s.grid2} style={{ margin: 0 }}>
-            <Field label="Mass coeff. α (RayleighDamp M)" hint="α·M term">
-              <input
-                className={s.inp}
-                value={p.RayleighDampM}
-                onChange={e => set("RayleighDampM", e.target.value)}
-              />
-            </Field>
-            <Field label="Stiffness coeff. β (RayleighDamp K)" hint="β·K term">
-              <input
-                className={s.inp}
-                value={p.RayleighDampK}
-                onChange={e => set("RayleighDampK", e.target.value)}
-              />
-            </Field>
-          </div>
-        </FieldDisabled>
-      </div>
-
-      <FieldDisabled
-        disabled={!guyanMatrixActive}
-        reason={p.GuyanDampMod !== 2
-          ? "Set GuyanDampMod=2 to specify a user 6×6 damping matrix."
-          : undefined}
-      >
-        <Collapsible title="User 6×6 Guyan damping matrix" defaultOpen={guyanMatrixActive}>
-          <div className={s.calloutInfo}>
-            When GuyanDampMod=2, a 6×6 symmetric damping matrix (in global coordinates,
-            at the interface DOFs) must follow the <code>GuyanDampSize</code> line in the
-            file. The matrix is <strong>not editable in this panel</strong> — edit it
-            directly in the raw file using <em>View</em>.
-          </div>
-          <Field label="Matrix size indicator (GuyanDampSize)" hint="Always 6 for a 6×6 matrix">
+        <div className={s.grid2} style={{ margin: 0 }}>
+          <Field
+            label="Mass coeff. α (RayleighDamp M)"
+            hint="α·M term"
+            disabledHint={!rayleighActive ? (p.GuyanDampMod === 2 ? "Using user 6×6 matrix — Rayleigh coefficients not applicable. Set GuyanDampMod to 1 to use Rayleigh damping instead" : "Set Guyan damping model (GuyanDampMod) to 1 – Rayleigh to enable α and β coefficients") : undefined}
+          >
             <input
               className={s.inp}
-              type="number"
-              value={p.GuyanDampSize}
-              onChange={e => set("GuyanDampSize", parseInt(e.target.value) || 6)}
+              value={p.RayleighDampM}
+              onChange={e => set("RayleighDampM", e.target.value)}
             />
           </Field>
-        </Collapsible>
-      </FieldDisabled>
+          <Field
+            label="Stiffness coeff. β (RayleighDamp K)"
+            hint="β·K term"
+            disabledHint={!rayleighActive ? (p.GuyanDampMod === 2 ? "Using user 6×6 matrix — Rayleigh coefficients not applicable. Set GuyanDampMod to 1 to use Rayleigh damping instead" : "Set Guyan damping model (GuyanDampMod) to 1 – Rayleigh to enable α and β coefficients") : undefined}
+          >
+            <input
+              className={s.inp}
+              value={p.RayleighDampK}
+              onChange={e => set("RayleighDampK", e.target.value)}
+            />
+          </Field>
+        </div>
+      </div>
+
+      <Collapsible title="User 6×6 Guyan damping matrix" defaultOpen={guyanMatrixActive}>
+        <div className={s.calloutInfo}>
+          When GuyanDampMod = 2, a 6×6 symmetric damping matrix (in global coordinates,
+          at the interface DOFs) must follow the GuyanDampSize line in the file.
+          In-panel matrix editing is coming in a future update — use the View button above
+          to edit the raw file directly in the meantime.
+        </div>
+        <Field
+          label="Matrix size indicator (GuyanDampSize)"
+          hint="Always 6 for a 6×6 matrix"
+          disabledHint={!guyanMatrixActive ? "Set Guyan damping model (GuyanDampMod) to 2 – User 6×6 matrix to enable this section" : undefined}
+        >
+          <input
+            className={s.inp}
+            type="number"
+            value={p.GuyanDampSize}
+            onChange={e => set("GuyanDampSize", parseInt(e.target.value) || 6)}
+          />
+        </Field>
+      </Collapsible>
     </div>
   );
 
@@ -863,43 +1113,47 @@ export default function SubDynPanel({
           />
         </Field>
 
-        <FieldDisabled
-          disabled={!nmodesOutputActive}
-          reason="Enable SSSum to output modal results."
+        <Field
+          label="Modes to output (NModes)"
+          hint="Number of CB modes written to summary — requires SSSum=True"
+          disabledHint={!nmodesOutputActive ? "Enable Write SubDyn summary file (SSSum) to configure modal output count" : undefined}
         >
-          <Field
-            label="Modes to output (NModes)"
-            hint="Number of CB modes written to summary — requires SSSum=True"
-          >
-            <input
-              className={s.inp}
-              type="number"
-              min={0}
-              step={1}
-              value={p.NModes}
-              onChange={e => set("NModes", Math.max(0, parseInt(e.target.value) || 0))}
-            />
-          </Field>
-        </FieldDisabled>
+          <input
+            className={s.inp}
+            type="number"
+            min={0}
+            step={1}
+            value={p.NModes}
+            onChange={e => set("NModes", Math.max(0, parseInt(e.target.value) || 0))}
+          />
+        </Field>
       </div>
 
       <SectionHead>Member & Joint Output Lists (from file)</SectionHead>
       <div className={s.calloutInfo}>
-        Member output list (<strong>NMOutputs={p.NMOutputs}</strong>) and joint output
-        list (<strong>NJOutputs={p.NJOutputs}</strong>) are multi-column tables in the
-        file and are preserved verbatim. Use <em>View</em> to edit them directly.
+        {`Member output list (NMOutputs = ${p.NMOutputs}) and joint output list (NJOutputs = ${p.NJOutputs}) are multi-column tables in the file and are preserved verbatim when saving. In-panel table editing is coming in a future update — use the View button above to edit them in the raw file directly.`}
       </div>
 
-      <Field
-        label="Output channel names (OutList)"
-        hint='One quoted channel name per line, e.g. "ReactFXss"'
-      >
-        <textarea
-          className={s.outListArea}
-          value={p.OutList}
-          onChange={e => set("OutList", e.target.value)}
+      <SectionHead>Output Channel List (OutList)</SectionHead>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <button type="button" className={s.pickVarsBtn} onClick={() => setShowOutVarModal(true)}>
+          <List size={12} strokeWidth={2} /> Pick variables…
+        </button>
+        <span style={{ fontSize: 11.5, color: "var(--tx-4)" }}>One quoted channel name per line</span>
+      </div>
+      <textarea
+        className={s.outListArea}
+        value={p.OutList}
+        onChange={e => set("OutList", e.target.value)}
+        spellCheck={false}
+      />
+      {showOutVarModal && (
+        <SdOutVarModal
+          current={p.OutList}
+          onClose={() => setShowOutVarModal(false)}
+          onApply={(outList) => set("OutList", outList)}
         />
-      </Field>
+      )}
     </div>
   );
 
