@@ -1318,12 +1318,17 @@ function ScatterChart({ runs, xName, yName, onCaptureRef }) {
 
 // ── Folder scanner modal ──────────────────────────────────────────────────────
 function FolderScannerModal({ open, defaultDir, onClose, onLoadRuns, loadedPaths = new Set() }) {
+  const [closing,   setClosing]   = useState(false);
   const [scanDir,   setScanDir]   = useState(defaultDir || '');
   const [files,     setFiles]     = useState([]);
   const [scanning,  setScanning]  = useState(false);
   const [selected,  setSelected]  = useState(new Set());
   const [scanErr,   setScanErr]   = useState('');
   const [collapsed, setCollapsed] = useState(new Set());
+
+  const handleClose = () => { if (closing) return; setClosing(true); setTimeout(onClose, 200); };
+
+  useEffect(() => { if (open) setClosing(false); }, [open]);
 
   const toggleGroup = (folder) => setCollapsed(prev => {
     const next = new Set(prev);
@@ -1389,19 +1394,19 @@ function FolderScannerModal({ open, defaultDir, onClose, onLoadRuns, loadedPaths
 
   const handleLoad = () => {
     onLoadRuns(files.filter(f => selected.has(f.path) && !loadedPaths.has(f.path)));
-    onClose();
+    handleClose();
   };
 
   if (!open) return null;
   return (
-    <div className={s.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={s.scannerModal}>
+    <div className={`${s.overlay}${closing ? ` ${s.overlayExit}` : ''}`} onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
+      <div className={`${s.scannerModal}${closing ? ` ${s.scannerModalExit}` : ''}`}>
         <div className={s.scannerHeader}>
           <span className={s.scannerTitle}>
             <FolderSearch size={14} strokeWidth={1.8} />
             Scan for output files
           </span>
-          <button className={s.closeBtn2} onClick={onClose}><X size={13} strokeWidth={2} /></button>
+          <button className={s.closeBtn2} onClick={handleClose}><X size={13} strokeWidth={2} /></button>
         </div>
         <div className={s.scannerPath}>
           <input className={s.scannerDirInput} value={scanDir} onChange={e => setScanDir(e.target.value)}
@@ -1441,36 +1446,40 @@ function FolderScannerModal({ open, defaultDir, onClose, onLoadRuns, loadedPaths
                         title={allSel ? 'Deselect all in group' : 'Select all in group'}
                       />
                     </div>
-                    {/* Files in folder — hidden when collapsed */}
-                    {!isCollapsed && folderFiles.map(f => {
-                      const isLoaded = loadedPaths.has(f.path);
-                      return (
-                        <div key={f.path}
-                          className={[s.scannerFileRow, isLoaded ? s.scannerFileRowLoaded : selected.has(f.path) ? s.scannerFileRowSel : ''].join(' ')}
-                          onClick={() => !isLoaded && toggleSelect(f.path)}
-                        >
-                          <input type="checkbox" className={s.scannerFileCheck}
-                            checked={isLoaded || selected.has(f.path)}
-                            disabled={isLoaded}
-                            onChange={() => !isLoaded && toggleSelect(f.path)}
-                            onClick={e => e.stopPropagation()}
-                          />
-                          <span className={s.scannerFileName} title={f.path}>{f.name}</span>
-                          <span className={s.scannerFileMeta}>
-                            {fmtSize(f.size_bytes)}
-                            {f.num_chans != null ? ` · ${f.num_chans} ch` : ''}
-                            {f.time_span != null ? ` · ${f.time_span.toFixed(0)}s` : ''}
-                          </span>
-                          <span className={s.scannerFileDate}>{fmtDate(f.modified_secs)}</span>
-                          {isLoaded
-                            ? <span className={s.scannerLoadedBadge}>✓ Loaded</span>
-                            : <button className={s.scannerAddBtn}
-                                onClick={e => { e.stopPropagation(); onLoadRuns([f]); onClose(); }}
-                              >Add</button>
-                          }
-                        </div>
-                      );
-                    })}
+                    {/* Files in folder — animated collapse */}
+                    <div className={`${s.scannerGroupBody}${isCollapsed ? ` ${s.scannerGroupBodyCollapsed}` : ''}`}>
+                      <div className={s.scannerGroupBodyInner}>
+                        {folderFiles.map(f => {
+                          const isLoaded = loadedPaths.has(f.path);
+                          return (
+                            <div key={f.path}
+                              className={[s.scannerFileRow, isLoaded ? s.scannerFileRowLoaded : selected.has(f.path) ? s.scannerFileRowSel : ''].join(' ')}
+                              onClick={() => !isLoaded && toggleSelect(f.path)}
+                            >
+                              <input type="checkbox" className={s.scannerFileCheck}
+                                checked={isLoaded || selected.has(f.path)}
+                                disabled={isLoaded}
+                                onChange={() => !isLoaded && toggleSelect(f.path)}
+                                onClick={e => e.stopPropagation()}
+                              />
+                              <span className={s.scannerFileName} title={f.path}>{f.name}</span>
+                              <span className={s.scannerFileMeta}>
+                                {fmtSize(f.size_bytes)}
+                                {f.num_chans != null ? ` · ${f.num_chans} ch` : ''}
+                                {f.time_span != null ? ` · ${f.time_span.toFixed(0)}s` : ''}
+                              </span>
+                              <span className={s.scannerFileDate}>{fmtDate(f.modified_secs)}</span>
+                              {isLoaded
+                                ? <span className={s.scannerLoadedBadge}>✓ Loaded</span>
+                                : <button className={s.scannerAddBtn}
+                                    onClick={e => { e.stopPropagation(); onLoadRuns([f]); onClose(); }}
+                                  >Add</button>
+                              }
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 );
               })}

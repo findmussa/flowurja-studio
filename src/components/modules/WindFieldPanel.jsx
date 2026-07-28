@@ -940,6 +940,7 @@ function renderSpectrum(canvas, psdEntries, specMode, cohResult) {
 
 // ── BTS Scanner Modal ─────────────────────────────────────────────────────────
 function BtsScannerModal({ onClose, onLoad, loadedPaths, initialDir = '' }) {
+  const [closing,    setClosing]    = useState(false);
   const [dir,        setDir]        = useState(initialDir);
   const [results,    setResults]    = useState([]);
   const [loading,    setLoading]    = useState(false);
@@ -948,6 +949,8 @@ function BtsScannerModal({ onClose, onLoad, loadedPaths, initialDir = '' }) {
   const [hasScanned, setHasScanned] = useState(false);
   const [collapsed,  setCollapsed]  = useState(new Set());
   const [pending,    setPending]    = useState(new Set()); // checked for bulk add
+
+  const handleClose = () => { if (closing) return; setClosing(true); setTimeout(onClose, 200); };
 
   const toggleGroup = (folder) => setCollapsed(prev => {
     const next = new Set(prev);
@@ -978,7 +981,7 @@ function BtsScannerModal({ onClose, onLoad, loadedPaths, initialDir = '' }) {
     }
     setPending(new Set());
     setAdding(false);
-    onClose();
+    handleClose();
   };
 
   const handleBrowse = async () => {
@@ -1014,11 +1017,11 @@ function BtsScannerModal({ onClose, onLoad, loadedPaths, initialDir = '' }) {
   }, [results]);
 
   return (
-    <div className={s.scanOverlay}>
-      <div className={s.scanModal}>
+    <div className={`${s.scanOverlay}${closing ? ` ${s.scanOverlayExit}` : ''}`}>
+      <div className={`${s.scanModal}${closing ? ` ${s.scanModalExit}` : ''}`}>
         <div className={s.scanHead}>
           <span className={s.scanTitle}>Scan for .bts files</span>
-          <button className={s.scanClose} onClick={onClose}><X size={13}/></button>
+          <button className={s.scanClose} onClick={handleClose}><X size={13}/></button>
         </div>
         <div className={s.scanDirRow}>
           <input className={s.scanDirInput} value={dir} readOnly placeholder="Select a directory to scan…" />
@@ -1059,34 +1062,38 @@ function BtsScannerModal({ onClose, onLoad, loadedPaths, initialDir = '' }) {
                     />
                   )}
                 </div>
-                {!isCollapsed && files.map(f => {
-                  const isLoaded = loadedPaths.has(f.path);
-                  const isChecked = pending.has(f.path);
-                  return (
-                    <div key={f.path}
-                      className={[s.scanRow, isLoaded ? s.scanRowCurrent : '', isChecked ? s.scanRowChecked : ''].join(' ')}
-                      onClick={() => !isLoaded && togglePending(f.path)}>
-                      <input
-                        type="checkbox"
-                        className={s.scanRowCheck}
-                        checked={isLoaded || isChecked}
-                        disabled={isLoaded}
-                        onChange={() => !isLoaded && togglePending(f.path)}
-                        onClick={e => e.stopPropagation()}
-                      />
-                      <span className={s.scanFileName} title={f.path}>{f.name}</span>
-                      <span className={s.scanMeta}>
-                        {f.nz}×{f.ny} · {fmtNum(f.uhub, 1)} m/s · {fmtNum(f.duration, 0)}s
-                      </span>
-                      {isLoaded
-                        ? <span className={s.scanLoadedBadge}>✓ Loaded</span>
-                        : <button className={s.scanLoadBtn}
-                            onClick={e => { e.stopPropagation(); onLoad(f.path); }}
-                          >Add</button>
-                      }
-                    </div>
-                  );
-                })}
+                <div className={`${s.scanGroupBody}${isCollapsed ? ` ${s.scanGroupBodyCollapsed}` : ''}`}>
+                  <div className={s.scanGroupBodyInner}>
+                    {files.map(f => {
+                      const isLoaded = loadedPaths.has(f.path);
+                      const isChecked = pending.has(f.path);
+                      return (
+                        <div key={f.path}
+                          className={[s.scanRow, isLoaded ? s.scanRowCurrent : '', isChecked ? s.scanRowChecked : ''].join(' ')}
+                          onClick={() => !isLoaded && togglePending(f.path)}>
+                          <input
+                            type="checkbox"
+                            className={s.scanRowCheck}
+                            checked={isLoaded || isChecked}
+                            disabled={isLoaded}
+                            onChange={() => !isLoaded && togglePending(f.path)}
+                            onClick={e => e.stopPropagation()}
+                          />
+                          <span className={s.scanFileName} title={f.path}>{f.name}</span>
+                          <span className={s.scanMeta}>
+                            {f.nz}×{f.ny} · {fmtNum(f.uhub, 1)} m/s · {fmtNum(f.duration, 0)}s
+                          </span>
+                          {isLoaded
+                            ? <span className={s.scanLoadedBadge}>✓ Loaded</span>
+                            : <button className={s.scanLoadBtn}
+                                onClick={e => { e.stopPropagation(); onLoad(f.path); }}
+                              >Add</button>
+                          }
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             );
           })}

@@ -778,6 +778,17 @@
 .cohInput input:focus { outline: none; border-color: #0891B2; }
 
 /* ── BTS Scanner Modal ──────────────────────────────────────────────────────── */
+@keyframes scanOverlayIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scanOverlayOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes scanCardIn {
+  from { opacity: 0; transform: scale(0.96) translateY(14px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+@keyframes scanCardOut {
+  from { opacity: 1; transform: scale(1)    translateY(0);   }
+  to   { opacity: 0; transform: scale(1.03) translateY(6px); }
+}
+
 .scanOverlay {
   position: absolute;
   inset: 0;
@@ -788,7 +799,9 @@
   z-index: 200;
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
+  animation: scanOverlayIn 0.18s ease both;
 }
+.scanOverlayExit { animation: scanOverlayOut 0.20s ease forwards; pointer-events: none; }
 
 .scanModal {
   --c-glass: rgba(238,238,242,1);
@@ -796,6 +809,7 @@
   --c-dark:  rgba(0,0,0,1);
   --glass-rl: 1;
   --glass-rd: 0.6;
+  animation: scanCardIn 0.40s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   width: min(760px, 92vw);
   max-height: calc(100% - 80px);
   background: color-mix(in srgb, var(--c-glass) 84%, transparent);
@@ -845,6 +859,7 @@
   --glass-rd: 1;
   background: color-mix(in srgb, var(--c-glass) 88%, transparent);
 }
+.scanModalExit { animation: scanCardOut 0.20s cubic-bezier(0.55, 0, 1, 0.45) forwards; }
 
 .scanHead {
   display: flex;
@@ -991,6 +1006,14 @@
 .scanGroup {
   margin-bottom: 4px;
 }
+
+.scanGroupBody {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.scanGroupBodyCollapsed { grid-template-rows: 0fr; }
+.scanGroupBodyInner { overflow: hidden; }
 
 .scanGroupLabel {
   padding: 5px 14px 4px;
