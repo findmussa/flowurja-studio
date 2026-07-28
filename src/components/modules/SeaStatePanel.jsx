@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { Waves, FolderOpen, Eye, Save, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { Waves, FolderOpen, Eye, Save, ChevronDown, ChevronRight, AlertTriangle, List } from "lucide-react";
 import RawFileModal from "../RawFileModal";
 import InfoPopover from "../InfoPopover";
 import s from "./SeaStatePanel.module.css";
@@ -293,6 +294,42 @@ const INFO = {
   },
 };
 
+// ── SeaState 4.2.0 output channels ────────────────────────────────────────────
+const SS_OUT_VARS = [
+  {
+    group: "Wave Elevation",
+    vars: [
+      { name: "Wave1Elev", unit: "m", desc: "Wave surface elevation at elevation point 1" },
+      { name: "Wave2Elev", unit: "m", desc: "Wave surface elevation at elevation point 2" },
+      { name: "Wave3Elev", unit: "m", desc: "Wave surface elevation at elevation point 3" },
+    ],
+  },
+  {
+    group: "Kinematics — Point 1",
+    vars: [
+      { name: "Wave1Vxi",  unit: "m/s",  desc: "Fluid particle X-velocity at kinematics point 1" },
+      { name: "Wave1Vyi",  unit: "m/s",  desc: "Fluid particle Y-velocity at kinematics point 1" },
+      { name: "Wave1Vzi",  unit: "m/s",  desc: "Fluid particle Z-velocity at kinematics point 1" },
+      { name: "Wave1Axi",  unit: "m/s²", desc: "Fluid particle X-acceleration at kinematics point 1" },
+      { name: "Wave1Ayi",  unit: "m/s²", desc: "Fluid particle Y-acceleration at kinematics point 1" },
+      { name: "Wave1Azi",  unit: "m/s²", desc: "Fluid particle Z-acceleration at kinematics point 1" },
+      { name: "Wave1DynP", unit: "Pa",   desc: "Hydrodynamic dynamic pressure at kinematics point 1" },
+    ],
+  },
+  {
+    group: "Kinematics — Point 2",
+    vars: [
+      { name: "Wave2Vxi",  unit: "m/s",  desc: "Fluid particle X-velocity at kinematics point 2" },
+      { name: "Wave2Vyi",  unit: "m/s",  desc: "Fluid particle Y-velocity at kinematics point 2" },
+      { name: "Wave2Vzi",  unit: "m/s",  desc: "Fluid particle Z-velocity at kinematics point 2" },
+      { name: "Wave2Axi",  unit: "m/s²", desc: "Fluid particle X-acceleration at kinematics point 2" },
+      { name: "Wave2Ayi",  unit: "m/s²", desc: "Fluid particle Y-acceleration at kinematics point 2" },
+      { name: "Wave2Azi",  unit: "m/s²", desc: "Fluid particle Z-acceleration at kinematics point 2" },
+      { name: "Wave2DynP", unit: "Pa",   desc: "Hydrodynamic dynamic pressure at kinematics point 2" },
+    ],
+  },
+];
+
 // ── Parser ────────────────────────────────────────────────────────────────────
 function parseSeaStateFile(content) {
   const kv = {};
@@ -547,40 +584,196 @@ function SectionHead({ children }) {
   return <h3 className={s.sectionHead}>{children}</h3>;
 }
 
-/**
- * FieldRow — wraps a form field with guided-simulation disabling.
- * When disabled=true: opacity 0.38, pointer-events none, cursor not-allowed.
- * Shows a small "n/a" tag next to the label to educate the user.
- */
-function FieldRow({ label, unit, children, hint, disabled = false, info }) {
+function DisabledHintPortal({ text, rect }) {
+  const popRef = useRef(null);
+  const W = 290;
+  let left = rect.left;
+  if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8;
+  if (left < 8) left = 8;
+  const [top, setTop] = useState(rect.bottom + 6);
+  useEffect(() => {
+    if (!popRef.current) return;
+    const r = popRef.current.getBoundingClientRect();
+    if (r.bottom > window.innerHeight - 8) setTop(rect.top - r.height - 6);
+  }, [rect.top]);
+  return createPortal(
+    <div ref={popRef} style={{
+      position: "fixed", top, left, zIndex: 99998, width: W,
+      background: "var(--bg-popover, color-mix(in srgb, var(--bg-surface) 88%, transparent))",
+      backdropFilter: "blur(20px) saturate(1.8)",
+      WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+      border: "0.5px solid var(--bd-popover, rgba(0,0,0,0.15))",
+      borderRadius: 10,
+      padding: "8px 12px",
+      fontSize: 11.5,
+      color: "var(--tx-2)",
+      lineHeight: 1.5,
+      boxShadow: "0 4px 20px rgba(0,0,0,0.14)",
+      pointerEvents: "none",
+    }}>{text}</div>,
+    document.body
+  );
+}
+
+function FieldRow({ label, unit, children, hint, disabled = false, disabledHint, info }) {
+  const rowRef = useRef(null);
+  const [hintRect, setHintRect] = useState(null);
+  const isOff = disabled || !!disabledHint;
   return (
-    <div className={[s.field, disabled ? s.fieldDisabled : ""].join(" ")}>
+    <div ref={rowRef}
+      className={[s.field, isOff ? s.fieldDisabled : ""].join(" ")}
+      onMouseEnter={() => disabledHint && rowRef.current && setHintRect(rowRef.current.getBoundingClientRect())}
+      onMouseLeave={() => setHintRect(null)}>
       <div className={s.fieldHeader}>
         <span className={s.fieldLabel}>{label}</span>
         {unit && <span className={s.unit}>{unit}</span>}
         {info && <InfoPopover content={info} accentColor={ACCENT} />}
-        {disabled && <span className={s.naTag}>n/a</span>}
+        {disabled && !disabledHint && <span className={s.naTag}>n/a</span>}
       </div>
       {children}
       {hint && <span className={s.hint}>{hint}</span>}
+      {disabledHint && hintRect && <DisabledHintPortal text={disabledHint} rect={hintRect} />}
     </div>
   );
 }
 
-function Toggle({ label, value, onChange, note, disabled = false }) {
+function Toggle({ label, value, onChange, note, disabled = false, disabledHint }) {
+  const rowRef = useRef(null);
+  const [hintRect, setHintRect] = useState(null);
+  const isOff = disabled || !!disabledHint;
   return (
-    <div className={[s.toggleRow, disabled ? s.fieldDisabled : ""].join(" ")}>
+    <div ref={rowRef}
+      className={[s.toggleRow, isOff ? s.fieldDisabled : ""].join(" ")}
+      onMouseEnter={() => disabledHint && rowRef.current && setHintRect(rowRef.current.getBoundingClientRect())}
+      onMouseLeave={() => setHintRect(null)}>
       <button
         className={[s.toggle, value ? s.on : ""].join(" ")}
-        onClick={() => !disabled && onChange(!value)}
+        onClick={() => !isOff && onChange(!value)}
         type="button"
       >
         <span className={s.toggleThumb} />
       </button>
       <span className={s.toggleLabel}>{label}</span>
       {note && <span className={s.toggleNote}>{note}</span>}
-      {disabled && <span className={s.naTag}>n/a</span>}
+      {disabled && !disabledHint && <span className={s.naTag}>n/a</span>}
+      {disabledHint && hintRect && <DisabledHintPortal text={disabledHint} rect={hintRect} />}
     </div>
+  );
+}
+
+// ── SsOutVarModal ─────────────────────────────────────────────────────────────
+function SsOutVarModal({ current, onClose, onApply }) {
+  const [selected, setSelected] = useState(() => {
+    const names = (current || "").split("\n")
+      .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
+    return new Set(names);
+  });
+  const [query, setQuery] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  const toggleGroup = (groupName) =>
+    setCollapsed(prev => { const n = new Set(prev); n.has(groupName) ? n.delete(groupName) : n.add(groupName); return n; });
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const handleClose = () => { setVisible(false); setTimeout(onClose, 220); };
+  const handleApply = () => {
+    const outList = [...selected].map(n => `"${n}"`).join("\n");
+    onApply(outList);
+    handleClose();
+  };
+  const toggle = (name) =>
+    setSelected(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
+
+  const q = query.toLowerCase();
+  const filteredGroups = SS_OUT_VARS.map(g => ({
+    ...g,
+    vars: q ? g.vars.filter(v =>
+      v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q) || v.unit.toLowerCase().includes(q)
+    ) : g.vars,
+  })).filter(g => g.vars.length > 0);
+
+  return createPortal(
+    <div className={`${s.modalOverlay} ${visible ? s.modalOverlayVisible : ""}`} onClick={handleClose}>
+      <div className={`${s.modal} ${visible ? s.modalVisible : ""}`} onClick={e => e.stopPropagation()}>
+        <div className={s.modalHeader}>
+          <span className={s.modalTitle}>Output variable picker</span>
+          <span className={s.modalCount}>{selected.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
+        </div>
+        <div className={s.modalSearch}>
+          <div className={s.modalSearchBox}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input className={s.modalSearchInput} placeholder="Search variables… (name, description, unit)"
+              value={query} onChange={e => setQuery(e.target.value)} autoFocus />
+          </div>
+        </div>
+        <div className={s.modalBody}>
+          {filteredGroups.map(g => {
+            const allOn  = g.vars.every(v => selected.has(v.name));
+            const someOn = g.vars.some(v => selected.has(v.name));
+            const isOpen = q ? true : !collapsed.has(g.group);
+            return (
+              <div key={g.group} className={s.varGroup}>
+                <div className={s.varGroupHead} onClick={() => toggleGroup(g.group)}>
+                  <button type="button"
+                    className={`${s.groupCheck} ${allOn ? s.groupCheckAll : someOn ? s.groupCheckSome : ""}`}
+                    onClick={(e) => { e.stopPropagation();
+                      setSelected(prev => { const n = new Set(prev);
+                        if (allOn) g.vars.forEach(v => n.delete(v.name));
+                        else       g.vars.forEach(v => n.add(v.name));
+                        return n; });
+                    }}
+                  />
+                  <span className={s.groupLabel}>{g.group}</span>
+                  <span className={s.varGroupCount}>{g.vars.filter(v => selected.has(v.name)).length}/{g.vars.length}</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    className={`${s.groupChevron} ${isOpen ? s.groupChevronOpen : ""}`}>
+                    <polyline points="2,4 6,8 10,4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div className={`${s.varGroupBody} ${!isOpen ? s.varGroupBodyCollapsed : ""}`}>
+                  <div className={s.varGroupBodyInner}>
+                    {g.vars.map(v => (
+                      <label key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}>
+                        <input type="checkbox" className={s.varCheck}
+                          checked={selected.has(v.name)} onChange={() => toggle(v.name)} />
+                        <span className={s.varName}>{v.name}</span>
+                        <span className={s.varUnit}>{v.unit}</span>
+                        <span className={s.varDesc}>{v.desc}</span>
+                        {selected.has(v.name) && (
+                          <svg width="11" height="11" viewBox="0 0 12 12" className={s.varCheckMark}>
+                            <polyline points="1.5,6 4.5,9 10.5,3" stroke={ACCENT} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {filteredGroups.length === 0 && (
+            <p className={s.varNoMatch}>No variables match "{query}"</p>
+          )}
+        </div>
+        <div className={s.modalFooter}>
+          <button className={s.modalCancelBtn} onClick={handleClose} type="button">Cancel</button>
+          <button className={s.modalApplyBtn} onClick={handleApply} type="button">
+            Apply {selected.size} channel{selected.size !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -696,12 +889,13 @@ export default function SeaStatePanel({
   onRegisterSave,
   simRunning = false,
 }) {
-  const [tab,         setTab]         = useState("quick");
+  const [tab,             setTab]         = useState("quick");
   const tabDirRef = useRef(1);
-  const [p,           _setP]          = useState(DEFAULT);
-  const [filePath,    setFilePath]    = useState("");
-  const [isDirtyFlag, setIsDirtyFlag] = useState(false);
-  const [rawOpen,     setRawOpen]     = useState(false);
+  const [p,               _setP]          = useState(DEFAULT);
+  const [filePath,        setFilePath]    = useState("");
+  const [isDirtyFlag,     setIsDirtyFlag] = useState(false);
+  const [rawOpen,         setRawOpen]     = useState(false);
+  const [showOutVarModal, setShowOutVarModal] = useState(false);
   const rawContent  = useRef("");
   const originalRef = useRef(null);
 
@@ -817,19 +1011,22 @@ export default function SeaStatePanel({
           </FieldRow>
 
           <FieldRow label="Significant wave height (WaveHs)" unit="m"
-            disabled={!activeHsTp(wm)} info={INFO.WaveHs}>
+            disabledHint={!activeHsTp(wm) ? "Set WaveMod to 1 (regular), 2 (JONSWAP), or 3 (white noise) to specify wave height and period" : undefined}
+            info={INFO.WaveHs}>
             <input className={s.inp} type="number" value={p.WaveHs}
               onChange={e => set("WaveHs", parseFloat(e.target.value) || p.WaveHs)} />
           </FieldRow>
 
           <FieldRow label="Peak spectral period (WaveTp)" unit="s"
-            disabled={!activeHsTp(wm)} info={INFO.WaveTp}>
+            disabledHint={!activeHsTp(wm) ? "Set WaveMod to 1 (regular), 2 (JONSWAP), or 3 (white noise) to specify wave height and period" : undefined}
+            info={INFO.WaveTp}>
             <input className={s.inp} type="number" value={p.WaveTp}
               onChange={e => set("WaveTp", parseFloat(e.target.value) || p.WaveTp)} />
           </FieldRow>
 
           <FieldRow label="Wave direction (WaveDir)" unit="°"
-            disabled={!activeWaveDir(wm)} info={INFO.WaveDir}>
+            disabledHint={!activeWaveDir(wm) ? "Set WaveMod to any value except 0 (still water) or 6 (ext kinematics) to specify wave direction" : undefined}
+            info={INFO.WaveDir}>
             <input className={s.inp} type="number" value={p.WaveDir}
               onChange={e => set("WaveDir", parseFloat(e.target.value) || 0)} />
           </FieldRow>
@@ -838,14 +1035,16 @@ export default function SeaStatePanel({
         <SectionHead>Stochastic Seeds</SectionHead>
         <div className={s.grid2}>
           <FieldRow label="Random seed 1 — WaveSeed(1)"
-            disabled={!activeSeed(wm)} info={INFO.WaveSeed1}>
+            disabledHint={!activeSeed(wm) ? "Set WaveMod to 2 (JONSWAP), 3 (white noise), or 4 (user-defined) to configure random seeds" : undefined}
+            info={INFO.WaveSeed1}>
             <input className={s.inp} type="number" value={p.WaveSeed1}
               onChange={e => set("WaveSeed1", parseInt(e.target.value) || 0)} />
           </FieldRow>
 
           <FieldRow label="Random seed 2 — WaveSeed(2)"
             hint="Integer or RANLUX"
-            disabled={!activeSeed(wm)} info={INFO.WaveSeed2}>
+            disabledHint={!activeSeed(wm) ? "Set WaveMod to 2 (JONSWAP), 3 (white noise), or 4 (user-defined) to configure random seeds" : undefined}
+            info={INFO.WaveSeed2}>
             <input className={s.inp} value={p.WaveSeed2}
               onChange={e => set("WaveSeed2", e.target.value)} />
           </FieldRow>
@@ -958,38 +1157,44 @@ export default function SeaStatePanel({
         <SectionHead>Sea State Parameters</SectionHead>
         <div className={s.grid2}>
           <FieldRow label="Significant wave height (WaveHs)" unit="m"
-            disabled={!activeHsTp(wm)} info={INFO.WaveHs}>
+            disabledHint={!activeHsTp(wm) ? "Set WaveMod to 1 (regular), 2 (JONSWAP), or 3 (white noise) to specify wave height and period" : undefined}
+            info={INFO.WaveHs}>
             <input className={s.inp} type="number" value={p.WaveHs}
               onChange={e => set("WaveHs", parseFloat(e.target.value) || p.WaveHs)} />
           </FieldRow>
 
           <FieldRow label="Peak spectral period (WaveTp)" unit="s"
-            disabled={!activeHsTp(wm)} info={INFO.WaveTp}>
+            disabledHint={!activeHsTp(wm) ? "Set WaveMod to 1 (regular), 2 (JONSWAP), or 3 (white noise) to specify wave height and period" : undefined}
+            info={INFO.WaveTp}>
             <input className={s.inp} type="number" value={p.WaveTp}
               onChange={e => set("WaveTp", parseFloat(e.target.value) || p.WaveTp)} />
           </FieldRow>
 
           <FieldRow label='JONSWAP peak shape γ (WavePkShp)'
             hint='"DEFAULT" → DNV formula · 1.0 = Pierson-Moskowitz'
-            disabled={!activePkShp(wm)} info={INFO.WavePkShp}>
+            disabledHint={!activePkShp(wm) ? "Set WaveMod = 2 (JONSWAP) to configure the peak-shape parameter γ" : undefined}
+            info={INFO.WavePkShp}>
             <input className={s.inp} value={p.WavePkShp}
               onChange={e => set("WavePkShp", e.target.value)} />
           </FieldRow>
 
           <FieldRow label="Low freq. cut-off (WvLowCOff)" unit="rad/s"
-            disabled={!activeFreqCutOff(wm)} info={INFO.WvLowCOff}>
+            disabledHint={!activeFreqCutOff(wm) ? "Set WaveMod to 2 (JONSWAP), 3 (white noise), or 4 (user-defined) to configure frequency cut-offs" : undefined}
+            info={INFO.WvLowCOff}>
             <input className={s.inp} type="number" value={p.WvLowCOff}
               onChange={e => set("WvLowCOff", parseFloat(e.target.value) || p.WvLowCOff)} />
           </FieldRow>
 
           <FieldRow label="High freq. cut-off (WvHiCOff)" unit="rad/s"
-            disabled={!activeFreqCutOff(wm)} info={INFO.WvHiCOff}>
+            disabledHint={!activeFreqCutOff(wm) ? "Set WaveMod to 2 (JONSWAP), 3 (white noise), or 4 (user-defined) to configure frequency cut-offs" : undefined}
+            info={INFO.WvHiCOff}>
             <input className={s.inp} type="number" value={p.WvHiCOff}
               onChange={e => set("WvHiCOff", parseFloat(e.target.value) || p.WvHiCOff)} />
           </FieldRow>
 
           <FieldRow label="Wave propagation direction (WaveDir)" unit="°"
-            disabled={!activeWaveDir(wm)} info={INFO.WaveDir}>
+            disabledHint={!activeWaveDir(wm) ? "Set WaveMod to any value except 0 (still water) or 6 (ext kinematics) to specify wave direction" : undefined}
+            info={INFO.WaveDir}>
             <input className={s.inp} type="number" value={p.WaveDir}
               onChange={e => set("WaveDir", parseFloat(e.target.value) || 0)} />
           </FieldRow>
@@ -998,7 +1203,8 @@ export default function SeaStatePanel({
         <SectionHead>Directional Spreading</SectionHead>
         <div className={s.grid2}>
           <FieldRow label="Directional spreading model (WaveDirMod)"
-            disabled={!activeDirMod(wm)} info={INFO.WaveDirMod}>
+            disabledHint={!activeDirMod(wm) ? "Set WaveMod to 2 (JONSWAP), 3 (white noise), or 4 (user-defined) to enable directional spreading" : undefined}
+            info={INFO.WaveDirMod}>
             <select className={s.select} value={p.WaveDirMod}
               onChange={e => set("WaveDirMod", Number(e.target.value))}
               disabled={!activeDirMod(wm)}>
@@ -1008,21 +1214,21 @@ export default function SeaStatePanel({
           </FieldRow>
 
           <FieldRow label="Spreading exponent (WaveDirSpread)"
-            disabled={!activeDirSpread(wm, wdm)}
+            disabledHint={!activeDirSpread(wm, wdm) ? "Set WaveMod to 2/3/4 and WaveDirMod = 1 (COS2S) to configure spreading parameters" : undefined}
             hint="Only used when WaveDirMod=1">
             <input className={s.inp} type="number" value={p.WaveDirSpread}
               onChange={e => set("WaveDirSpread", parseInt(e.target.value) || 1)} />
           </FieldRow>
 
           <FieldRow label="Number of wave directions (WaveNDir)"
-            disabled={!activeDirSpread(wm, wdm)}
+            disabledHint={!activeDirSpread(wm, wdm) ? "Set WaveMod to 2/3/4 and WaveDirMod = 1 (COS2S) to configure spreading parameters" : undefined}
             hint="Must be odd; only used when WaveDirMod=1">
             <input className={s.inp} type="number" value={p.WaveNDir}
               onChange={e => set("WaveNDir", parseInt(e.target.value) || 1)} />
           </FieldRow>
 
           <FieldRow label="Total directional range (WaveDirRange)" unit="°"
-            disabled={!activeDirSpread(wm, wdm)}
+            disabledHint={!activeDirSpread(wm, wdm) ? "Set WaveMod to 2/3/4 and WaveDirMod = 1 (COS2S) to configure spreading parameters" : undefined}
             hint="Only used when WaveDirMod=1">
             <input className={s.inp} type="number" value={p.WaveDirRange}
               onChange={e => set("WaveDirRange", parseFloat(e.target.value) || 0)} />
@@ -1032,14 +1238,16 @@ export default function SeaStatePanel({
         <SectionHead>Stochastic Generation</SectionHead>
         <div className={s.grid2}>
           <FieldRow label="Random seed 1 — WaveSeed(1)"
-            disabled={!activeSeed(wm)} info={INFO.WaveSeed1}>
+            disabledHint={!activeSeed(wm) ? "Set WaveMod to 2 (JONSWAP), 3 (white noise), or 4 (user-defined) to configure random seeds" : undefined}
+            info={INFO.WaveSeed1}>
             <input className={s.inp} type="number" value={p.WaveSeed1}
               onChange={e => set("WaveSeed1", parseInt(e.target.value) || 0)} />
           </FieldRow>
 
           <FieldRow label="Random seed 2 — WaveSeed(2)"
             hint="Integer or RANLUX"
-            disabled={!activeSeed(wm)} info={INFO.WaveSeed2}>
+            disabledHint={!activeSeed(wm) ? "Set WaveMod to 2 (JONSWAP), 3 (white noise), or 4 (user-defined) to configure random seeds" : undefined}
+            info={INFO.WaveSeed2}>
             <input className={s.inp} value={p.WaveSeed2}
               onChange={e => set("WaveSeed2", e.target.value)} />
           </FieldRow>
@@ -1048,13 +1256,14 @@ export default function SeaStatePanel({
         <div className={s.toggleGrid}>
           <Toggle label="Normally-distributed amplitudes (WaveNDAmp)"
             value={p.WaveNDAmp} onChange={v => set("WaveNDAmp", v)}
-            disabled={!activeSeed(wm)}
+            disabledHint={!activeSeed(wm) ? "Set WaveMod to 2 (JONSWAP), 3 (white noise), or 4 (user-defined) to enable stochastic amplitude generation" : undefined}
             note="Rayleigh-distributed amplitudes (physically correct)" />
         </div>
 
         <FieldRow label="External kinematics file (WvKinFile)"
           hint="Only used when WaveMod=5 or 6"
-          disabled={!activeKinFile(wm)} info={INFO.WvKinFile}>
+          disabledHint={!activeKinFile(wm) ? "Set WaveMod = 5 (ext elevation) or 6 (ext full kinematics) to specify the wave kinematics file" : undefined}
+          info={INFO.WvKinFile}>
           <div className={s.fileRow}>
             <input className={s.inp} value={p.WvKinFile}
               onChange={e => set("WvKinFile", e.target.value)} />
@@ -1077,29 +1286,29 @@ export default function SeaStatePanel({
           <div className={s.toggleGrid} style={{ marginBottom: 12 }}>
             <Toggle label="Difference-frequency 2nd-order kinematics (WvDiffQTF)"
               value={p.WvDiffQTF} onChange={v => set("WvDiffQTF", v)}
-              disabled={!active2ndOrder(p.WaveMod)} />
+              disabledHint={!active2ndOrder(p.WaveMod) ? "Set WaveMod to any value except 0 (still water) or 6 (ext kinematics) to enable second-order wave effects" : undefined} />
             <Toggle label="Sum-frequency 2nd-order kinematics (WvSumQTF)"
               value={p.WvSumQTF} onChange={v => set("WvSumQTF", v)}
-              disabled={!active2ndOrder(p.WaveMod)} />
+              disabledHint={!active2ndOrder(p.WaveMod) ? "Set WaveMod to any value except 0 (still water) or 6 (ext kinematics) to enable second-order wave effects" : undefined} />
           </div>
           <div className={s.grid2}>
             <FieldRow label="Diff-freq low cut-off (WvLowCOffD)" unit="rad/s"
-              disabled={!active2ndOrder(p.WaveMod)}>
+              disabledHint={!active2ndOrder(p.WaveMod) ? "Set WaveMod to any value except 0 (still water) or 6 (ext kinematics) to enable second-order wave effects" : undefined}>
               <input className={s.inp} type="number" value={p.WvLowCOffD}
                 onChange={e => set("WvLowCOffD", parseFloat(e.target.value) || 0)} />
             </FieldRow>
             <FieldRow label="Diff-freq high cut-off (WvHiCOffD)" unit="rad/s"
-              disabled={!active2ndOrder(p.WaveMod)}>
+              disabledHint={!active2ndOrder(p.WaveMod) ? "Set WaveMod to any value except 0 (still water) or 6 (ext kinematics) to enable second-order wave effects" : undefined}>
               <input className={s.inp} type="number" value={p.WvHiCOffD}
                 onChange={e => set("WvHiCOffD", parseFloat(e.target.value) || 0)} />
             </FieldRow>
             <FieldRow label="Sum-freq low cut-off (WvLowCOffS)" unit="rad/s"
-              disabled={!active2ndOrder(p.WaveMod)}>
+              disabledHint={!active2ndOrder(p.WaveMod) ? "Set WaveMod to any value except 0 (still water) or 6 (ext kinematics) to enable second-order wave effects" : undefined}>
               <input className={s.inp} type="number" value={p.WvLowCOffS}
                 onChange={e => set("WvLowCOffS", parseFloat(e.target.value) || 0)} />
             </FieldRow>
             <FieldRow label="Sum-freq high cut-off (WvHiCOffS)" unit="rad/s"
-              disabled={!active2ndOrder(p.WaveMod)}>
+              disabledHint={!active2ndOrder(p.WaveMod) ? "Set WaveMod to any value except 0 (still water) or 6 (ext kinematics) to enable second-order wave effects" : undefined}>
               <input className={s.inp} type="number" value={p.WvHiCOffS}
                 onChange={e => set("WvHiCOffS", parseFloat(e.target.value) || 0)} />
             </FieldRow>
@@ -1122,26 +1331,26 @@ export default function SeaStatePanel({
             </FieldRow>
 
             <FieldRow label="Max crest height (CrestHmax)" unit="m"
-              disabled={p.ConstWaveMod === 0}
+              disabledHint={p.ConstWaveMod === 0 ? "Set ConstWaveMod > 0 (1=constrain by crest elevation, 2=peak-to-trough) to configure the deterministic wave" : undefined}
               hint="Only used when ConstWaveMod > 0">
               <input className={s.inp} type="number" value={p.CrestHmax}
                 onChange={e => set("CrestHmax", parseFloat(e.target.value) || 0)} />
             </FieldRow>
 
             <FieldRow label="Crest time (CrestTime)" unit="s"
-              disabled={p.ConstWaveMod === 0}>
+              disabledHint={p.ConstWaveMod === 0 ? "Set ConstWaveMod > 0 (1=constrain by crest elevation, 2=peak-to-trough) to configure the deterministic wave" : undefined}>
               <input className={s.inp} type="number" value={p.CrestTime}
                 onChange={e => set("CrestTime", parseFloat(e.target.value) || 0)} />
             </FieldRow>
 
             <FieldRow label="Crest X position (CrestXi)" unit="m"
-              disabled={p.ConstWaveMod === 0}>
+              disabledHint={p.ConstWaveMod === 0 ? "Set ConstWaveMod > 0 (1=constrain by crest elevation, 2=peak-to-trough) to configure the deterministic wave" : undefined}>
               <input className={s.inp} type="number" value={p.CrestXi}
                 onChange={e => set("CrestXi", parseFloat(e.target.value) || 0)} />
             </FieldRow>
 
             <FieldRow label="Crest Y position (CrestYi)" unit="m"
-              disabled={p.ConstWaveMod === 0}>
+              disabledHint={p.ConstWaveMod === 0 ? "Set ConstWaveMod > 0 (1=constrain by crest elevation, 2=peak-to-trough) to configure the deterministic wave" : undefined}>
               <input className={s.inp} type="number" value={p.CrestYi}
                 onChange={e => set("CrestYi", parseFloat(e.target.value) || 0)} />
             </FieldRow>
@@ -1184,45 +1393,45 @@ export default function SeaStatePanel({
         </div>
         <div className={s.grid2}>
           <FieldRow label="Sub-surface current speed at SWL (CurrSSV0)" unit="m/s"
-            disabled={!stdActive}>
+            disabledHint={!stdActive ? "Set CurrMod = 1 (standard profile) to configure current loading parameters" : undefined}>
             <input className={s.inp} type="number" value={p.CurrSSV0}
               onChange={e => set("CurrSSV0", parseFloat(e.target.value) || 0)} />
           </FieldRow>
 
           <FieldRow label="Sub-surface current direction (CurrSSDir)" unit="° or DEFAULT"
             hint={`"DEFAULT" = same as WaveDir`}
-            disabled={!stdActive}>
+            disabledHint={!stdActive ? "Set CurrMod = 1 (standard profile) to configure current loading parameters" : undefined}>
             <input className={s.inp} value={p.CurrSSDir}
               onChange={e => set("CurrSSDir", e.target.value)} />
           </FieldRow>
 
           <FieldRow label="Near-surface reference depth (CurrNSRef)" unit="m"
-            disabled={!stdActive}
+            disabledHint={!stdActive ? "Set CurrMod = 1 (standard profile) to configure current loading parameters" : undefined}
             hint="Depth below SWL at which near-surface profile begins">
             <input className={s.inp} type="number" value={p.CurrNSRef}
               onChange={e => set("CurrNSRef", parseFloat(e.target.value) || 0)} />
           </FieldRow>
 
           <FieldRow label="Near-surface speed at SWL (CurrNSV0)" unit="m/s"
-            disabled={!stdActive}>
+            disabledHint={!stdActive ? "Set CurrMod = 1 (standard profile) to configure current loading parameters" : undefined}>
             <input className={s.inp} type="number" value={p.CurrNSV0}
               onChange={e => set("CurrNSV0", parseFloat(e.target.value) || 0)} />
           </FieldRow>
 
           <FieldRow label="Near-surface direction (CurrNSDir)" unit="°"
-            disabled={!stdActive}>
+            disabledHint={!stdActive ? "Set CurrMod = 1 (standard profile) to configure current loading parameters" : undefined}>
             <input className={s.inp} type="number" value={p.CurrNSDir}
               onChange={e => set("CurrNSDir", parseFloat(e.target.value) || 0)} />
           </FieldRow>
 
           <FieldRow label="Depth-independent speed (CurrDIV)" unit="m/s"
-            disabled={!stdActive}>
+            disabledHint={!stdActive ? "Set CurrMod = 1 (standard profile) to configure current loading parameters" : undefined}>
             <input className={s.inp} type="number" value={p.CurrDIV}
               onChange={e => set("CurrDIV", parseFloat(e.target.value) || 0)} />
           </FieldRow>
 
           <FieldRow label="Depth-independent direction (CurrDIDir)" unit="°"
-            disabled={!stdActive}>
+            disabledHint={!stdActive ? "Set CurrMod = 1 (standard profile) to configure current loading parameters" : undefined}>
             <input className={s.inp} type="number" value={p.CurrDIDir}
               onChange={e => set("CurrDIDir", parseFloat(e.target.value) || 0)} />
           </FieldRow>
@@ -1239,7 +1448,8 @@ export default function SeaStatePanel({
         <SectionHead>External Kinematics File</SectionHead>
         <FieldRow label="Wave kinematics file (WvKinFile)"
           hint="Required when WaveMod=5 or WaveMod=6"
-          disabled={!activeKinFile(p.WaveMod)} info={INFO.WvKinFile}>
+          disabledHint={!activeKinFile(p.WaveMod) ? "Set WaveMod = 5 (ext elevation) or 6 (ext full kinematics) to specify the wave kinematics file" : undefined}
+          info={INFO.WvKinFile}>
           <div className={s.fileRow}>
             <input className={s.inp} value={p.WvKinFile}
               onChange={e => set("WvKinFile", e.target.value)} />
@@ -1326,15 +1536,28 @@ export default function SeaStatePanel({
         </div>
       </Collapsible>
 
-      <FieldRow
-        label="Output channel names (OutList)"
-        hint='One quoted channel name per line, e.g. "Wave1Elev"'>
-        <textarea
-          className={s.outListArea}
-          value={p.OutList}
-          onChange={e => set("OutList", e.target.value)}
+      <SectionHead>Output Channel List (OutList)</SectionHead>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <button type="button" className={s.pickVarsBtn} onClick={() => setShowOutVarModal(true)}>
+          <List size={12} strokeWidth={2} />
+          Pick variables…
+        </button>
+        <span style={{ fontSize: 11.5, color: "var(--tx-4)" }}>One channel per line — quotes added automatically on save.</span>
+      </div>
+      <textarea
+        className={s.outListArea}
+        value={p.OutList}
+        onChange={e => set("OutList", e.target.value)}
+        spellCheck={false}
+      />
+
+      {showOutVarModal && (
+        <SsOutVarModal
+          current={p.OutList}
+          onClose={() => setShowOutVarModal(false)}
+          onApply={(outList) => set("OutList", outList)}
         />
-      </FieldRow>
+      )}
     </div>
   );
 
@@ -1469,14 +1692,8 @@ export default function SeaStatePanel({
               Guided simulation
             </p>
             <p style={{ fontSize: 10.5, color: "var(--tx-4)", lineHeight: 1.5 }}>
-              Fields tagged <span style={{
-                fontSize: 9.5, fontWeight: 600,
-                background: "var(--bg-muted)",
-                border: "0.5px solid var(--bd-subtle)",
-                borderRadius: 4, padding: "1px 5px",
-                color: "var(--tx-6)",
-              }}>n/a</span> have no effect for WaveMod={p.WaveMod} ({waveModName}) and are
-              visually disabled to reduce configuration errors.
+              Dimmed fields have no effect for the current WaveMod or CurrMod setting.
+              Hover over a dimmed field to see exactly how to enable it.
             </p>
           </div>
         </div>
