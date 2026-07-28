@@ -840,28 +840,54 @@
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.40);
+  background: rgba(0,0,0,0.28);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.20s ease;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 .modalOverlayVisible { opacity: 1; }
 
 .modal {
+  /* ── Liquid glass tokens (light mode) ── */
+  --c-glass: #c4c4c8;
+  --c-light: #ffffff;
+  --c-dark:  #000000;
+  --glass-rl: 1;    /* reflex light multiplier */
+  --glass-rd: 1;    /* reflex dark  multiplier */
+  --glass-sat: 160%;
+
   width: 680px;
   max-width: 95vw;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-panel, var(--bg-surface));
-  border: 0.5px solid var(--bd-subtle);
-  border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.30), 0 4px 16px rgba(0,0,0,0.15);
+  background-color: rgba(238,238,242,0.84); /* light-mode default — readable */
+  backdrop-filter: blur(32px) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(32px) saturate(var(--glass-sat));
+  border: none;
+  border-radius: 18px;
+  box-shadow:
+    /* outer depth */
+    0px 1px  5px 0px  color-mix(in srgb, var(--c-dark) calc(var(--glass-rd) * 10%), transparent),
+    0px 8px 24px 0px  color-mix(in srgb, var(--c-dark) calc(var(--glass-rd) * 12%), transparent),
+    0px 24px 64px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd) * 18%), transparent),
+    /* outer ring (border substitute) */
+    inset 0 0 0 0.5px      color-mix(in srgb, var(--c-light) calc(var(--glass-rl) * 18%), transparent),
+    /* top-left light edge */
+    inset 1.8px  3px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-rl) * 90%), transparent),
+    /* bottom-right subtle light */
+    inset -2px  -2px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-rl) * 80%), transparent),
+    inset -3px  -8px 1px -6px color-mix(in srgb, var(--c-light) calc(var(--glass-rl) * 60%), transparent),
+    /* inner dark depth */
+    inset -0.3px -1px   4px  0px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd) * 12%), transparent),
+    inset -1.5px  2.5px 0px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd) * 20%), transparent),
+    inset  0px    3px   4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd) * 20%), transparent),
+    inset  2px   -6.5px 1px -4px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd) * 10%), transparent);
   opacity: 0;
   transform: translateY(10px) scale(0.97);
   transition: opacity 0.20s ease, transform 0.20s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -872,12 +898,85 @@
   transform: translateY(0) scale(1);
 }
 
+/* ── Frosted grain overlay ── */
+.modal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Dark mode glass tokens ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .modal {
+    --c-glass: #606068;
+    --c-light: #c8c8d0;
+    --glass-rl: 0.4;
+    --glass-rd: 2.2;
+    --glass-sat: 140%;
+    background-color: rgba(54,54,62,0.84);
+  }
+}
+:root[data-theme="dark"]  .modal { --c-glass: #606068; --c-light: #c8c8d0; --glass-rl: 0.4; --glass-rd: 2.2; --glass-sat: 140%; background-color: rgba(54,54,62,0.84); }
+:root[data-theme="light"] .modal { --c-glass: #c4c4c8; --c-light: #ffffff; --glass-rl: 1;   --glass-rd: 1;   --glass-sat: 160%; background-color: rgba(238,238,242,0.84); }
+
+/* Dark mode search box — much less white fill so it doesn't read as a grey block */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .modalSearchBox {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.14);
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 0 rgba(0,0,0,0.20);
+  }
+  :root:not([data-theme="light"]) .modalSearchBox:focus-within {
+    border-color: rgba(55,138,221,0.70);
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 0 rgba(0,0,0,0.20), 0 0 0 3px rgba(55,138,221,0.22);
+  }
+}
+:root[data-theme="dark"] .modalSearchBox {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 0 rgba(0,0,0,0.20);
+}
+:root[data-theme="dark"] .modalSearchBox:focus-within {
+  border-color: rgba(55,138,221,0.70);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 0 rgba(0,0,0,0.20), 0 0 0 3px rgba(55,138,221,0.22);
+}
+
+/* Dark mode cancel button — white tints on dark glass */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .modalCancelBtn {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  :root:not([data-theme="light"]) .modalCancelBtn:hover {
+    background: rgba(255,255,255,0.14);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
+  }
+}
+:root[data-theme="dark"] .modalCancelBtn {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+:root[data-theme="dark"] .modalCancelBtn:hover {
+  background: rgba(255,255,255,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
+}
+
 .modalHeader {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 16px 20px 12px;
-  border-bottom: 0.5px solid var(--bd-subtle);
+  border-bottom: 0.5px solid rgba(255,255,255,0.22);
   flex-shrink: 0;
 }
 .modalTitle {
@@ -914,16 +1013,33 @@
 .modalClose:hover { background: var(--bg-hover-md); color: var(--tx-1); }
 
 .modalSearch {
+  padding: 10px 16px;
+  border-bottom: 0.5px solid rgba(255,255,255,0.22);
+  flex-shrink: 0;
+}
+.modalSearchBox {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  border-bottom: 0.5px solid var(--bd-subtle);
-  flex-shrink: 0;
+  height: 34px;
+  padding: 0 12px;
+  background: rgba(0,0,0,0.05);
+  border: 0.5px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,0.80),
+    inset 0 -0.5px 0 0 rgba(0,0,0,0.06);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.modalSearchBox:focus-within {
+  border-color: rgba(55,138,221,0.60);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,0.80),
+    inset 0 -0.5px 0 0 rgba(0,0,0,0.06),
+    0 0 0 3px rgba(55,138,221,0.18);
 }
 .modalSearchInput {
   flex: 1;
-  height: 28px;
   background: none;
   border: none;
   outline: none;
@@ -931,7 +1047,7 @@
   font-family: inherit;
   color: var(--tx-1);
 }
-.modalSearchInput::placeholder { color: var(--tx-5); }
+.modalSearchInput::placeholder { color: var(--tx-3); }
 
 .modalBody {
   flex: 1;
@@ -944,34 +1060,61 @@
   padding: 4px 0;
 }
 
+.varGroupBody {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.varGroupBodyCollapsed {
+  grid-template-rows: 0fr;
+}
+.varGroupBodyInner {
+  overflow: hidden;
+}
+
 .varGroupHead {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 20px 4px;
+  padding: 10px 20px 6px;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: rgba(55,138,221,0.72);
-  position: sticky;
-  top: 0;
-  background: var(--bg-panel, var(--bg-surface));
-  z-index: 1;
+  color: #2472c8;
+  background-color: color-mix(in srgb, var(--c-glass, #c4c4c8) 30%, transparent);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  box-shadow:
+    inset 0  1px 0 0 rgba(255,255,255,0.32),
+    inset 0 -0.5px 0 0 rgba(255,255,255,0.12),
+    0 2px 10px rgba(0,0,0,0.06);
+  cursor: pointer;
+  user-select: none;
 }
+.varGroupHead:hover { color: #1a5faa; }
+.groupLabel { flex: 1; }
+.groupChevron {
+  color: currentColor;
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  transform: rotate(-90deg);
+  flex-shrink: 0;
+}
+.groupChevronOpen { transform: rotate(0deg); }
 
+/* Dark mode: glass tokens inherited from .modal; only text colour needs updating */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .varGroupHead { color: rgba(90,165,240,0.88); }
-  :root:not([data-theme="light"]) .modalBody { background: var(--bg-panel); }
+  :root:not([data-theme="light"]) .varGroupHead { color: #60a8f0; }
 }
-:root[data-theme="dark"] .varGroupHead { color: rgba(90,165,240,0.88); }
+:root[data-theme="dark"]  .varGroupHead { color: #60a8f0; }
+:root[data-theme="light"] .varGroupHead { color: #2472c8; }
 
 .varGroupCount {
   font-size: 10.5px;
   font-weight: 600;
   color: var(--tx-5);
   font-variant-numeric: tabular-nums;
-  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .groupCheck {
@@ -1054,23 +1197,27 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 0.5px solid var(--bd-subtle);
+  border-top: 0.5px solid rgba(255,255,255,0.22);
   flex-shrink: 0;
 }
 
 .modalCancelBtn {
   height: 32px;
   padding: 0 14px;
-  background: var(--bg-surface);
-  border: 0.5px solid var(--bd-input);
+  background: rgba(0,0,0,0.05);
+  border: 0.5px solid rgba(0,0,0,0.12);
   border-radius: 7px;
   font-size: 13px;
   font-family: inherit;
   color: var(--tx-2);
   cursor: pointer;
-  transition: background 0.12s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+  transition: background 0.12s, box-shadow 0.12s;
 }
-.modalCancelBtn:hover { background: var(--bg-surface-hov); }
+.modalCancelBtn:hover {
+  background: rgba(0,0,0,0.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+}
 
 .modalApplyBtn {
   height: 32px;

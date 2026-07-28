@@ -12,26 +12,102 @@
 .overlay     { animation: overlayIn  0.18s ease both; }
 .overlayExit { animation: overlayOut 0.20s ease forwards; pointer-events: none; }
 
-.card     { animation: cardIn  0.40s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+/* ── Card — liquid glass ── */
+.card {
+  animation: cardIn  0.40s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  --c-glass: #c4c4c8;
+  --c-light: #ffffff;
+  --c-dark:  #000000;
+  --glass-rl: 1;
+  --glass-rd: 1;
+  --glass-sat: 160%;
+
+  background-color: rgba(238,238,242,0.90) !important;
+  backdrop-filter: blur(32px) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(32px) saturate(var(--glass-sat));
+  border: none !important;
+  box-shadow:
+    0px  1px  5px 0px  color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*10%), transparent),
+    0px  8px 24px 0px  color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*12%), transparent),
+    0px 24px 64px 0px  color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*18%), transparent),
+    inset 0 0 0 0.5px       color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*18%), transparent),
+    inset  1.8px   3px  0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*90%), transparent),
+    inset -2px    -2px  0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*80%), transparent),
+    inset -3px    -8px  1px -6px color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*60%), transparent),
+    inset -0.3px  -1px  4px  0px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*12%), transparent),
+    inset -1.5px   2.5px 0px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*20%), transparent),
+    inset  0px     3px  4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*20%), transparent),
+    inset  2px    -6.5px 1px -4px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*10%), transparent) !important;
+}
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 9999;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .card {
+    --c-glass: #606068; --c-light: #c8c8d0;
+    --glass-rl: 0.4; --glass-rd: 2.2; --glass-sat: 140%;
+    background-color: rgba(54,54,62,0.90) !important;
+  }
+}
+:root[data-theme="dark"]  .card { --c-glass: #606068; --c-light: #c8c8d0; --glass-rl: 0.4; --glass-rd: 2.2; --glass-sat: 140%; background-color: rgba(54,54,62,0.90) !important; }
+:root[data-theme="light"] .card { --c-glass: #c4c4c8; --c-light: #ffffff; --glass-rl: 1;   --glass-rd: 1;   --glass-sat: 160%; background-color: rgba(238,238,242,0.90) !important; }
+
 .cardExit { animation: cardOut 0.20s cubic-bezier(0.55, 0, 1, 0.45) forwards; }
 
 /* ── Shared header button base ── */
 .closeBtn, .editBtn, .discardBtn, .saveBtn {
-  border: none;
   cursor: pointer;
   border-radius: 6px;
   padding: 4px 10px;
   font-size: 12px;
   font-family: inherit;
   font-weight: 500;
-  transition: background 0.22s ease, color 0.22s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: background 0.12s, box-shadow 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.closeBtn, .editBtn, .discardBtn {
-  background: var(--bg-pill);
+.closeBtn, .discardBtn {
+  background: rgba(0,0,0,0.05);
+  border: 0.5px solid rgba(0,0,0,0.12);
   color: var(--tx-3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
 }
-.closeBtn:hover, .discardBtn:hover  { background: var(--bg-hover-md); color: var(--tx-1); }
+.closeBtn:hover, .discardBtn:hover  { background: rgba(0,0,0,0.09); color: var(--tx-1); }
 .closeBtn:active, .discardBtn:active { transform: scale(0.88); transition-duration: 0.07s; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .closeBtn,
+  :root:not([data-theme="light"]) .discardBtn {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  :root:not([data-theme="light"]) .closeBtn:hover,
+  :root:not([data-theme="light"]) .discardBtn:hover {
+    background: rgba(255,255,255,0.14);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
+  }
+}
+:root[data-theme="dark"] .closeBtn,
+:root[data-theme="dark"] .discardBtn {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+:root[data-theme="dark"] .closeBtn:hover,
+:root[data-theme="dark"] .discardBtn:hover {
+  background: rgba(255,255,255,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
+}
 
 .editBtn { color: #0891B2; background: rgba(8,145,178,0.08); border: 0.5px solid rgba(8,145,178,0.28); }
 .editBtn:hover  { background: rgba(8,145,178,0.16); color: #0777A3; }
@@ -46,6 +122,25 @@
 .saveBtn:active:not(:disabled) { transform: scale(0.88); transition-duration: 0.07s; }
 .saveBtn:disabled, .discardBtn:disabled, .closeBtn:disabled { opacity: 0.45; cursor: default; }
 
+/* ── View-mode pre ── */
+.codeView {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 14px 18px;
+  font-size: 11.5px;
+  line-height: 1.65;
+  font-family: 'SF Mono','Fira Code','JetBrains Mono',ui-monospace,monospace;
+  color: var(--tx-2);
+  background: transparent;
+  white-space: pre;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bd) transparent;
+}
+.codeView::-webkit-scrollbar        { width: 4px; height: 4px; }
+.codeView::-webkit-scrollbar-track  { background: transparent; }
+.codeView::-webkit-scrollbar-thumb  { background: var(--bd); border-radius: 2px; }
+
 /* ── Editable textarea ── */
 .editArea {
   flex: 1;
@@ -56,7 +151,7 @@
   line-height: 1.65;
   font-family: 'SF Mono','Fira Code','JetBrains Mono',ui-monospace,monospace;
   color: var(--tx-2);
-  background: var(--bg-app);
+  background: transparent;
   white-space: pre;
   resize: none;
   border: none;
@@ -88,15 +183,49 @@
 }
 
 .warnCard {
-  background: var(--bg-surface-hov);
+  --c-glass: #c4c4c8; --c-light: #ffffff; --c-dark: #000000;
+  --glass-rl: 1; --glass-rd: 1; --glass-sat: 160%;
+
+  position: relative;
+  background-color: rgba(238,238,242,0.90);
+  backdrop-filter: blur(32px) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(32px) saturate(var(--glass-sat));
+  border: none;
   border-radius: 14px;
-  border: 0.5px solid var(--bd-card);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.32), 0 4px 12px rgba(0,0,0,0.14);
+  box-shadow:
+    0px 8px 24px 0px  color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*14%), transparent),
+    0px 24px 64px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*20%), transparent),
+    inset 0 0 0 0.5px       color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*18%), transparent),
+    inset  1.8px   3px  0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*90%), transparent),
+    inset -2px    -2px  0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*70%), transparent),
+    inset  0px     3px  4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*16%), transparent);
+  overflow: hidden;
   padding: 22px 24px 20px;
   max-width: 340px;
   width: 90%;
   animation: warnCardIn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+.warnCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 9999;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .warnCard {
+    --c-glass: #606068; --c-light: #c8c8d0; --glass-rl: 0.4; --glass-rd: 2.2; --glass-sat: 140%;
+    background-color: rgba(54,54,62,0.90);
+  }
+}
+:root[data-theme="dark"]  .warnCard { --c-glass: #606068; --c-light: #c8c8d0; --glass-rl: 0.4; --glass-rd: 2.2; --glass-sat: 140%; background-color: rgba(54,54,62,0.90); }
+:root[data-theme="light"] .warnCard { --c-glass: #c4c4c8; --c-light: #ffffff; --glass-rl: 1;   --glass-rd: 1;   --glass-sat: 160%; background-color: rgba(238,238,242,0.90); }
 
 .warnIcon {
   color: #F59E0B;
@@ -137,17 +266,29 @@
   flex: 1;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid var(--bd-input);
-  background: var(--bg-pill);
-  color: var(--tx-3);
+  border: 0.5px solid rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.05);
+  color: var(--tx-2);
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+  transition: background 0.12s, box-shadow 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.warnCancel:hover  { background: var(--bg-hover); color: var(--tx-1); }
+.warnCancel:hover  { background: rgba(0,0,0,0.09); color: var(--tx-1); }
 .warnCancel:active { transform: scale(0.97); transition-duration: 0.07s; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .warnCancel {
+    background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  :root:not([data-theme="light"]) .warnCancel:hover {
+    background: rgba(255,255,255,0.14); box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
+  }
+}
+:root[data-theme="dark"] .warnCancel { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
+:root[data-theme="dark"] .warnCancel:hover { background: rgba(255,255,255,0.14); box-shadow: inset 0 1px 0 rgba(255,255,255,0.42); }
 
 .warnConfirm {
   flex: 1;

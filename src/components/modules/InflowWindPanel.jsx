@@ -835,8 +835,12 @@ function OutVarModal({ current, onClose, onApply }) {
       .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
     return new Set(names);
   });
-  const [query,   setQuery]   = useState("");
-  const [visible, setVisible] = useState(false);
+  const [query,     setQuery]     = useState("");
+  const [visible,   setVisible]   = useState(false);
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  const toggleGroup = (groupName) =>
+    setCollapsed(prev => { const n = new Set(prev); n.has(groupName) ? n.delete(groupName) : n.add(groupName); return n; });
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true));
@@ -884,17 +888,19 @@ function OutVarModal({ current, onClose, onApply }) {
 
         {/* Search */}
         <div className={s.modalSearch}>
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
-            <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
-            <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          <input
-            className={s.modalSearchInput}
-            placeholder="Search variables… (name, description, unit)"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            autoFocus
-          />
+          <div className={s.modalSearchBox}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              className={s.modalSearchInput}
+              placeholder="Search variables… (name, description, unit)"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              autoFocus
+            />
+          </div>
         </div>
 
         {/* Variable groups */}
@@ -902,13 +908,15 @@ function OutVarModal({ current, onClose, onApply }) {
           {filteredGroups.map(g => {
             const allOn  = g.vars.every(v => selected.has(v.name));
             const someOn = g.vars.some(v => selected.has(v.name));
+            const isOpen = q ? true : !collapsed.has(g.group);
             return (
               <div key={g.group} className={s.varGroup}>
-                <div className={s.varGroupHead}>
+                <div className={s.varGroupHead} onClick={() => toggleGroup(g.group)}>
                   <button
                     type="button"
                     className={`${s.groupCheck} ${allOn ? s.groupCheckAll : someOn ? s.groupCheckSome : ""}`}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setSelected(prev => {
                         const n = new Set(prev);
                         if (allOn) g.vars.forEach(v => n.delete(v.name));
@@ -917,27 +925,36 @@ function OutVarModal({ current, onClose, onApply }) {
                       });
                     }}
                   />
-                  <span>{g.group}</span>
+                  <span className={s.groupLabel}>{g.group}</span>
                   <span className={s.varGroupCount}>{g.vars.filter(v => selected.has(v.name)).length}/{g.vars.length}</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    className={`${s.groupChevron} ${isOpen ? s.groupChevronOpen : ""}`}>
+                    <polyline points="2,4 6,8 10,4" stroke="currentColor" strokeWidth="1.5"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-                {g.vars.map(v => (
-                  <label key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}>
-                    <input
-                      type="checkbox"
-                      className={s.varCheck}
-                      checked={selected.has(v.name)}
-                      onChange={() => toggle(v.name)}
-                    />
-                    <span className={s.varName}>{v.name}</span>
-                    <span className={s.varUnit}>{v.unit}</span>
-                    <span className={s.varDesc}>{v.desc}</span>
-                    {selected.has(v.name) && (
-                      <svg width="11" height="11" viewBox="0 0 12 12" className={s.varCheck__mark}>
-                        <polyline points="1.5,6 4.5,9 10.5,3" stroke={ACCENT} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </label>
-                ))}
+                <div className={`${s.varGroupBody} ${!isOpen ? s.varGroupBodyCollapsed : ""}`}>
+                  <div className={s.varGroupBodyInner}>
+                    {g.vars.map(v => (
+                      <label key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}>
+                        <input
+                          type="checkbox"
+                          className={s.varCheck}
+                          checked={selected.has(v.name)}
+                          onChange={() => toggle(v.name)}
+                        />
+                        <span className={s.varName}>{v.name}</span>
+                        <span className={s.varUnit}>{v.unit}</span>
+                        <span className={s.varDesc}>{v.desc}</span>
+                        {selected.has(v.name) && (
+                          <svg width="11" height="11" viewBox="0 0 12 12" className={s.varCheck__mark}>
+                            <polyline points="1.5,6 4.5,9 10.5,3" stroke={ACCENT} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
             );
           })}

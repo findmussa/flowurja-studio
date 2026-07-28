@@ -51,15 +51,60 @@
 /* ── Rest ── */
 .section { padding: 0 10px 10px; flex-shrink: 0; }
 
-/* ── Context card — shared boundary for Project + Models ── */
+/* ── Context card — liquid glass ── */
 .contextCard {
+  --c-glass: #c4c4c8;
+  --c-light: #ffffff;
+  --c-dark:  #000000;
+  --glass-rl: 1;
+  --glass-rd: 1;
+  --glass-sat: 160%;
+
+  position: relative;
   margin: 0 10px 8px;
-  border: 0.5px solid var(--bd);
+  border: none;
   border-radius: 11px;
-  background: var(--bg-muted);
+  background-color: rgba(238,238,242,0.84);
+  backdrop-filter: blur(32px) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(32px) saturate(var(--glass-sat));
+  box-shadow:
+    0px  1px  4px 0px  color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*8%),  transparent),
+    0px  4px 14px 0px  color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*10%), transparent),
+    inset 0 0 0 0.5px       color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*18%), transparent),
+    inset  1.8px   3px  0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*90%), transparent),
+    inset -2px    -2px  0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*70%), transparent),
+    inset -0.3px  -1px  4px  0px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*10%), transparent),
+    inset  0px     3px  4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-rd)*14%), transparent);
   flex-shrink: 0;
   overflow: hidden;
 }
+
+/* Grain texture */
+.contextCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Dark mode glass tokens */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .contextCard {
+    --c-glass: #606068; --c-light: #c8c8d0;
+    --glass-rl: 0.4; --glass-rd: 2.2; --glass-sat: 140%;
+    background-color: rgba(54,54,62,0.84);
+  }
+}
+:root[data-theme="dark"]  .contextCard { --c-glass: #606068; --c-light: #c8c8d0; --glass-rl: 0.4; --glass-rd: 2.2; --glass-sat: 140%; background-color: rgba(54,54,62,0.84); }
+:root[data-theme="light"] .contextCard { --c-glass: #c4c4c8; --c-light: #ffffff; --glass-rl: 1;   --glass-rd: 1;   --glass-sat: 160%; background-color: rgba(238,238,242,0.84); }
+
 /* Top breathing room — .section has padding-top: 0 by default */
 .contextCard > .section:first-child {
   padding-top: 10px;
@@ -84,15 +129,32 @@
   min-width: 0;
   display: flex; align-items: center; gap: 7px;
   padding: 7px 10px;
-  background: var(--bg-pill);
-  border: 1px solid var(--bd-input);
+  background: rgba(0,0,0,0.05);
+  border: 0.5px solid rgba(0,0,0,0.12);
   border-radius: 9px;
   cursor: pointer; color: var(--tx-1);
   font-size: 13px; font-weight: 500; font-family: inherit;
-  transition: background 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.80), inset 0 -0.5px 0 0 rgba(0,0,0,0.06);
+  transition: background 0.15s, box-shadow 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.picker:hover  { background: var(--bg-hover); }
+.picker:hover  { background: rgba(0,0,0,0.09); }
 .picker:active { transform: scale(0.98); transition-duration: 0.07s; }
+
+/* Dark mode picker */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .picker {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.14);
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 0 rgba(0,0,0,0.20);
+  }
+  :root:not([data-theme="light"]) .picker:hover { background: rgba(255,255,255,0.12); }
+}
+:root[data-theme="dark"] .picker {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 0 rgba(0,0,0,0.20);
+}
+:root[data-theme="dark"] .picker:hover { background: rgba(255,255,255,0.12); }
 
 .closeProjectBtn {
   display: flex;
@@ -102,21 +164,57 @@
   height: 30px;
   flex-shrink: 0;
   border-radius: 8px;
-  border: 1px solid var(--bd-input);
-  background: var(--bg-pill);
+  border: 0.5px solid rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.05);
   color: var(--tx-4);
   cursor: pointer;
   padding: 0;
-  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .closeProjectBtn:hover {
   background: rgba(239,68,68,0.08);
   color: #EF4444;
   border-color: rgba(239,68,68,0.28);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
 }
 .closeProjectBtn:active {
   transform: scale(0.88);
   transition-duration: 0.07s;
+}
+
+/* Dark mode close + add buttons */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .closeProjectBtn,
+  :root:not([data-theme="light"]) .addModelBtn {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  :root:not([data-theme="light"]) .closeProjectBtn:hover {
+    background: rgba(239,68,68,0.15);
+    border-color: rgba(239,68,68,0.35);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.20);
+  }
+  :root:not([data-theme="light"]) .addModelBtn:hover {
+    background: rgba(255,255,255,0.14);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
+  }
+}
+:root[data-theme="dark"] .closeProjectBtn,
+:root[data-theme="dark"] .addModelBtn {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+:root[data-theme="dark"] .closeProjectBtn:hover {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.20);
+}
+:root[data-theme="dark"] .addModelBtn:hover {
+  background: rgba(255,255,255,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
 }
 .pickerIcon    { color: var(--tx-3); flex-shrink: 0; }
 .pickerName    { flex: 1; text-align: left; letter-spacing: -0.01em; }
@@ -259,15 +357,16 @@
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  border: 1px solid var(--bd-input);
-  background: var(--bg-pill);
+  border: 0.5px solid rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.05);
   color: var(--tx-4);
   cursor: pointer;
   padding: 0;
-  transition: background 0.12s, color 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+  transition: background 0.12s, color 0.12s, box-shadow 0.12s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   flex-shrink: 0;
 }
-.addModelBtn:hover  { background: var(--bg-hover); color: var(--tx-1); }
+.addModelBtn:hover  { background: rgba(0,0,0,0.09); color: var(--tx-1); }
 .addModelBtn:active { transform: scale(0.88); transition-duration: 0.07s; }
 
 .modelList {

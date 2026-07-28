@@ -129,19 +129,17 @@ export default function RawFileModal({
         onClick={e => e.stopPropagation()}
         className={`${s.card}${closing ? ` ${s.cardExit}` : ""}`}
         style={{
-          background: "var(--bg-app)", borderRadius: 12, overflow: "hidden",
+          borderRadius: 12, overflow: "hidden",
           width: "min(860px, 90vw)", height: "min(600px, 80vh)",
           display: "flex", flexDirection: "column",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.40)",
-          border: "0.5px solid var(--bd)",
           position: "relative",
         }}
       >
         {/* ── Header ── */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "12px 16px", borderBottom: "0.5px solid var(--bd-subtle)",
-          background: "var(--bg-header)", flexShrink: 0, gap: 8,
+          padding: "12px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.22)",
+          background: "transparent", flexShrink: 0, gap: 8,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
             {filename && (
@@ -225,12 +223,7 @@ export default function RawFileModal({
             autoCorrect="off"
           />
         ) : (
-          <pre style={{
-            flex: 1, overflow: "auto", margin: 0, padding: "14px 18px",
-            fontSize: 11.5, lineHeight: 1.65,
-            fontFamily: "'SF Mono','Fira Code','JetBrains Mono',ui-monospace,monospace",
-            color: "var(--tx-2)", background: "var(--bg-app)", whiteSpace: "pre",
-          }}>{content}</pre>
+          <pre className={s.codeView}>{content}</pre>
         )}
 
         {/* ── Warning dialog overlay ── */}

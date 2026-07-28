@@ -392,25 +392,143 @@
 }
 
 .scannerModal {
+  --c-glass: rgba(238,238,242,1);
+  --c-light: rgba(255,255,255,1);
+  --c-dark:  rgba(0,0,0,1);
+  --glass-rl: 1;
+  --glass-rd: 0.6;
   width:760px; max-width:100%; max-height:calc(100vh - 48px);
-  background:var(--bg-surface);
-  border:0.5px solid var(--bd); border-radius:14px;
-  box-shadow:0 20px 60px rgba(0,0,0,0.35);
+  background: color-mix(in srgb, var(--c-glass) 84%, transparent);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  backdrop-filter: blur(32px) saturate(160%);
+  border:none; border-radius:14px;
+  box-shadow:
+    inset 0  1.5px 0  0  color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*80%), transparent),
+    inset 0 -1px   0  0  color-mix(in srgb, var(--c-dark)  calc(var(--glass-rd)*8%),  transparent),
+    inset 1px  0   0  0  color-mix(in srgb, var(--c-light) calc(var(--glass-rl)*22%), transparent),
+    inset -1px 0   0  0  color-mix(in srgb, var(--c-dark)  calc(var(--glass-rd)*6%),  transparent),
+    0  2px   4px  rgba(0,0,0,0.04),
+    0  4px   8px  rgba(0,0,0,0.05),
+    0  8px  16px  rgba(0,0,0,0.05),
+    0 12px  28px  rgba(0,0,0,0.06),
+    0 24px  48px  rgba(0,0,0,0.07),
+    0 40px  80px  rgba(0,0,0,0.08),
+    0 60px 120px  rgba(0,0,0,0.09);
   display:flex; flex-direction:column; overflow:hidden;
+  position:relative;
+}
+.scannerModal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scannerModal {
+    --c-glass: rgba(48,48,54,1);
+    --glass-rl: 0.35;
+    --glass-rd: 1;
+    background: color-mix(in srgb, var(--c-glass) 88%, transparent);
+  }
+}
+:root[data-theme="dark"] .scannerModal {
+  --c-glass: rgba(48,48,54,1);
+  --glass-rl: 0.35;
+  --glass-rd: 1;
+  background: color-mix(in srgb, var(--c-glass) 88%, transparent);
 }
 
-.scannerHeader { display:flex; align-items:center; justify-content:space-between; padding:13px 16px 11px; border-bottom:0.5px solid var(--bd-subtle); flex-shrink:0; }
+.scannerHeader { display:flex; align-items:center; justify-content:space-between; padding:13px 16px 11px; border-bottom:0.5px solid rgba(255,255,255,0.22); flex-shrink:0; }
 .scannerTitle { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--tx-1); }
-.closeBtn2 { display:flex; align-items:center; border:none; background:transparent; color:var(--tx-4); cursor:pointer; padding:4px; border-radius:5px; transition:background 0.1s,color 0.1s; }
-.closeBtn2:hover { background:var(--bg-hover); color:var(--tx-1); }
-.scannerPath { display:flex; align-items:center; gap:7px; padding:9px 14px; border-bottom:0.5px solid var(--bd-subtle); flex-shrink:0; }
-.scannerDirInput { flex:1; padding:6px 10px; border-radius:7px; border:0.5px solid var(--bd-input); background:var(--bg-input); color:var(--tx-1); font-size:12px; font-family:ui-monospace,"SF Mono",monospace; outline:none; }
+.closeBtn2 {
+  display:flex; align-items:center;
+  border:0.5px solid rgba(0,0,0,0.12);
+  background:rgba(0,0,0,0.05);
+  color:var(--tx-4); cursor:pointer;
+  padding:4px; border-radius:5px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+  transition:background 0.1s,color 0.1s;
+}
+.closeBtn2:hover { background:rgba(239,68,68,0.10); color:#ef4444; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .closeBtn2 {
+    background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  :root:not([data-theme="light"]) .closeBtn2:hover { background:rgba(239,68,68,0.15); }
+}
+:root[data-theme="dark"] .closeBtn2 {
+  background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+:root[data-theme="dark"] .closeBtn2:hover { background:rgba(239,68,68,0.15); }
+.scannerPath { display:flex; align-items:center; gap:7px; padding:9px 14px; border-bottom:0.5px solid rgba(255,255,255,0.22); flex-shrink:0; }
+.scannerDirInput {
+  flex:1; padding:6px 10px; border-radius:7px;
+  border:0.5px solid rgba(0,0,0,0.12);
+  background:rgba(0,0,0,0.05);
+  color:var(--tx-1); font-size:12px; font-family:ui-monospace,"SF Mono",monospace; outline:none;
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.80), inset 0 -0.5px 0 0 rgba(0,0,0,0.06);
+}
 .scannerDirInput:focus { border-color:#0891B2; }
-.scannerPickBtn { padding:5px 12px; border-radius:7px; border:0.5px solid var(--bd); background:var(--bg-hover); color:var(--tx-3); font-size:11.5px; font-family:inherit; font-weight:500; cursor:pointer; white-space:nowrap; transition:background 0.1s,color 0.1s; }
-.scannerPickBtn:hover { background:var(--bg-hover-md); color:var(--tx-1); }
-.scannerScanBtn { padding:5px 12px; border-radius:7px; border:0.5px solid var(--bd); background:var(--bg-hover); color:var(--tx-3); font-size:11.5px; font-family:inherit; font-weight:500; cursor:pointer; white-space:nowrap; transition:background 0.1s,color 0.1s; display:flex; align-items:center; gap:5px; }
-.scannerScanBtn:hover:not(:disabled) { background:var(--bg-hover-md); color:var(--tx-1); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scannerDirInput {
+    background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.14);
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 0 rgba(0,0,0,0.20);
+  }
+}
+:root[data-theme="dark"] .scannerDirInput {
+  background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.14);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 0 rgba(0,0,0,0.20);
+}
+.scannerPickBtn {
+  padding:5px 12px; border-radius:7px;
+  border:0.5px solid rgba(0,0,0,0.12);
+  background:rgba(0,0,0,0.05); color:var(--tx-3);
+  font-size:11.5px; font-family:inherit; font-weight:500; cursor:pointer; white-space:nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+  transition:background 0.1s,color 0.1s;
+}
+.scannerPickBtn:hover { background:rgba(0,0,0,0.09); color:var(--tx-1); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scannerPickBtn {
+    background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  :root:not([data-theme="light"]) .scannerPickBtn:hover { background:rgba(255,255,255,0.14); }
+}
+:root[data-theme="dark"] .scannerPickBtn {
+  background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+:root[data-theme="dark"] .scannerPickBtn:hover { background:rgba(255,255,255,0.14); }
+.scannerScanBtn {
+  padding:5px 12px; border-radius:7px;
+  border:0.5px solid rgba(0,0,0,0.12);
+  background:rgba(0,0,0,0.05); color:var(--tx-3);
+  font-size:11.5px; font-family:inherit; font-weight:500; cursor:pointer; white-space:nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+  transition:background 0.1s,color 0.1s; display:flex; align-items:center; gap:5px;
+}
+.scannerScanBtn:hover:not(:disabled) { background:rgba(0,0,0,0.09); color:var(--tx-1); }
 .scannerScanBtn:disabled { opacity:0.5; cursor:default; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scannerScanBtn {
+    background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  :root:not([data-theme="light"]) .scannerScanBtn:hover:not(:disabled) { background:rgba(255,255,255,0.14); }
+}
+:root[data-theme="dark"] .scannerScanBtn {
+  background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+:root[data-theme="dark"] .scannerScanBtn:hover:not(:disabled) { background:rgba(255,255,255,0.14); }
 .scanErr { padding:7px 14px; font-size:12px; color:#DC2626; background:rgba(239,68,68,0.07); border-bottom:0.5px solid rgba(239,68,68,0.18); flex-shrink:0; }
 /* Select-all bar (hidden — select-all is now per group header like WindField) */
 .scannerSelectBar { display:none; }
@@ -503,10 +621,31 @@
 .scanRowSel { background:rgba(8,145,178,0.07); }
 .scanRowSel:hover { background:rgba(8,145,178,0.12); }
 .scanName { font-family:ui-monospace,"SF Mono",monospace; color:var(--tx-1); font-weight:500; max-width:280px; overflow:hidden; text-overflow:ellipsis; }
-.scannerFooter { display:flex; align-items:center; gap:8px; padding:10px 14px; border-top:0.5px solid var(--bd-subtle); flex-shrink:0; }
+.scannerFooter { display:flex; align-items:center; gap:8px; padding:10px 14px; border-top:0.5px solid rgba(255,255,255,0.22); flex-shrink:0; }
 .scanCount { font-size:12px; color:var(--tx-4); flex:1; }
-.scannerClearBtn { padding:5px 12px; border-radius:7px; border:0.5px solid var(--bd); background:transparent; color:var(--tx-4); font-size:11.5px; font-family:inherit; cursor:pointer; transition:background 0.1s,color 0.1s; }
-.scannerClearBtn:hover { background:var(--bg-hover); color:var(--tx-2); }
+.scannerClearBtn {
+  padding:5px 12px; border-radius:7px;
+  border:0.5px solid rgba(0,0,0,0.12);
+  background:rgba(0,0,0,0.05); color:var(--tx-4); font-size:11.5px;
+  font-family:inherit; cursor:pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
+  transition:background 0.1s,color 0.1s;
+}
+.scannerClearBtn:hover { background:rgba(0,0,0,0.09); color:var(--tx-2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scannerClearBtn {
+    background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  :root:not([data-theme="light"]) .scannerClearBtn:hover {
+    background:rgba(255,255,255,0.14); color:var(--tx-2);
+  }
+}
+:root[data-theme="dark"] .scannerClearBtn {
+  background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+:root[data-theme="dark"] .scannerClearBtn:hover { background:rgba(255,255,255,0.14); color:var(--tx-2); }
 .scannerLoadBtn { padding:6px 16px; border-radius:7px; border:none; background:#0891B2; color:#fff; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; transition:background 0.1s,opacity 0.1s; }
 .scannerLoadBtn:hover:not(:disabled) { background:#0e7490; }
 .scannerLoadBtn:disabled { opacity:0.45; cursor:default; }
