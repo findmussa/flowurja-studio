@@ -990,9 +990,8 @@ export default function SeaStatePanel({
     return (
       <div className={`${s.form} ${s.tabEnterFirst}`}>
         <div className={s.callout}>
-          Wave kinematics are defined here and passed to HydroDyn. WtrDens and WtrDpth here
-          override the .fst values when not set to <strong>"default"</strong>. The guided
-          simulation panel dims fields that have no effect for your chosen wave model.
+          Wave kinematics are defined here and passed to HydroDyn. WtrDens and WtrDpth override
+          the .fst values when not set to "default". Hover a dimmed field to see how to enable it.
         </div>
 
         <SectionHead>Wave Model</SectionHead>
