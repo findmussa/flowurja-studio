@@ -360,8 +360,9 @@ function EdOutVarModal({ current, onClose, onApply, vars = ED_OUT_VARS, title = 
 // ── Missing-fields context — lets Field read the set without prop-drilling ───
 const MissingCtx = createContext(new Set());
 
-// Fields that exist in DEFAULT but have no corresponding UI input; never flag them.
-const NO_UI_FIELDS = new Set([]);
+// NodeOutList is stored as __NodeOut__ in rawKV (not a direct key), so the
+// missing-fields check can never find it — exclude it from that scan.
+const NO_UI_FIELDS = new Set(["NodeOutList"]);
 
 // Which tab each DEFAULT key lives on — used to jump to the right place from the banner.
 const FIELD_TAB = {
