@@ -122,8 +122,10 @@ function parseSubDynFile(content) {
       continue;
     }
 
-    // Detect OUTPUT CHANNELS section
-    if (/OUTPUT\s+CHANNEL/i.test(line) && !line.startsWith("!")) {
+    // Detect output channel section — standard modules use "OUTPUT CHANNELS",
+    // SubDyn uses "SSOutList" embedded in a dashed divider line. Must check
+    // BEFORE the divider-skip so the dashes don't hide the SSOutList keyword.
+    if ((/OUTPUT\s+CHANNEL/i.test(line) || /\bSSOutList\b/i.test(line)) && !line.startsWith("!")) {
       inOutChannels = true;
       continue;
     }
@@ -264,7 +266,7 @@ function buildSubDynContent(originalContent, p) {
       continue;
     }
 
-    if (/OUTPUT\s+CHANNEL/i.test(trimmed) && !trimmed.startsWith("!")) {
+    if ((/OUTPUT\s+CHANNEL/i.test(trimmed) || /\bSSOutList\b/i.test(trimmed)) && !trimmed.startsWith("!")) {
       result.push(rawLine);
       inOutChannels = true;
       outListInserted = false;
@@ -442,13 +444,13 @@ const SD_OUT_VARS = [
     { name: "M1N1AccY",  unit: "m/s²", desc: "Member 1 node 1 translational acceleration — Y" },
     { name: "M1N1AccZ",  unit: "m/s²", desc: "Member 1 node 1 translational acceleration — Z" },
   ]},
-  { group: "Member 1 — Internal Forces (NMOutputs, Node 1)", vars: [
-    { name: "M1N1FKXs",  unit: "N",    desc: "Member 1 node 1 internal force — X (local frame)" },
-    { name: "M1N1FKYs",  unit: "N",    desc: "Member 1 node 1 internal force — Y (local frame)" },
-    { name: "M1N1FKZs",  unit: "N",    desc: "Member 1 node 1 internal force — Z (local frame)" },
-    { name: "M1N1MKXs",  unit: "N·m",  desc: "Member 1 node 1 internal moment — X (local frame)" },
-    { name: "M1N1MKYs",  unit: "N·m",  desc: "Member 1 node 1 internal moment — Y (local frame)" },
-    { name: "M1N1MKZs",  unit: "N·m",  desc: "Member 1 node 1 internal moment — Z (local frame)" },
+  { group: "Member 1 — Internal Forces/Moments (element frame)", vars: [
+    { name: "M1N1FKxe",  unit: "N",    desc: "Member 1 node 1 axial/shear force — x (element local frame)" },
+    { name: "M1N1FKye",  unit: "N",    desc: "Member 1 node 1 shear force — y (element local frame)" },
+    { name: "M1N1FKze",  unit: "N",    desc: "Member 1 node 1 shear force — z (element local frame)" },
+    { name: "M1N1MKxe",  unit: "N·m",  desc: "Member 1 node 1 torsion moment — x (element local frame)" },
+    { name: "M1N1MKye",  unit: "N·m",  desc: "Member 1 node 1 fore-aft bending moment — y (element local frame)" },
+    { name: "M1N1MKze",  unit: "N·m",  desc: "Member 1 node 1 side-to-side bending moment — z (element local frame)" },
   ]},
   { group: "Member 2 — Kinematics (NMOutputs, Node 1)", vars: [
     { name: "M2N1TDX",   unit: "m",    desc: "Member 2 node 1 translational displacement — X" },
@@ -464,13 +466,13 @@ const SD_OUT_VARS = [
     { name: "M2N1AccY",  unit: "m/s²", desc: "Member 2 node 1 translational acceleration — Y" },
     { name: "M2N1AccZ",  unit: "m/s²", desc: "Member 2 node 1 translational acceleration — Z" },
   ]},
-  { group: "Member 2 — Internal Forces (NMOutputs, Node 1)", vars: [
-    { name: "M2N1FKXs",  unit: "N",    desc: "Member 2 node 1 internal force — X (local frame)" },
-    { name: "M2N1FKYs",  unit: "N",    desc: "Member 2 node 1 internal force — Y (local frame)" },
-    { name: "M2N1FKZs",  unit: "N",    desc: "Member 2 node 1 internal force — Z (local frame)" },
-    { name: "M2N1MKXs",  unit: "N·m",  desc: "Member 2 node 1 internal moment — X (local frame)" },
-    { name: "M2N1MKYs",  unit: "N·m",  desc: "Member 2 node 1 internal moment — Y (local frame)" },
-    { name: "M2N1MKZs",  unit: "N·m",  desc: "Member 2 node 1 internal moment — Z (local frame)" },
+  { group: "Member 2 — Internal Forces/Moments (element frame)", vars: [
+    { name: "M2N1FKxe",  unit: "N",    desc: "Member 2 node 1 axial/shear force — x (element local frame)" },
+    { name: "M2N1FKye",  unit: "N",    desc: "Member 2 node 1 shear force — y (element local frame)" },
+    { name: "M2N1FKze",  unit: "N",    desc: "Member 2 node 1 shear force — z (element local frame)" },
+    { name: "M2N1MKxe",  unit: "N·m",  desc: "Member 2 node 1 torsion moment — x (element local frame)" },
+    { name: "M2N1MKye",  unit: "N·m",  desc: "Member 2 node 1 fore-aft bending moment — y (element local frame)" },
+    { name: "M2N1MKze",  unit: "N·m",  desc: "Member 2 node 1 side-to-side bending moment — z (element local frame)" },
   ]},
   { group: "Joint 1 Outputs (NJOutputs ≥ 1)", vars: [
     { name: "J1TDX",     unit: "m",    desc: "Joint 1 translational displacement — X" },
