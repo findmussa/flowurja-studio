@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo, createContext, useContext } from "react";
+import { createPortal } from "react-dom";
 import { invoke }             from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
-  Zap, FolderOpen, Eye, Save, ChevronDown, ChevronRight, Link, Unlink, AlertTriangle,
+  Zap, FolderOpen, Eye, Save, ChevronDown, ChevronRight, Link, Unlink, AlertTriangle, List,
 } from "lucide-react";
 import RawFileModal from "../RawFileModal";
 import InfoPopover from "../InfoPopover";
-import OutVarPicker from "../OutVarPicker";
 import s from "./AeroDynPanel.module.css";
 
 const ACCENT = "#BA7517";
@@ -21,7 +21,6 @@ const NO_UI_FIELDS = new Set([
   "SectAvg","SectAvgWeighting","SectAvgNPoints","SectAvgPsiBwd","SectAvgPsiFwd",
   "AoA34","IntegrationMethod",
   "NacArea","NacCd","NacDragAC",
-  "BldNd_BladesOut","BldNd_BlOutNd",  // no independent UI field
 ]);
 
 // Tab location for each DEFAULT key — used to navigate from the banner.
@@ -49,6 +48,7 @@ const FIELD_TAB = {
   VolHub:"output", HubCenBx:"output", VolNac:"output", NacCenB:"output",
   NumTwrNds:"output", SumPrint:"output",
   NBlOuts:"output", BlOutNd:"output", NTwOuts:"output", TwOutNd:"output",
+  BldNd_BladesOut:"output", BldNd_BlOutNd:"output",
 };
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
@@ -85,6 +85,7 @@ const TWR_SHADOW_MODES = [
 ];
 
 const DBEMT_MODES = [
+  { v: 0, label: "0 – Disabled"        },
   { v: 1, label: "1 – Const τ₁"       },
   { v: 2, label: "2 – Time-dep τ₁"    },
   { v: 3, label: "3 – Const τ₁ cont." },
@@ -550,13 +551,52 @@ function SectionHead({ children }) {
   return <h3 className={s.sectionHead}>{children}</h3>;
 }
 
-function Field({ label, unit, children, hint, info, fieldKey }) {
+function DisabledHintPortal({ text, rect }) {
+  const popRef = useRef(null);
+  const W = 280;
+  let left = rect.left;
+  if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8;
+  if (left < 8) left = 8;
+  const [top, setTop] = useState(rect.bottom + 6);
+  useEffect(() => {
+    if (!popRef.current) return;
+    const r = popRef.current.getBoundingClientRect();
+    if (r.bottom > window.innerHeight - 8) setTop(rect.top - r.height - 6);
+  }, [rect.top]);
+  return createPortal(
+    <div ref={popRef} style={{
+      position:"fixed", top, left, zIndex:99998, width:W,
+      background:"var(--bg-popover, color-mix(in srgb, var(--bg-surface) 88%, transparent))",
+      backdropFilter:"blur(20px) saturate(1.8)",
+      WebkitBackdropFilter:"blur(20px) saturate(1.8)",
+      border:"0.5px solid var(--bd-popover, rgba(0,0,0,0.15))",
+      borderRadius:10,
+      padding:"8px 12px",
+      fontSize:11.5,
+      color:"var(--tx-2)",
+      lineHeight:1.5,
+      boxShadow:"0 4px 20px rgba(0,0,0,0.14)",
+      pointerEvents:"none",
+    }}>{text}</div>,
+    document.body
+  );
+}
+
+function Field({ label, unit, children, hint, info, fieldKey, disabledHint }) {
   const missingSet = useContext(MissingCtx);
-  // Extract the OpenFAST key from the label "(KeyName)" pattern or use explicit fieldKey prop
+  const fieldRef = useRef(null);
+  const [hintRect, setHintRect] = useState(null);
   const key = fieldKey || label.match(/\(([A-Za-z_][A-Za-z_0-9]*)\)\s*$/)?.[1];
   const isMissing = key && missingSet.size > 0 && missingSet.has(key);
+  const showHint = () => {
+    if (!disabledHint || !fieldRef.current) return;
+    setHintRect(fieldRef.current.getBoundingClientRect());
+  };
   return (
-    <div className={s.field}>
+    <div ref={fieldRef}
+      className={`${s.field} ${disabledHint ? s.fieldDisabled : ""}`}
+      onMouseEnter={showHint}
+      onMouseLeave={() => setHintRect(null)}>
       <div className={s.fieldHeader}>
         <span className={s.fieldLabel}>{label}</span>
         {unit && <span className={s.unit}>{unit}</span>}
@@ -572,6 +612,7 @@ function Field({ label, unit, children, hint, info, fieldKey }) {
         {children}
       </div>
       {hint && <span className={s.hint}>{hint}</span>}
+      {disabledHint && hintRect && <DisabledHintPortal text={disabledHint} rect={hintRect} />}
     </div>
   );
 }
@@ -592,12 +633,13 @@ function Toggle({ label, value, onChange, note }) {
   );
 }
 
-function SelField({ label, value, onChange, options, hint }) {
+function SelField({ label, value, onChange, options, hint, disabledHint }) {
   return (
-    <Field label={label} hint={hint}>
+    <Field label={label} hint={hint} disabledHint={disabledHint}>
       <select
         className={s.select}
         value={value}
+        disabled={!!disabledHint}
         onChange={e => onChange(Number(e.target.value))}
       >
         {options.map(o => (
@@ -717,6 +759,228 @@ function TurbineSchematic() {
   );
 }
 
+// ── AeroDyn OutList variable groups ─────────────────────────────────────────
+const AD_OUT_VARS = [
+  { group: "Rotor Performance", vars: [
+    { name:"RtAeroCp",  unit:"–",    desc:"Rotor aerodynamic power coefficient" },
+    { name:"RtAeroCt",  unit:"–",    desc:"Rotor aerodynamic thrust coefficient" },
+    { name:"RtAeroCq",  unit:"–",    desc:"Rotor aerodynamic torque coefficient" },
+    { name:"RtAeroPwr", unit:"W",    desc:"Rotor aerodynamic power" },
+    { name:"RtTSR",     unit:"–",    desc:"Rotor tip-speed ratio" },
+  ]},
+  { group: "Rotor Fluid Forces — hub frame", vars: [
+    { name:"RtFldFxh",  unit:"N",    desc:"Rotor fluid force, hub x (downwind)" },
+    { name:"RtFldFyh",  unit:"N",    desc:"Rotor fluid force, hub y (lateral)" },
+    { name:"RtFldFzh",  unit:"N",    desc:"Rotor fluid force, hub z (upward)" },
+    { name:"RtFldMxh",  unit:"N·m",  desc:"Rotor fluid moment, hub x (torque)" },
+    { name:"RtFldMyh",  unit:"N·m",  desc:"Rotor fluid moment, hub y (tilt)" },
+    { name:"RtFldMzh",  unit:"N·m",  desc:"Rotor fluid moment, hub z (yaw)" },
+  ]},
+  { group: "Wind at Rotor", vars: [
+    { name:"RtVAvgxh",  unit:"m/s",  desc:"Average wind speed at rotor, hub x" },
+    { name:"RtVAvgyh",  unit:"m/s",  desc:"Average wind speed at rotor, hub y" },
+    { name:"RtVAvgzh",  unit:"m/s",  desc:"Average wind speed at rotor, hub z" },
+    { name:"RtSkew",    unit:"deg",  desc:"Rotor inflow skew angle" },
+  ]},
+  { group: "Blade Summary (Blade 1)", vars: [
+    { name:"B1N001Alpha", unit:"deg",  desc:"Blade 1 node 1 angle of attack" },
+    { name:"B1N001Cl",    unit:"–",    desc:"Blade 1 node 1 lift coefficient" },
+    { name:"B1N001Cd",    unit:"–",    desc:"Blade 1 node 1 drag coefficient" },
+    { name:"B1N001Fn",    unit:"N/m",  desc:"Blade 1 node 1 normal force per unit span" },
+    { name:"B1N001Ft",    unit:"N/m",  desc:"Blade 1 node 1 tangential force per unit span" },
+    { name:"B1N001AxInd", unit:"–",    desc:"Blade 1 node 1 axial induction factor" },
+    { name:"B1N001TnInd", unit:"–",    desc:"Blade 1 node 1 tangential induction factor" },
+  ]},
+  { group: "Tower Aerodynamics (optional)", vars: [
+    { name:"TwN001VUndx", unit:"m/s",  desc:"Tower node 1 undisturbed wind, x" },
+    { name:"TwN001VDisx", unit:"m/s",  desc:"Tower node 1 disturbed wind, x" },
+    { name:"TwN001Vrel",  unit:"m/s",  desc:"Tower node 1 relative wind speed" },
+    { name:"TwN001STVx",  unit:"m/s",  desc:"Tower node 1 structural velocity, x" },
+    { name:"TwN001Fx",    unit:"N/m",  desc:"Tower node 1 aerodynamic force x" },
+    { name:"TwN001Fy",    unit:"N/m",  desc:"Tower node 1 aerodynamic force y" },
+  ]},
+];
+
+// ── AeroDyn OutListAD blade-station variable groups ──────────────────────────
+const AD_NODE_VARS = [
+  { group: "Angle of Attack & Kinematics", vars: [
+    { name:"Alpha",   unit:"deg",   desc:"Angle of attack" },
+    { name:"Vrel",    unit:"m/s",   desc:"Relative wind speed at section" },
+    { name:"STVx",    unit:"m/s",   desc:"Structural velocity, rotor x" },
+    { name:"STVy",    unit:"m/s",   desc:"Structural velocity, rotor y" },
+    { name:"STVz",    unit:"m/s",   desc:"Structural velocity, rotor z" },
+  ]},
+  { group: "Wind Velocity at Section", vars: [
+    { name:"VUndx",   unit:"m/s",   desc:"Undisturbed wind velocity, x" },
+    { name:"VUndy",   unit:"m/s",   desc:"Undisturbed wind velocity, y" },
+    { name:"VUndz",   unit:"m/s",   desc:"Undisturbed wind velocity, z" },
+    { name:"VDisx",   unit:"m/s",   desc:"Disturbed wind velocity, x" },
+    { name:"VDisy",   unit:"m/s",   desc:"Disturbed wind velocity, y" },
+    { name:"VDisz",   unit:"m/s",   desc:"Disturbed wind velocity, z" },
+  ]},
+  { group: "Induction Factors", vars: [
+    { name:"AxInd",   unit:"–",     desc:"Axial induction factor" },
+    { name:"TnInd",   unit:"–",     desc:"Tangential induction factor" },
+    { name:"Vindx",   unit:"m/s",   desc:"Induction velocity, x" },
+    { name:"Vindy",   unit:"m/s",   desc:"Induction velocity, y" },
+  ]},
+  { group: "Aerodynamic Coefficients", vars: [
+    { name:"Cl",      unit:"–",     desc:"Lift coefficient" },
+    { name:"Cd",      unit:"–",     desc:"Drag coefficient" },
+    { name:"Cm",      unit:"–",     desc:"Pitching moment coefficient" },
+    { name:"Cn",      unit:"–",     desc:"Normal force coefficient" },
+    { name:"Ct",      unit:"–",     desc:"Tangential force coefficient" },
+    { name:"Cla",     unit:"–",     desc:"Attached flow lift coefficient" },
+    { name:"Cda",     unit:"–",     desc:"Attached flow drag coefficient" },
+    { name:"Cma",     unit:"–",     desc:"Attached flow moment coefficient" },
+  ]},
+  { group: "Forces Per Unit Span", vars: [
+    { name:"Fn",      unit:"N/m",   desc:"Normal force per unit span (out-of-plane)" },
+    { name:"Ft",      unit:"N/m",   desc:"Tangential force per unit span (in-plane)" },
+    { name:"Fx",      unit:"N/m",   desc:"Force per unit span, global x" },
+    { name:"Fy",      unit:"N/m",   desc:"Force per unit span, global y" },
+    { name:"Fl",      unit:"N/m",   desc:"Lift force per unit span" },
+    { name:"Fd",      unit:"N/m",   desc:"Drag force per unit span" },
+    { name:"Mm",      unit:"N·m/m", desc:"Pitching moment per unit span" },
+  ]},
+  { group: "Dynamic & Turbulence", vars: [
+    { name:"DynP",    unit:"Pa",    desc:"Dynamic pressure at section" },
+    { name:"Re",      unit:"–",     desc:"Reynolds number × 10⁶" },
+    { name:"M",       unit:"–",     desc:"Mach number" },
+    { name:"Gamma",   unit:"m²/s",  desc:"Circulation (vortex strength)" },
+  ]},
+  { group: "B-L Unsteady State (UAMod≥2)", vars: [
+    { name:"X1",      unit:"–",     desc:"B-L state variable X1" },
+    { name:"X2",      unit:"–",     desc:"B-L state variable X2" },
+    { name:"X3",      unit:"–",     desc:"B-L state variable X3 (HGM/5-state)" },
+    { name:"X4",      unit:"–",     desc:"B-L state variable X4 (HGM/5-state)" },
+    { name:"Cl_static", unit:"–",   desc:"Static lift coefficient" },
+    { name:"Cd_static", unit:"–",   desc:"Static drag coefficient" },
+  ]},
+];
+
+// ── Inline variable picker modal (same glass pattern as ElastoDyn) ───────────
+function AdOutVarModal({ vars = AD_OUT_VARS, title = "Output variable picker", current = "", onClose, onApply }) {
+  const [selected, setSelected] = useState(() => {
+    const s = new Set();
+    (current || "").split("\n").forEach(l => { const v = l.trim().replace(/"/g,""); if (v) s.add(v); });
+    return s;
+  });
+  const [query, setQuery] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const q = query.toLowerCase();
+  const allFlat = vars.flatMap(g => g.vars.map(v => v.name));
+
+  const toggleVar = (name) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(name) ? next.delete(name) : next.add(name);
+      return next;
+    });
+  };
+  const toggleGroup = (group) => {
+    const names = group.vars.map(v => v.name);
+    const allOn = names.every(n => selected.has(n));
+    setSelected(prev => {
+      const next = new Set(prev);
+      allOn ? names.forEach(n => next.delete(n)) : names.forEach(n => next.add(n));
+      return next;
+    });
+  };
+  const toggleCollapse = (g) => setCollapsed(prev => {
+    const next = new Set(prev);
+    next.has(g) ? next.delete(g) : next.add(g);
+    return next;
+  });
+
+  const apply = () => {
+    onApply([...selected].join("\n"));
+    onClose();
+  };
+
+  return createPortal(
+    <div className={`${s.modalOverlay} ${visible ? s.modalOverlayVisible : ""}`}
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className={`${s.modal} ${visible ? s.modalVisible : ""}`}>
+        <div className={s.modalHeader}>
+          <span className={s.modalTitle}>{title}</span>
+          <span className={s.modalCount}>{selected.size} selected</span>
+          <button className={s.modalClose} onClick={onClose}>×</button>
+        </div>
+        <div className={s.modalSearch}>
+          <div className={s.modalSearchBox}>
+            <List size={12} style={{ color:"var(--tx-4)", flexShrink:0 }} />
+            <input className={s.modalSearchInput} placeholder="Filter variables…"
+              value={query} onChange={e => setQuery(e.target.value)} autoFocus />
+          </div>
+        </div>
+        <div className={s.modalBody}>
+          {vars.map(grp => {
+            const filtered = q ? grp.vars.filter(v =>
+              v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q)
+            ) : grp.vars;
+            if (!filtered.length) return null;
+            const allOn  = filtered.every(v => selected.has(v.name));
+            const someOn = !allOn && filtered.some(v => selected.has(v.name));
+            const isOpen = !collapsed.has(grp.group);
+            return (
+              <div key={grp.group} className={s.varGroup}>
+                <div className={s.varGroupHead} onClick={() => { if (!q) toggleCollapse(grp.group); }}>
+                  <div
+                    className={`${s.groupCheck} ${allOn ? s.groupCheckAll : someOn ? s.groupCheckSome : ""}`}
+                    onClick={e => { e.stopPropagation(); toggleGroup(grp); }}>
+                    {allOn && <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                      <path d="M1 3.5L3.5 6L8 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>}
+                    {someOn && <div style={{ width:6, height:6, borderRadius:1.5, background:"#BA7517" }} />}
+                  </div>
+                  <span style={{ flex:1 }}>{grp.group}</span>
+                  <span className={s.varGroupCount}>{filtered.length}</span>
+                  {!q && (isOpen
+                    ? <ChevronDown  size={12} strokeWidth={2} style={{ color:"var(--tx-4)" }} />
+                    : <ChevronRight size={12} strokeWidth={2} style={{ color:"var(--tx-4)" }} />)}
+                </div>
+                <div className={`${s.varGroupBody} ${(!isOpen && !q) ? s.varGroupBodyCollapsed : ""}`}>
+                  <div className={s.varGroupInner}>
+                    {filtered.map(v => (
+                      <div key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}
+                        onClick={() => toggleVar(v.name)}>
+                        <div className={s.varCheck}>
+                          <svg className={s.varCheckMark} width="9" height="7" viewBox="0 0 9 7" fill="none">
+                            <path d="M1 3.5L3.5 6L8 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        <span className={s.varName}>{v.name}</span>
+                        <span className={s.varDesc}>{v.desc}</span>
+                        <span className={s.varUnit}>{v.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {q && !vars.some(g => g.vars.some(v =>
+            v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q)
+          )) && <div className={s.varNoMatch}>No variables match "{query}"</div>}
+        </div>
+        <div className={s.modalFooter}>
+          <button className={s.modalCancelBtn} onClick={onClose}>Cancel</button>
+          <button className={s.modalApplyBtn} onClick={apply}>Apply {selected.size} variable{selected.size !== 1 ? "s" : ""}</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function AeroDynPanel({ onLog, project, filePathFromProject, onDirtyChange, onRegisterSave, simRunning = false }) {
   const [tab,      setTab]      = useState("quick");
@@ -724,9 +988,9 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
   const [p,        _setP]       = useState(DEFAULT);
   const [filePath, setFilePath] = useState("");
   const [isDirtyFlag, setIsDirtyFlag] = useState(false);
-  const [rawOpen,       setRawOpen]       = useState(false);
-  const [pickerOpen,    setPickerOpen]    = useState(false); // OutList picker
-  const [pickerOpenAD,  setPickerOpenAD]  = useState(false); // OutListAD picker
+  const [rawOpen,          setRawOpen]          = useState(false);
+  const [showOutVarModal,  setShowOutVarModal]  = useState(false);
+  const [showNodeVarModal, setShowNodeVarModal] = useState(false);
   const rawContent  = useRef("");
   const originalRef = useRef(null); // JSON snapshot of last loaded/saved state (ref = no race)
 
@@ -960,19 +1224,33 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         <Toggle label="Aero-acoustics (CompAA)"        value={p.CompAA}     onChange={v => set("CompAA", v)}   note="WakeMod=1 or 2" />
         <Toggle label="Echo input to .ech file (Echo)" value={p.Echo}       onChange={v => set("Echo", v)} />
       </div>
+      <Field label="Aero-acoustics input file (AA_InputFile)"
+        disabledHint={!p.CompAA ? "Enable CompAA to specify an aero-acoustics input file" : undefined}>
+        <div className={s.fileRow}>
+          <input className={s.inp} value={p.AA_InputFile} disabled={!p.CompAA}
+            onChange={e => set("AA_InputFile", e.target.value)} />
+          <button className={s.browseBtn} type="button" disabled={!p.CompAA}
+            onClick={async () => {
+              const f = await openDialog({ multiple: false });
+              if (f) set("AA_InputFile", f);
+            }}>
+            <FolderOpen size={12} strokeWidth={1.8} />
+          </button>
+        </div>
+      </Field>
 
       <Collapsible title="Environment (usually 'default')">
         <div className={s.grid2}>
           {[
-            ["AirDens","Air density","kg/m³"],
-            ["KinVisc","Kinematic viscosity","m²/s"],
-            ["SpdSound","Speed of sound","m/s"],
-            ["Patm","Atmospheric pressure","Pa"],
-            ["Pvap","Vapour pressure","Pa"],
-          ].map(([k, lbl, unit]) => (
-            <Field key={k} label={lbl} unit={unit}>
-              <input className={s.inp} value={p[k]} onChange={e => set(k, e.target.value)}
-                placeholder='"default"' />
+            ["AirDens","Air density","kg/m³",  undefined],
+            ["KinVisc","Kinematic viscosity","m²/s", undefined],
+            ["SpdSound","Speed of sound","m/s", undefined],
+            ["Patm","Atmospheric pressure","Pa", !p.CavitCheck ? "Enable CavitCheck to use Patm" : undefined],
+            ["Pvap","Vapour pressure","Pa",       !p.CavitCheck ? "Enable CavitCheck to use Pvap" : undefined],
+          ].map(([k, lbl, unit, hint]) => (
+            <Field key={k} label={lbl} unit={unit} disabledHint={hint}>
+              <input className={s.inp} value={p[k]} disabled={!!hint}
+                onChange={e => set(k, e.target.value)} placeholder='"default"' />
             </Field>
           ))}
         </div>
@@ -982,10 +1260,12 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         <div className={s.toggleGrid}>
           <Toggle label="Calculate tail fin aerodynamics (TFinAero)" value={p.TFinAero} onChange={v => set("TFinAero", v)} />
         </div>
-        <Field label="Tail fin input file">
+        <Field label="Tail fin input file (TFinFile)"
+          disabledHint={!p.TFinAero ? "Enable TFinAero to specify a tail fin input file" : undefined}>
           <div className={s.fileRow}>
-            <input className={s.inp} value={p.TFinFile} onChange={e => set("TFinFile", e.target.value)} />
-            <button className={s.browseBtn} type="button"
+            <input className={s.inp} value={p.TFinFile} disabled={!p.TFinAero}
+              onChange={e => set("TFinFile", e.target.value)} />
+            <button className={s.browseBtn} type="button" disabled={!p.TFinAero}
               onClick={async () => {
                 const f = await openDialog({ multiple: false });
                 if (f) set("TFinFile", f);
@@ -1007,19 +1287,29 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
       </div>
 
       <SectionHead>BEMT Options — WakeMod = 1 or 2</SectionHead>
+      {(p.WakeMod === 0 || p.WakeMod === 3) && (
+        <p className={s.hint} style={{ color:"var(--tx-4)", fontStyle:"italic" }}>
+          Set WakeMod = 1 (BEMT) or 2 (DBEMT) to activate these options.
+        </p>
+      )}
       <div className={s.grid2}>
         <SelField label="Skewed-wake correction" value={p.SkewMod} onChange={v => set("SkewMod", v)}
-          options={[{v:1,label:"1 – Uncoupled"},{v:2,label:"2 – Pitt/Peters"},{v:3,label:"3 – Coupled"}]} />
-        <Field label="Skew factor (SkewModFactor)">
+          options={[{v:1,label:"1 – Uncoupled"},{v:2,label:"2 – Pitt/Peters"},{v:3,label:"3 – Coupled"}]}
+          disabledHint={(p.WakeMod === 0 || p.WakeMod === 3) ? "Only active when WakeMod = 1 or 2" : undefined} />
+        <Field label="Skew factor (SkewModFactor)"
+          disabledHint={(p.WakeMod === 0 || p.WakeMod === 3) ? "Only active when WakeMod = 1 or 2" : undefined}>
           <input className={s.inp} value={p.SkewModFactor} onChange={e => set("SkewModFactor", e.target.value)}
-            placeholder='"default" = 15/32·π' />
+            disabled={p.WakeMod === 0 || p.WakeMod === 3} placeholder='"default" = 15/32·π' />
         </Field>
-        <Field label="BEMT convergence tolerance">
+        <Field label="BEMT convergence tolerance (IndToler)"
+          disabledHint={(p.WakeMod === 0 || p.WakeMod === 3) ? "Only active when WakeMod = 1 or 2" : undefined}>
           <input className={s.inp} value={p.IndToler} onChange={e => set("IndToler", e.target.value)}
-            placeholder='"default"' />
+            disabled={p.WakeMod === 0 || p.WakeMod === 3} placeholder='"default"' />
         </Field>
-        <Field label="Max iterations (MaxIter)">
+        <Field label="Max iterations (MaxIter)"
+          disabledHint={(p.WakeMod === 0 || p.WakeMod === 3) ? "Only active when WakeMod = 1 or 2" : undefined}>
           <input className={s.inp} value={p.MaxIter}
+            disabled={p.WakeMod === 0 || p.WakeMod === 3}
             onChange={e => set("MaxIter", parseInt(e.target.value) || p.MaxIter)} />
         </Field>
       </div>
@@ -1032,22 +1322,37 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
       </div>
 
       <SectionHead>DBEMT Options — WakeMod = 2</SectionHead>
+      {p.WakeMod !== 2 && (
+        <p className={s.hint} style={{ color:"var(--tx-4)", fontStyle:"italic" }}>
+          Set WakeMod = 2 (DBEMT) to activate dynamic wake options.
+        </p>
+      )}
       <div className={s.grid2}>
         <SelField label="DBEMT model (DBEMT_Mod)" value={p.DBEMT_Mod}
-          onChange={v => set("DBEMT_Mod", v)} options={DBEMT_MODES} />
+          onChange={v => set("DBEMT_Mod", v)} options={DBEMT_MODES}
+          disabledHint={p.WakeMod !== 2 ? "Only active when WakeMod = 2 (DBEMT)" : undefined} />
         <Field label="τ₁ constant (tau1_const)" unit="s"
-          hint="Used when DBEMT_Mod = 1 or 3">
+          hint="Used when DBEMT_Mod = 1 or 3"
+          disabledHint={p.WakeMod !== 2 ? "Only active when WakeMod = 2 (DBEMT)" :
+                        (p.DBEMT_Mod === 0 || p.DBEMT_Mod === 2) ? "Only used when DBEMT_Mod = 1 or 3" : undefined}>
           <input className={s.inp} value={p.tau1_const}
+            disabled={p.WakeMod !== 2 || p.DBEMT_Mod === 0 || p.DBEMT_Mod === 2}
             onChange={e => set("tau1_const", parseFloat(e.target.value) || p.tau1_const)} />
         </Field>
       </div>
 
       <SectionHead>OLAF Free-Vortex Wake — WakeMod = 3</SectionHead>
-      <Field label="OLAF input file">
+      {p.WakeMod !== 3 && (
+        <p className={s.hint} style={{ color:"var(--tx-4)", fontStyle:"italic" }}>
+          Set WakeMod = 3 (OLAF) to activate the free-vortex wake model.
+        </p>
+      )}
+      <Field label="OLAF input file (OLAFInputFileName)"
+        disabledHint={p.WakeMod !== 3 ? "Only active when WakeMod = 3 (OLAF)" : undefined}>
         <div className={s.fileRow}>
-          <input className={s.inp} value={p.OLAFInputFileName}
+          <input className={s.inp} value={p.OLAFInputFileName} disabled={p.WakeMod !== 3}
             onChange={e => set("OLAFInputFileName", e.target.value)} />
-          <button className={s.browseBtn} type="button"
+          <button className={s.browseBtn} type="button" disabled={p.WakeMod !== 3}
             onClick={async () => {
               const f = await openDialog({ multiple: false });
               if (f) set("OLAFInputFileName", f);
@@ -1058,21 +1363,29 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
       </Field>
 
       <SectionHead>Beddoes-Leishman Unsteady — AFAeroMod = 2</SectionHead>
+      {p.AFAeroMod !== 2 && (
+        <p className={s.hint} style={{ color:"var(--tx-4)", fontStyle:"italic" }}>
+          Set AFAeroMod = 2 (B-L Unsteady) in Quick or General tab to activate these options.
+        </p>
+      )}
       <div className={s.grid2}>
         <SelField label="Unsteady aero model (UAMod)" value={p.UAMod}
-          onChange={v => set("UAMod", v)} options={UA_MODES} />
-        <Field label="UA start radius" unit="R" hint="Fraction of rotor radius">
-          <input className={s.inp} value={p.UAStartRad}
+          onChange={v => set("UAMod", v)} options={UA_MODES}
+          disabledHint={p.AFAeroMod !== 2 ? "Only active when AFAeroMod = 2 (B-L Unsteady)" : undefined} />
+        <Field label="UA start radius (UAStartRad)" unit="R" hint="Fraction of rotor radius"
+          disabledHint={p.AFAeroMod !== 2 ? "Only active when AFAeroMod = 2 (B-L Unsteady)" : undefined}>
+          <input className={s.inp} value={p.UAStartRad} disabled={p.AFAeroMod !== 2}
             onChange={e => set("UAStartRad", parseFloat(e.target.value) || p.UAStartRad)} />
         </Field>
-        <Field label="UA end radius" unit="R">
-          <input className={s.inp} value={p.UAEndRad}
+        <Field label="UA end radius (UAEndRad)" unit="R"
+          disabledHint={p.AFAeroMod !== 2 ? "Only active when AFAeroMod = 2 (B-L Unsteady)" : undefined}>
+          <input className={s.inp} value={p.UAEndRad} disabled={p.AFAeroMod !== 2}
             onChange={e => set("UAEndRad", parseFloat(e.target.value) || p.UAEndRad)} />
         </Field>
       </div>
       <div className={s.toggleGrid}>
         <Toggle label="f' lookup table (FLookup)" value={p.FLookup} onChange={v => set("FLookup", v)}
-          note="FALSE → use S1–S4 from airfoil files" />
+          note={p.AFAeroMod !== 2 ? "Requires AFAeroMod = 2" : "FALSE → use S1–S4 from airfoil files"} />
       </div>
     </div>
   );
@@ -1182,28 +1495,26 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
           <input className={s.inp} value={p.NBlOuts}
             onChange={e => set("NBlOuts", parseInt(e.target.value) || 0)} />
         </Field>
-        <Field label="Blade output nodes (BlOutNd)">
-          <input className={s.inp} value={p.BlOutNd}
+        <Field label="Blade output nodes (BlOutNd)"
+          disabledHint={p.NBlOuts === 0 ? "Set NBlOuts ≥ 1 to specify blade output node indices" : undefined}>
+          <input className={s.inp} value={p.BlOutNd} disabled={p.NBlOuts === 0}
             onChange={e => set("BlOutNd", e.target.value)} />
         </Field>
         <Field label="# tower node outputs (NTwOuts)" hint="0–9">
           <input className={s.inp} value={p.NTwOuts}
             onChange={e => set("NTwOuts", parseInt(e.target.value) || 0)} />
         </Field>
-        <Field label="Tower output nodes (TwOutNd)">
-          <input className={s.inp} value={p.TwOutNd}
+        <Field label="Tower output nodes (TwOutNd)"
+          disabledHint={p.NTwOuts === 0 ? "Set NTwOuts ≥ 1 to specify tower output node indices" : undefined}>
+          <input className={s.inp} value={p.TwOutNd} disabled={p.NTwOuts === 0}
             onChange={e => set("TwOutNd", e.target.value)} />
         </Field>
       </div>
 
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, marginTop:12 }}>
         <span style={{ fontSize:12, fontWeight:600, color:"var(--tx-2)" }}>OutList — rotor/blade/tower channel names</span>
-        <button
-          type="button"
-          style={{ flexShrink:0, padding:"4px 11px", borderRadius:7, border:"0.5px solid var(--bd-input)", background:"var(--bg-surface)", color:"var(--tx-2)", fontSize:11.5, fontFamily:"inherit", cursor:"pointer", whiteSpace:"nowrap" }}
-          onClick={() => setPickerOpen(true)}
-        >
-          Variable picker…
+        <button type="button" className={s.pickVarsBtn} onClick={() => setShowOutVarModal(true)}>
+          <List size={11} /> Pick variables
         </button>
       </div>
       <p style={{ margin:"0 0 6px", fontSize:11.5, color:"var(--tx-4)" }}>One channel per line. Quotes added automatically on save.</p>
@@ -1211,62 +1522,58 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         value={p.OutList}
         onChange={e => set("OutList", e.target.value)}
         spellCheck={false} />
-      {pickerOpen && (
-        <OutVarPicker
-          open={pickerOpen}
-          onClose={() => setPickerOpen(false)}
-          mode="add"
-          currentVars={(p.OutList||"").split("\n").map(l=>l.trim().replace(/"/g,"")).filter(Boolean)}
-          onApply={(names) => {
-            const existing = new Set((p.OutList||"").split("\n").map(l=>l.trim().replace(/"/g,"")).filter(Boolean));
-            const toAdd = names.filter(n => !existing.has(n));
-            if (toAdd.length === 0) return;
-            set("OutList", [...existing, ...toAdd].join("\n"));
-          }}
+      {showOutVarModal && (
+        <AdOutVarModal
+          vars={AD_OUT_VARS}
+          title="AeroDyn output variable picker"
+          current={p.OutList}
+          onClose={() => setShowOutVarModal(false)}
+          onApply={outList => set("OutList", outList)}
         />
       )}
 
-      <Collapsible title="Blade-node detailed output (optional)">
-        <div className={s.grid2}>
-          <Field label="Blades to output (BldNd_BladesOut)">
-            <input className={s.inp} value={p.BldNd_BladesOut}
-              onChange={e => set("BldNd_BladesOut", parseInt(e.target.value) || 1)} />
-          </Field>
-          <Field label="Node selection (BldNd_BlOutNd)" hint='"All" or specific node number'>
-            <input className={s.inp} value={p.BldNd_BlOutNd}
-              onChange={e => set("BldNd_BlOutNd", e.target.value)} />
-          </Field>
-        </div>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, marginTop:12 }}>
-          <span style={{ fontSize:12, fontWeight:600, color:"var(--tx-2)" }}>OutListAD — blade-station channel names</span>
-          <button
-            type="button"
-            style={{ flexShrink:0, padding:"4px 11px", borderRadius:7, border:"0.5px solid var(--bd-input)", background:"var(--bg-surface)", color:"var(--tx-2)", fontSize:11.5, fontFamily:"inherit", cursor:"pointer", whiteSpace:"nowrap" }}
-            onClick={() => setPickerOpenAD(true)}
-          >
-            Variable picker…
-          </button>
-        </div>
-        <p style={{ margin:"0 0 6px", fontSize:11.5, color:"var(--tx-4)" }}>Blade-station aerodynamic outputs, e.g. Fx, Fy, alpha, Cl.</p>
-        <textarea className={s.outListArea}
-          value={p.OutListAD}
-          onChange={e => set("OutListAD", e.target.value)}
-          spellCheck={false} />
-        {pickerOpenAD && (
-          <OutVarPicker
-            open={pickerOpenAD}
-            onClose={() => setPickerOpenAD(false)}
-            mode="add"
-            currentVars={(p.OutListAD||"").split("\n").map(l=>l.trim().replace(/"/g,"")).filter(Boolean)}
-            onApply={(names) => {
-              const existing = new Set((p.OutListAD||"").split("\n").map(l=>l.trim().replace(/"/g,"")).filter(Boolean));
-              const toAdd = names.filter(n => !existing.has(n));
-              if (toAdd.length === 0) return;
-              set("OutListAD", [...existing, ...toAdd].join("\n"));
-            }}
-          />
-        )}
-      </Collapsible>
+      <SectionHead>Blade-node detailed output (OutListAD)</SectionHead>
+      <p className={s.hint}>
+        Per-station blade aerodynamic channels (e.g. Alpha, Cl, Fn). Requires BldNd_BladesOut ≥ 1.
+      </p>
+      <div className={s.grid2}>
+        <Field label="Blades to output (BldNd_BladesOut)" hint="0 = disabled; 1–3 = blades to include" fieldKey="BldNd_BladesOut">
+          <input className={s.inp} type="number" min={0} max={3} step={1}
+            value={p.BldNd_BladesOut ?? 0}
+            onChange={e => set("BldNd_BladesOut", parseInt(e.target.value) || 0)} />
+        </Field>
+        <Field label="Node indices (BldNd_BlOutNd)" hint={'"All" or space-separated node numbers'} fieldKey="BldNd_BlOutNd"
+          disabledHint={(p.BldNd_BladesOut ?? 0) === 0 ? "Set BldNd_BladesOut ≥ 1 to select which blade nodes to output" : undefined}>
+          <input className={s.inp} value={p.BldNd_BlOutNd ?? "All"}
+            disabled={(p.BldNd_BladesOut ?? 0) === 0}
+            onChange={e => set("BldNd_BlOutNd", e.target.value)} />
+        </Field>
+      </div>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, marginTop:10 }}>
+        <span style={{ fontSize:12, fontWeight:600, color:"var(--tx-2)" }}>OutListAD — blade-station channel names</span>
+        <button type="button" className={s.pickVarsBtn}
+          disabled={(p.BldNd_BladesOut ?? 0) === 0}
+          style={{ opacity:(p.BldNd_BladesOut ?? 0) === 0 ? 0.35 : 1, cursor:(p.BldNd_BladesOut ?? 0) === 0 ? "not-allowed" : "pointer" }}
+          onClick={() => (p.BldNd_BladesOut ?? 0) > 0 && setShowNodeVarModal(true)}>
+          <List size={11} /> Pick blade-station vars
+        </button>
+      </div>
+      <p style={{ margin:"0 0 6px", fontSize:11.5, color:"var(--tx-4)" }}>Blade-station aerodynamic outputs (Alpha, Cl, Fn, Fx, etc.). One per line.</p>
+      <textarea className={s.outListArea}
+        value={p.OutListAD}
+        disabled={(p.BldNd_BladesOut ?? 0) === 0}
+        onChange={e => set("OutListAD", e.target.value)}
+        spellCheck={false}
+        placeholder={(p.BldNd_BladesOut ?? 0) === 0 ? "Set BldNd_BladesOut ≥ 1 to enable blade-station outputs" : ""} />
+      {showNodeVarModal && (
+        <AdOutVarModal
+          vars={AD_NODE_VARS}
+          title="Blade-station variable picker"
+          current={p.OutListAD}
+          onClose={() => setShowNodeVarModal(false)}
+          onApply={outList => set("OutListAD", outList)}
+        />
+      )}
     </div>
   );
 
