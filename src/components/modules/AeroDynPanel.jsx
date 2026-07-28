@@ -859,125 +859,147 @@ const AD_NODE_VARS = [
   ]},
 ];
 
-// ── Inline variable picker modal (same glass pattern as ElastoDyn) ───────────
+// ── Inline variable picker modal (identical glass pattern to ElastoDyn) ───────
 function AdOutVarModal({ vars = AD_OUT_VARS, title = "Output variable picker", current = "", onClose, onApply }) {
   const [selected, setSelected] = useState(() => {
-    const s = new Set();
-    (current || "").split("\n").forEach(l => { const v = l.trim().replace(/"/g,""); if (v) s.add(v); });
-    return s;
+    const names = (current || "").split("\n")
+      .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
+    return new Set(names);
   });
-  const [query, setQuery] = useState("");
-  const [visible, setVisible] = useState(false);
+  const [query,     setQuery]     = useState("");
+  const [visible,   setVisible]   = useState(false);
   const [collapsed, setCollapsed] = useState(new Set());
+
+  const toggleCollapse = (groupName) =>
+    setCollapsed(prev => { const n = new Set(prev); n.has(groupName) ? n.delete(groupName) : n.add(groupName); return n; });
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 220);
+  };
+
+  const handleApply = () => {
+    const outList = [...selected].map(n => `"${n}"`).join("\n");
+    onApply(outList);
+    handleClose();
+  };
+
+  const toggle = (name) =>
+    setSelected(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
+
   const q = query.toLowerCase();
-  const allFlat = vars.flatMap(g => g.vars.map(v => v.name));
-
-  const toggleVar = (name) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
-    });
-  };
-  const toggleGroup = (group) => {
-    const names = group.vars.map(v => v.name);
-    const allOn = names.every(n => selected.has(n));
-    setSelected(prev => {
-      const next = new Set(prev);
-      allOn ? names.forEach(n => next.delete(n)) : names.forEach(n => next.add(n));
-      return next;
-    });
-  };
-  const toggleCollapse = (g) => setCollapsed(prev => {
-    const next = new Set(prev);
-    next.has(g) ? next.delete(g) : next.add(g);
-    return next;
-  });
-
-  const apply = () => {
-    onApply([...selected].join("\n"));
-    onClose();
-  };
+  const filteredGroups = vars.map(g => ({
+    ...g,
+    vars: q ? g.vars.filter(v =>
+      v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q) || v.unit.toLowerCase().includes(q)
+    ) : g.vars,
+  })).filter(g => g.vars.length > 0);
 
   return createPortal(
-    <div className={`${s.modalOverlay} ${visible ? s.modalOverlayVisible : ""}`}
-      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={`${s.modal} ${visible ? s.modalVisible : ""}`}>
+    <div
+      className={`${s.modalOverlay} ${visible ? s.modalOverlayVisible : ""}`}
+      onClick={handleClose}
+    >
+      <div
+        className={`${s.modal} ${visible ? s.modalVisible : ""}`}
+        onClick={e => e.stopPropagation()}
+      >
         <div className={s.modalHeader}>
           <span className={s.modalTitle}>{title}</span>
           <span className={s.modalCount}>{selected.size} selected</span>
-          <button className={s.modalClose} onClick={onClose}>×</button>
+          <div style={{ flex: 1 }} />
+          <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
         </div>
+
         <div className={s.modalSearch}>
           <div className={s.modalSearchBox}>
-            <List size={12} style={{ color:"var(--tx-4)", flexShrink:0 }} />
-            <input className={s.modalSearchInput} placeholder="Filter variables…"
-              value={query} onChange={e => setQuery(e.target.value)} autoFocus />
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              className={s.modalSearchInput}
+              placeholder="Search variables… (name, description, unit)"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              autoFocus
+            />
           </div>
         </div>
+
         <div className={s.modalBody}>
-          {vars.map(grp => {
-            const filtered = q ? grp.vars.filter(v =>
-              v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q)
-            ) : grp.vars;
-            if (!filtered.length) return null;
-            const allOn  = filtered.every(v => selected.has(v.name));
-            const someOn = !allOn && filtered.some(v => selected.has(v.name));
-            const isOpen = !collapsed.has(grp.group);
+          {filteredGroups.map(g => {
+            const allOn  = g.vars.every(v => selected.has(v.name));
+            const someOn = g.vars.some(v => selected.has(v.name));
+            const isOpen = q ? true : !collapsed.has(g.group);
             return (
-              <div key={grp.group} className={s.varGroup}>
-                <div className={s.varGroupHead} onClick={() => { if (!q) toggleCollapse(grp.group); }}>
-                  <div
+              <div key={g.group} className={s.varGroup}>
+                <div className={s.varGroupHead} onClick={() => toggleCollapse(g.group)}>
+                  <button
+                    type="button"
                     className={`${s.groupCheck} ${allOn ? s.groupCheckAll : someOn ? s.groupCheckSome : ""}`}
-                    onClick={e => { e.stopPropagation(); toggleGroup(grp); }}>
-                    {allOn && <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-                      <path d="M1 3.5L3.5 6L8 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>}
-                    {someOn && <div style={{ width:6, height:6, borderRadius:1.5, background:"#BA7517" }} />}
-                  </div>
-                  <span style={{ flex:1 }}>{grp.group}</span>
-                  <span className={s.varGroupCount}>{filtered.length}</span>
-                  {!q && (isOpen
-                    ? <ChevronDown  size={12} strokeWidth={2} style={{ color:"var(--tx-4)" }} />
-                    : <ChevronRight size={12} strokeWidth={2} style={{ color:"var(--tx-4)" }} />)}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setSelected(prev => {
+                        const n = new Set(prev);
+                        if (allOn) g.vars.forEach(v => n.delete(v.name));
+                        else       g.vars.forEach(v => n.add(v.name));
+                        return n;
+                      });
+                    }}
+                  />
+                  <span className={s.groupLabel}>{g.group}</span>
+                  <span className={s.varGroupCount}>{g.vars.filter(v => selected.has(v.name)).length}/{g.vars.length}</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    className={`${s.groupChevron} ${isOpen ? s.groupChevronOpen : ""}`}>
+                    <polyline points="2,4 6,8 10,4" stroke="currentColor" strokeWidth="1.5"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-                <div className={`${s.varGroupBody} ${(!isOpen && !q) ? s.varGroupBodyCollapsed : ""}`}>
-                  <div className={s.varGroupInner}>
-                    {filtered.map(v => (
-                      <div key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}
-                        onClick={() => toggleVar(v.name)}>
-                        <div className={s.varCheck}>
-                          <svg className={s.varCheckMark} width="9" height="7" viewBox="0 0 9 7" fill="none">
-                            <path d="M1 3.5L3.5 6L8 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
+                <div className={`${s.varGroupBody} ${!isOpen ? s.varGroupBodyCollapsed : ""}`}>
+                  <div className={s.varGroupBodyInner}>
+                    {g.vars.map(v => (
+                      <label key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}>
+                        <input
+                          type="checkbox"
+                          className={s.varCheck}
+                          checked={selected.has(v.name)}
+                          onChange={() => toggle(v.name)}
+                        />
                         <span className={s.varName}>{v.name}</span>
-                        <span className={s.varDesc}>{v.desc}</span>
                         <span className={s.varUnit}>{v.unit}</span>
-                      </div>
+                        <span className={s.varDesc}>{v.desc}</span>
+                        {selected.has(v.name) && (
+                          <svg width="11" height="11" viewBox="0 0 12 12" className={s.varCheck__mark}>
+                            <polyline points="1.5,6 4.5,9 10.5,3" stroke={ACCENT} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </label>
                     ))}
                   </div>
                 </div>
               </div>
             );
           })}
-          {q && !vars.some(g => g.vars.some(v =>
-            v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q)
-          )) && <div className={s.varNoMatch}>No variables match "{query}"</div>}
+          {filteredGroups.length === 0 && (
+            <p className={s.varNoMatch}>No variables match "{query}"</p>
+          )}
         </div>
+
         <div className={s.modalFooter}>
-          <button className={s.modalCancelBtn} onClick={onClose}>Cancel</button>
-          <button className={s.modalApplyBtn} onClick={apply}>Apply {selected.size} variable{selected.size !== 1 ? "s" : ""}</button>
+          <button className={s.modalCancelBtn} onClick={handleClose} type="button">Cancel</button>
+          <button className={s.modalApplyBtn} onClick={handleApply} type="button">
+            Apply {selected.size} channel{selected.size !== 1 ? "s" : ""}
+          </button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -1485,7 +1507,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         />
       </Field>
 
-      <SectionHead>Output Settings</SectionHead>
+      <div style={{ marginTop: 20 }}><SectionHead>Output Settings</SectionHead></div>
       <div className={s.toggleGrid}>
         <Toggle label="Generate summary file (SumPrint)" value={p.SumPrint}
           onChange={v => set("SumPrint", v)} />
@@ -1511,8 +1533,10 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         </Field>
       </div>
 
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, marginTop:12 }}>
+      <div style={{ marginBottom:4, marginTop:12 }}>
         <span style={{ fontSize:12, fontWeight:600, color:"var(--tx-2)" }}>OutList — rotor/blade/tower channel names</span>
+      </div>
+      <div style={{ marginBottom:6 }}>
         <button type="button" className={s.pickVarsBtn} onClick={() => setShowOutVarModal(true)}>
           <List size={11} /> Pick variables
         </button>
@@ -1532,7 +1556,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         />
       )}
 
-      <SectionHead>Blade-node detailed output (OutListAD)</SectionHead>
+      <div style={{ marginTop: 24 }}><SectionHead>Blade-node detailed output (OutListAD)</SectionHead></div>
       <p className={s.hint}>
         Per-station blade aerodynamic channels (e.g. Alpha, Cl, Fn). Requires BldNd_BladesOut ≥ 1.
       </p>
@@ -1549,8 +1573,10 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
             onChange={e => set("BldNd_BlOutNd", e.target.value)} />
         </Field>
       </div>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, marginTop:10 }}>
+      <div style={{ marginBottom:4, marginTop:10 }}>
         <span style={{ fontSize:12, fontWeight:600, color:"var(--tx-2)" }}>OutListAD — blade-station channel names</span>
+      </div>
+      <div style={{ marginBottom:6 }}>
         <button type="button" className={s.pickVarsBtn}
           disabled={(p.BldNd_BladesOut ?? 0) === 0}
           style={{ opacity:(p.BldNd_BladesOut ?? 0) === 0 ? 0.35 : 1, cursor:(p.BldNd_BladesOut ?? 0) === 0 ? "not-allowed" : "pointer" }}
