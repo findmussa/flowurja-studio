@@ -107,8 +107,9 @@ const SP_STYLES = `
     margin-bottom: 20px;
     padding: 9px 0;
     border-radius: 9px;
-    border: 1px solid var(--bd-input);
-    background: var(--bg-pill);
+    border: 0.5px solid rgba(0,0,0,0.12);
+    background: rgba(0,0,0,0.05);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.70);
     color: var(--tx-2);
     font-size: 13px;
     font-weight: 500;
@@ -118,14 +119,22 @@ const SP_STYLES = `
     letter-spacing: -0.01em;
     transition: background 0.15s, color 0.12s, transform 0.45s ${SPRING};
   }
-  .sp-action-btn:hover {
-    background: var(--bg-hover);
-    color: var(--tx-1);
+  .sp-action-btn:hover { background: rgba(0,0,0,0.09); color: var(--tx-1); }
+  .sp-action-btn:active { transform: scale(0.97); transition-duration: 0.07s; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .sp-action-btn {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+    }
+    :root:not([data-theme="light"]) .sp-action-btn:hover { background: rgba(255,255,255,0.14); }
   }
-  .sp-action-btn:active {
-    transform: scale(0.97);
-    transition-duration: 0.07s;
+  :root[data-theme="dark"] .sp-action-btn {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
   }
+  :root[data-theme="dark"] .sp-action-btn:hover { background: rgba(255,255,255,0.14); }
 `;
 
 // ── Section card ──────────────────────────────────────────────────────────────
