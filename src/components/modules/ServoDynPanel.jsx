@@ -21,28 +21,34 @@ const TABS = [
   { id: "output",    label: "Output"         },
 ];
 
-// ── ServoDyn output variable groups ───────────────────────────────────────────
+// ── ServoDyn output variable groups — OpenFAST 4.2.0 ─────────────────────────
 const SD_OUT_VARS = [
   {
-    group: "Generator",
+    group: "Generator & Power",
     vars: [
-      { name: "GenPwr",  desc: "Electrical generator power (kW)" },
-      { name: "GenTq",   desc: "Electrical generator torque command (kN·m)" },
+      { name: "GenPwr",    unit: "kW",   desc: "Electrical generator power output" },
+      { name: "GenTq",     unit: "kN·m", desc: "Generator torque demand from controller" },
     ],
   },
   {
-    group: "Pitch Commands",
+    group: "HSS Brake",
     vars: [
-      { name: "BlPitchC1", desc: "Blade 1 pitch command from controller (deg)" },
-      { name: "BlPitchC2", desc: "Blade 2 pitch command from controller (deg)" },
-      { name: "BlPitchC3", desc: "Blade 3 pitch command from controller (deg)" },
+      { name: "HSSBrTqC", unit: "kN·m", desc: "HSS brake torque command from controller" },
+      { name: "HSSBrTq",  unit: "kN·m", desc: "HSS brake torque applied to drivetrain" },
     ],
   },
   {
-    group: "HSS Brake & Yaw Control",
+    group: "Blade Pitch Commands",
     vars: [
-      { name: "HSSBrTqC",  desc: "HSS brake torque command (kN·m)" },
-      { name: "YawMomCom", desc: "Nacelle-yaw moment command from controller (kN·m)" },
+      { name: "BlPitchC1", unit: "deg", desc: "Blade 1 pitch command from controller" },
+      { name: "BlPitchC2", unit: "deg", desc: "Blade 2 pitch command from controller" },
+      { name: "BlPitchC3", unit: "deg", desc: "Blade 3 pitch command from controller" },
+    ],
+  },
+  {
+    group: "Yaw Control",
+    vars: [
+      { name: "YawMomCom", unit: "kN·m", desc: "Nacelle-yaw moment command from controller" },
     ],
   },
 ];
@@ -515,116 +521,114 @@ function BladeTriple3({ label, unit, keys, p, setP, hint }) {
 }
 
 // ── SdOutVarModal ─────────────────────────────────────────────────────────────
-function SdOutVarModal({ current = "", onClose, onApply }) {
-  const initialSelected = useMemo(() => {
-    const s = new Set();
-    current.split("\n").forEach(l => {
-      const m = l.trim().match(/^"?([^"]+)"?$/);
-      if (m) s.add(m[1]);
-    });
-    return s;
-  }, [current]);
-
-  const [selected,  setSelected]  = useState(initialSelected);
+function SdOutVarModal({ current, onClose, onApply }) {
+  const [selected, setSelected] = useState(() => {
+    const names = (current || "").split("\n")
+      .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
+    return new Set(names);
+  });
   const [query,     setQuery]     = useState("");
   const [visible,   setVisible]   = useState(false);
   const [collapsed, setCollapsed] = useState(new Set());
+
+  const toggleGroup = (groupName) =>
+    setCollapsed(prev => { const n = new Set(prev); n.has(groupName) ? n.delete(groupName) : n.add(groupName); return n; });
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const handleClose = () => { setVisible(false); setTimeout(onClose, 220); };
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 220);
+  };
+
   const handleApply = () => {
     const outList = [...selected].map(n => `"${n}"`).join("\n");
     onApply(outList);
     handleClose();
   };
 
-  const toggle = name => setSelected(prev => {
-    const next = new Set(prev);
-    next.has(name) ? next.delete(name) : next.add(name);
-    return next;
-  });
-
-  const toggleGroup = (group, vars) => {
-    const names = vars.map(v => v.name);
-    const allOn = names.every(n => selected.has(n));
-    setSelected(prev => {
-      const next = new Set(prev);
-      names.forEach(n => allOn ? next.delete(n) : next.add(n));
-      return next;
-    });
-  };
+  const toggle = (name) =>
+    setSelected(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
 
   const q = query.toLowerCase();
-  const filtered = SD_OUT_VARS.map(g => ({
+  const filteredGroups = SD_OUT_VARS.map(g => ({
     ...g,
-    vars: q ? g.vars.filter(v => v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q)) : g.vars,
+    vars: q ? g.vars.filter(v =>
+      v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q) || v.unit.toLowerCase().includes(q)
+    ) : g.vars,
   })).filter(g => g.vars.length > 0);
 
   return createPortal(
     <div
-      className={[s.varOverlay, visible ? "" : s.varOverlayHidden].join(" ")}
-      onMouseDown={e => { if (e.target === e.currentTarget) handleClose(); }}
+      className={`${s.modalOverlay} ${visible ? s.modalOverlayVisible : ""}`}
+      onClick={handleClose}
     >
-      <div className={[s.varModal, visible ? "" : s.varModalHidden].join(" ")}>
+      <div
+        className={`${s.modal} ${visible ? s.modalVisible : ""}`}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className={s.varHead}>
-          <span className={s.varHeadTitle}>Output variable picker</span>
-          <button className={s.varCancelBtn} onClick={handleClose} type="button">Cancel</button>
+        <div className={s.modalHeader}>
+          <span className={s.modalTitle}>Output variable picker</span>
+          <span className={s.modalCount}>{selected.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
         </div>
 
         {/* Search */}
-        <div className={s.varSearchWrap}>
-          <svg className={s.varSearchIcon} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input
-            className={s.varSearchInput}
-            placeholder="Search channels…"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            autoFocus
-          />
+        <div className={s.modalSearch}>
+          <div className={s.modalSearchBox}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              className={s.modalSearchInput}
+              placeholder="Search variables… (name, description, unit)"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              autoFocus
+            />
+          </div>
         </div>
 
-        {/* Groups */}
-        <div className={s.varBody}>
-          {filtered.map(({ group, vars }) => {
-            const isOpen = !collapsed.has(group);
-            const selCount = vars.filter(v => selected.has(v.name)).length;
+        {/* Variable groups */}
+        <div className={s.modalBody}>
+          {filteredGroups.map(g => {
+            const allOn  = g.vars.every(v => selected.has(v.name));
+            const someOn = g.vars.some(v => selected.has(v.name));
+            const isOpen = q ? true : !collapsed.has(g.group);
             return (
-              <div key={group} className={s.varGroup}>
-                <button
-                  className={s.varGroupHead}
-                  type="button"
-                  onClick={() => setCollapsed(prev => {
-                    const next = new Set(prev);
-                    next.has(group) ? next.delete(group) : next.add(group);
-                    return next;
-                  })}
-                >
-                  <ChevronRight
-                    size={13} strokeWidth={2}
-                    className={[s.groupChevron, isOpen ? s.groupChevronOpen : ""].join(" ")}
+              <div key={g.group} className={s.varGroup}>
+                <div className={s.varGroupHead} onClick={() => toggleGroup(g.group)}>
+                  <button
+                    type="button"
+                    className={`${s.groupCheck} ${allOn ? s.groupCheckAll : someOn ? s.groupCheckSome : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(prev => {
+                        const n = new Set(prev);
+                        if (allOn) g.vars.forEach(v => n.delete(v.name));
+                        else       g.vars.forEach(v => n.add(v.name));
+                        return n;
+                      });
+                    }}
                   />
-                  <span className={s.varGroupLabel}>{group}</span>
-                  {selCount > 0 && <span className={s.countBadge}>{selCount}</span>}
-                  <input
-                    type="checkbox"
-                    className={s.varCheck}
-                    checked={vars.every(v => selected.has(v.name))}
-                    onChange={() => toggleGroup(group, vars)}
-                    onClick={e => e.stopPropagation()}
-                    style={{ marginLeft: 4 }}
-                  />
-                </button>
-                <div className={[s.varGroupBody, isOpen ? "" : s.varGroupBodyCollapsed].join(" ")}>
+                  <span className={s.groupLabel}>{g.group}</span>
+                  <span className={s.varGroupCount}>{g.vars.filter(v => selected.has(v.name)).length}/{g.vars.length}</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    className={`${s.groupChevron} ${isOpen ? s.groupChevronOpen : ""}`}>
+                    <polyline points="2,4 6,8 10,4" stroke="currentColor" strokeWidth="1.5"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div className={`${s.varGroupBody} ${!isOpen ? s.varGroupBodyCollapsed : ""}`}>
                   <div className={s.varGroupBodyInner}>
-                    {vars.map(v => (
-                      <label key={v.name} className={s.varRow}>
+                    {g.vars.map(v => (
+                      <label key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}>
                         <input
                           type="checkbox"
                           className={s.varCheck}
@@ -632,7 +636,13 @@ function SdOutVarModal({ current = "", onClose, onApply }) {
                           onChange={() => toggle(v.name)}
                         />
                         <span className={s.varName}>{v.name}</span>
+                        <span className={s.varUnit}>{v.unit}</span>
                         <span className={s.varDesc}>{v.desc}</span>
+                        {selected.has(v.name) && (
+                          <svg width="11" height="11" viewBox="0 0 12 12" className={s.varCheckMark}>
+                            <polyline points="1.5,6 4.5,9 10.5,3" stroke={ACCENT} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
                       </label>
                     ))}
                   </div>
@@ -640,15 +650,17 @@ function SdOutVarModal({ current = "", onClose, onApply }) {
               </div>
             );
           })}
+          {filteredGroups.length === 0 && (
+            <p className={s.varNoMatch}>No variables match "{query}"</p>
+          )}
         </div>
 
         {/* Footer */}
-        <div className={s.varFooter}>
-          <span style={{ fontSize: 11.5, color: "var(--tx-4)", marginRight: "auto" }}>
-            {selected.size} channel{selected.size !== 1 ? "s" : ""} selected
-          </span>
-          <button className={s.varCancelBtn} onClick={handleClose} type="button">Cancel</button>
-          <button className={s.varApplyBtn} onClick={handleApply} type="button">Apply</button>
+        <div className={s.modalFooter}>
+          <button className={s.modalCancelBtn} onClick={handleClose} type="button">Cancel</button>
+          <button className={s.modalApplyBtn} onClick={handleApply} type="button">
+            Apply {selected.size} channel{selected.size !== 1 ? "s" : ""}
+          </button>
         </div>
       </div>
     </div>,
