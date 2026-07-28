@@ -92,6 +92,7 @@ const DBEMT_MODES = [
 ];
 
 const UA_MODES = [
+  { v: 0, label: "0 – None (quasi-steady)"  },
   { v: 2, label: "2 – B-L Gonzalez"        },
   { v: 3, label: "3 – B-L Minnema/Pierce"  },
   { v: 4, label: "4 – B-L HGM 4-state"     },
@@ -1246,6 +1247,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         <Toggle label="Aero-acoustics (CompAA)"        value={p.CompAA}     onChange={v => set("CompAA", v)}   note="WakeMod=1 or 2" />
         <Toggle label="Echo input to .ech file (Echo)" value={p.Echo}       onChange={v => set("Echo", v)} />
       </div>
+      <div style={{ marginTop: 12 }}>
       <Field label="Aero-acoustics input file (AA_InputFile)"
         disabledHint={!p.CompAA ? "Enable CompAA to specify an aero-acoustics input file" : undefined}>
         <div className={s.fileRow}>
@@ -1260,6 +1262,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
           </button>
         </div>
       </Field>
+      </div>
 
       <Collapsible title="Environment (usually 'default')">
         <div className={s.grid2}>
@@ -1395,19 +1398,29 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
           onChange={v => set("UAMod", v)} options={UA_MODES}
           disabledHint={p.AFAeroMod !== 2 ? "Only active when AFAeroMod = 2 (B-L Unsteady)" : undefined} />
         <Field label="UA start radius (UAStartRad)" unit="R" hint="Fraction of rotor radius"
-          disabledHint={p.AFAeroMod !== 2 ? "Only active when AFAeroMod = 2 (B-L Unsteady)" : undefined}>
-          <input className={s.inp} value={p.UAStartRad} disabled={p.AFAeroMod !== 2}
+          disabledHint={
+            p.AFAeroMod !== 2 ? "Only active when AFAeroMod = 2 (B-L Unsteady)" :
+            p.UAMod === 0 ? "Not used when UAMod = 0 (quasi-steady)" : undefined
+          }>
+          <input className={s.inp} value={p.UAStartRad} disabled={p.AFAeroMod !== 2 || p.UAMod === 0}
             onChange={e => set("UAStartRad", parseFloat(e.target.value) || p.UAStartRad)} />
         </Field>
         <Field label="UA end radius (UAEndRad)" unit="R"
-          disabledHint={p.AFAeroMod !== 2 ? "Only active when AFAeroMod = 2 (B-L Unsteady)" : undefined}>
-          <input className={s.inp} value={p.UAEndRad} disabled={p.AFAeroMod !== 2}
+          disabledHint={
+            p.AFAeroMod !== 2 ? "Only active when AFAeroMod = 2 (B-L Unsteady)" :
+            p.UAMod === 0 ? "Not used when UAMod = 0 (quasi-steady)" : undefined
+          }>
+          <input className={s.inp} value={p.UAEndRad} disabled={p.AFAeroMod !== 2 || p.UAMod === 0}
             onChange={e => set("UAEndRad", parseFloat(e.target.value) || p.UAEndRad)} />
         </Field>
       </div>
       <div className={s.toggleGrid}>
         <Toggle label="f' lookup table (FLookup)" value={p.FLookup} onChange={v => set("FLookup", v)}
-          note={p.AFAeroMod !== 2 ? "Requires AFAeroMod = 2" : "FALSE → use S1–S4 from airfoil files"} />
+          note={
+            p.AFAeroMod !== 2 ? "Requires AFAeroMod = 2" :
+            p.UAMod === 0 ? "Not used when UAMod = 0 (quasi-steady)" :
+            "FALSE → use S1–S4 from airfoil files"
+          } />
       </div>
     </div>
   );

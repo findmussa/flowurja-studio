@@ -295,8 +295,9 @@
   color: rgba(186,117,23,0.75);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  margin: 0 0 11px;
+  margin: 24px 0 10px;
 }
+.form > .sectionHead:first-child { margin-top: 0; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .sectionHead { color: rgba(234,170,48,0.85); }
