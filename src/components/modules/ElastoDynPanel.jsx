@@ -1,15 +1,287 @@
 import { useState, useEffect, useCallback, useRef, useMemo, createContext, useContext } from "react";
+import { createPortal } from "react-dom";
 import { invoke }             from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
-  Activity, FolderOpen, Eye, Save, ChevronDown, ChevronRight, Link, Unlink, AlertTriangle,
+  Activity, FolderOpen, Eye, Save, ChevronDown, ChevronRight, Link, Unlink, AlertTriangle, List,
 } from "lucide-react";
 import RawFileModal from "../RawFileModal";
 import InfoPopover from "../InfoPopover";
-import OutVarPicker from "../OutVarPicker";
 import s from "./ElastoDynPanel.module.css";
 
 const ACCENT = "#7F77DD";
+
+// ── ElastoDyn output variable database ───────────────────────────────────────
+const ED_OUT_VARS = [
+  {
+    group: "Performance & Power",
+    vars: [
+      { name: "GenSpeed",  unit: "rpm",  desc: "Generator speed (high-speed shaft)" },
+      { name: "GenTq",     unit: "kN·m", desc: "Generator electrical torque" },
+      { name: "GenPwr",    unit: "kW",   desc: "Generator electrical power output" },
+      { name: "RotSpeed",  unit: "rpm",  desc: "Low-speed shaft (rotor) speed" },
+      { name: "HSSBrTqC", unit: "kN·m", desc: "High-speed shaft brake torque (command)" },
+      { name: "HSShftV",  unit: "rpm",  desc: "High-speed shaft speed" },
+    ],
+  },
+  {
+    group: "Rotor & Shaft",
+    vars: [
+      { name: "Azimuth",   unit: "deg",  desc: "Blade 1 azimuth angle" },
+      { name: "RotThrust", unit: "kN",   desc: "Rotor thrust (low-speed shaft axis)" },
+      { name: "RotTorq",  unit: "kN·m", desc: "Rotor torque (low-speed shaft)" },
+      { name: "RotPwr",   unit: "kW",   desc: "Rotor aerodynamic power" },
+      { name: "LSSTipPxa",unit: "deg",  desc: "Low-speed shaft tip azimuth" },
+      { name: "LSSTipMya",unit: "kN·m", desc: "LSS tip tilt moment" },
+      { name: "LSSTipMzs",unit: "kN·m", desc: "LSS tip yaw moment (non-rotating)" },
+      { name: "LSShftFys",unit: "kN",   desc: "LSS shear force (y, non-rotating)" },
+      { name: "LSShftFzs",unit: "kN",   desc: "LSS shear force (z, non-rotating)" },
+    ],
+  },
+  {
+    group: "Blade Root Loads — Blade 1",
+    vars: [
+      { name: "RootFxb1", unit: "kN",   desc: "Blade 1 root x-shear (body frame)" },
+      { name: "RootFyb1", unit: "kN",   desc: "Blade 1 root y-shear (body frame)" },
+      { name: "RootFzb1", unit: "kN",   desc: "Blade 1 root axial force (body frame)" },
+      { name: "RootMxb1", unit: "kN·m", desc: "Blade 1 root edge moment (body frame)" },
+      { name: "RootMyb1", unit: "kN·m", desc: "Blade 1 root flap moment (body frame)" },
+      { name: "RootMzb1", unit: "kN·m", desc: "Blade 1 root torsion (body frame)" },
+      { name: "RootFxc1", unit: "kN",   desc: "Blade 1 root x-shear (chord frame)" },
+      { name: "RootFyc1", unit: "kN",   desc: "Blade 1 root y-shear (chord frame)" },
+      { name: "RootMxc1", unit: "kN·m", desc: "Blade 1 root edge moment (chord frame)" },
+      { name: "RootMyc1", unit: "kN·m", desc: "Blade 1 root flap moment (chord frame)" },
+    ],
+  },
+  {
+    group: "Blade Root Loads — Blades 2 & 3",
+    vars: [
+      { name: "RootFxb2", unit: "kN",   desc: "Blade 2 root x-shear (body frame)" },
+      { name: "RootFyb2", unit: "kN",   desc: "Blade 2 root y-shear (body frame)" },
+      { name: "RootMxb2", unit: "kN·m", desc: "Blade 2 root edge moment" },
+      { name: "RootMyb2", unit: "kN·m", desc: "Blade 2 root flap moment" },
+      { name: "RootFxb3", unit: "kN",   desc: "Blade 3 root x-shear (body frame)" },
+      { name: "RootFyb3", unit: "kN",   desc: "Blade 3 root y-shear (body frame)" },
+      { name: "RootMxb3", unit: "kN·m", desc: "Blade 3 root edge moment" },
+      { name: "RootMyb3", unit: "kN·m", desc: "Blade 3 root flap moment" },
+    ],
+  },
+  {
+    group: "Blade Deflections & Pitch",
+    vars: [
+      { name: "OoPDefl1",  unit: "m",   desc: "Blade 1 out-of-plane tip deflection" },
+      { name: "IPDefl1",   unit: "m",   desc: "Blade 1 in-plane tip deflection" },
+      { name: "OoPDefl2",  unit: "m",   desc: "Blade 2 out-of-plane tip deflection" },
+      { name: "IPDefl2",   unit: "m",   desc: "Blade 2 in-plane tip deflection" },
+      { name: "OoPDefl3",  unit: "m",   desc: "Blade 3 out-of-plane tip deflection" },
+      { name: "IPDefl3",   unit: "m",   desc: "Blade 3 in-plane tip deflection" },
+      { name: "TipDxc1",  unit: "m",   desc: "Blade 1 tip flapwise deflection (chord frame)" },
+      { name: "TipDyc1",  unit: "m",   desc: "Blade 1 tip edgewise deflection (chord frame)" },
+      { name: "TipRDxb1", unit: "deg", desc: "Blade 1 tip flapwise rotation" },
+      { name: "TipRDyb1", unit: "deg", desc: "Blade 1 tip edgewise rotation" },
+      { name: "BldPitch1",unit: "deg", desc: "Blade 1 pitch angle" },
+      { name: "BldPitch2",unit: "deg", desc: "Blade 2 pitch angle" },
+      { name: "BldPitch3",unit: "deg", desc: "Blade 3 pitch angle" },
+      { name: "TipClrnc1",unit: "m",   desc: "Blade 1 tip-to-tower clearance" },
+    ],
+  },
+  {
+    group: "Tower & Yaw Loads",
+    vars: [
+      { name: "TwrBsFxt",  unit: "kN",   desc: "Tower base fore-aft shear force" },
+      { name: "TwrBsFyt",  unit: "kN",   desc: "Tower base side-to-side shear force" },
+      { name: "TwrBsFzt",  unit: "kN",   desc: "Tower base vertical force" },
+      { name: "TwrBsMxt",  unit: "kN·m", desc: "Tower base side-to-side bending moment" },
+      { name: "TwrBsMyt",  unit: "kN·m", desc: "Tower base fore-aft bending moment" },
+      { name: "TwrBsMzt",  unit: "kN·m", desc: "Tower base torsional moment" },
+      { name: "YawBrFxp",  unit: "kN",   desc: "Yaw bearing fore-aft shear force" },
+      { name: "YawBrFyp",  unit: "kN",   desc: "Yaw bearing side-to-side shear force" },
+      { name: "YawBrFzp",  unit: "kN",   desc: "Yaw bearing vertical force" },
+      { name: "YawBrMxp",  unit: "kN·m", desc: "Yaw bearing roll moment" },
+      { name: "YawBrMyp",  unit: "kN·m", desc: "Yaw bearing pitch moment" },
+      { name: "YawBrMzp",  unit: "kN·m", desc: "Yaw bearing yaw moment" },
+      { name: "YawBrTDxp", unit: "m",    desc: "Tower-top fore-aft displacement" },
+      { name: "YawBrTDyp", unit: "m",    desc: "Tower-top side-to-side displacement" },
+      { name: "YawBrRDzt", unit: "deg",  desc: "Nacelle yaw angle (tower-top)" },
+    ],
+  },
+  {
+    group: "Nacelle & Tower Top",
+    vars: [
+      { name: "NacYaw",     unit: "deg",    desc: "Nacelle yaw angle" },
+      { name: "NacYawErr",  unit: "deg",    desc: "Nacelle yaw error angle" },
+      { name: "TTDspFA",    unit: "m",      desc: "Tower-top fore-aft displacement" },
+      { name: "TTDspSS",    unit: "m",      desc: "Tower-top side-to-side displacement" },
+      { name: "NacIMURAxs", unit: "deg/s²", desc: "Nacelle IMU roll acceleration" },
+      { name: "NacIMURAys", unit: "deg/s²", desc: "Nacelle IMU pitch acceleration" },
+      { name: "NacIMURAzs", unit: "deg/s²", desc: "Nacelle IMU yaw acceleration" },
+      { name: "NcIMUTAxs",  unit: "m/s²",  desc: "Nacelle IMU translational x acceleration" },
+      { name: "NcIMUTAys",  unit: "m/s²",  desc: "Nacelle IMU translational y acceleration" },
+      { name: "NcIMUTAzs",  unit: "m/s²",  desc: "Nacelle IMU translational z acceleration" },
+    ],
+  },
+  {
+    group: "Platform (Offshore)",
+    vars: [
+      { name: "PtfmSurge", unit: "m",    desc: "Platform surge (fore-aft translation)" },
+      { name: "PtfmSway",  unit: "m",    desc: "Platform sway (side-to-side translation)" },
+      { name: "PtfmHeave", unit: "m",    desc: "Platform heave (vertical translation)" },
+      { name: "PtfmRoll",  unit: "deg",  desc: "Platform roll rotation" },
+      { name: "PtfmPitch", unit: "deg",  desc: "Platform pitch rotation" },
+      { name: "PtfmYaw",   unit: "deg",  desc: "Platform yaw rotation" },
+      { name: "PtfmFxt",   unit: "kN",   desc: "Platform mooring/hydro fore-aft force" },
+      { name: "PtfmFyt",   unit: "kN",   desc: "Platform mooring/hydro side force" },
+      { name: "PtfmFzt",   unit: "kN",   desc: "Platform mooring/hydro vertical force" },
+      { name: "PtfmMxt",   unit: "kN·m", desc: "Platform roll moment" },
+      { name: "PtfmMyt",   unit: "kN·m", desc: "Platform pitch moment" },
+      { name: "PtfmMzt",   unit: "kN·m", desc: "Platform yaw moment" },
+    ],
+  },
+];
+
+// ── Inline output-variable picker modal (createPortal to escape scroll clip) ─
+function EdOutVarModal({ current, onClose, onApply }) {
+  const [selected,  setSelected]  = useState(() => {
+    const names = (current || "").split("\n")
+      .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
+    return new Set(names);
+  });
+  const [query,     setQuery]     = useState("");
+  const [visible,   setVisible]   = useState(false);
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  const toggleGroup = (groupName) =>
+    setCollapsed(prev => { const n = new Set(prev); n.has(groupName) ? n.delete(groupName) : n.add(groupName); return n; });
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 220);
+  };
+
+  const handleApply = () => {
+    const outList = [...selected].map(n => `"${n}"`).join("\n");
+    onApply(outList);
+    handleClose();
+  };
+
+  const toggle = (name) =>
+    setSelected(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
+
+  const q = query.toLowerCase();
+  const filteredGroups = ED_OUT_VARS.map(g => ({
+    ...g,
+    vars: q ? g.vars.filter(v =>
+      v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q) || v.unit.toLowerCase().includes(q)
+    ) : g.vars,
+  })).filter(g => g.vars.length > 0);
+
+  return createPortal(
+    <div
+      className={`${s.modalOverlay} ${visible ? s.modalOverlayVisible : ""}`}
+      onClick={handleClose}
+    >
+      <div
+        className={`${s.modal} ${visible ? s.modalVisible : ""}`}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className={s.modalHeader}>
+          <span className={s.modalTitle}>Output variable picker</span>
+          <span className={s.modalCount}>{selected.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
+        </div>
+
+        <div className={s.modalSearch}>
+          <div className={s.modalSearchBox}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              className={s.modalSearchInput}
+              placeholder="Search variables… (name, description, unit)"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className={s.modalBody}>
+          {filteredGroups.map(g => {
+            const allOn  = g.vars.every(v => selected.has(v.name));
+            const someOn = g.vars.some(v => selected.has(v.name));
+            const isOpen = q ? true : !collapsed.has(g.group);
+            return (
+              <div key={g.group} className={s.varGroup}>
+                <div className={s.varGroupHead} onClick={() => toggleGroup(g.group)}>
+                  <button
+                    type="button"
+                    className={`${s.groupCheck} ${allOn ? s.groupCheckAll : someOn ? s.groupCheckSome : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(prev => {
+                        const n = new Set(prev);
+                        if (allOn) g.vars.forEach(v => n.delete(v.name));
+                        else       g.vars.forEach(v => n.add(v.name));
+                        return n;
+                      });
+                    }}
+                  />
+                  <span className={s.groupLabel}>{g.group}</span>
+                  <span className={s.varGroupCount}>{g.vars.filter(v => selected.has(v.name)).length}/{g.vars.length}</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    className={`${s.groupChevron} ${isOpen ? s.groupChevronOpen : ""}`}>
+                    <polyline points="2,4 6,8 10,4" stroke="currentColor" strokeWidth="1.5"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div className={`${s.varGroupBody} ${!isOpen ? s.varGroupBodyCollapsed : ""}`}>
+                  <div className={s.varGroupBodyInner}>
+                    {g.vars.map(v => (
+                      <label key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}>
+                        <input
+                          type="checkbox"
+                          className={s.varCheck}
+                          checked={selected.has(v.name)}
+                          onChange={() => toggle(v.name)}
+                        />
+                        <span className={s.varName}>{v.name}</span>
+                        <span className={s.varUnit}>{v.unit}</span>
+                        <span className={s.varDesc}>{v.desc}</span>
+                        {selected.has(v.name) && (
+                          <svg width="11" height="11" viewBox="0 0 12 12" className={s.varCheck__mark}>
+                            <polyline points="1.5,6 4.5,9 10.5,3" stroke={ACCENT} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {filteredGroups.length === 0 && (
+            <p className={s.varNoMatch}>No variables match "{query}"</p>
+          )}
+        </div>
+
+        <div className={s.modalFooter}>
+          <button className={s.modalCancelBtn} onClick={handleClose} type="button">Cancel</button>
+          <button className={s.modalApplyBtn} onClick={handleApply} type="button">
+            Apply {selected.size} channel{selected.size !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 // ── Missing-fields context — lets Field read the set without prop-drilling ───
 const MissingCtx = createContext(new Set());
@@ -762,8 +1034,8 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
   const [p,        _setP]       = useState(DEFAULT);
   const [filePath, setFilePath] = useState("");
   const [isDirtyFlag, setIsDirtyFlag] = useState(false);
-  const [showRaw,  setShowRaw]  = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [showRaw,         setShowRaw]         = useState(false);
+  const [showOutVarModal, setShowOutVarModal] = useState(false);
   const [rawContent, setRawContent] = useState("");
 
   // Ref holds a JSON snapshot of the last loaded/saved state.
@@ -1581,38 +1853,29 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
               </Collapsible>
 
               <SectionHead>Output channels (OutList)</SectionHead>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                <p className={s.hint} style={{ margin:0 }}>
-                  One channel per line. Quotes are optional — added automatically on save.
-                </p>
-                <button
-                  style={{ flexShrink:0, marginLeft:12, padding:"4px 11px", borderRadius:7, border:"0.5px solid var(--bd-input)", background:"var(--bg-surface)", color:"var(--tx-2)", fontSize:11.5, fontFamily:"inherit", cursor:"pointer", whiteSpace:"nowrap" }}
-                  onClick={() => setPickerOpen(true)}
-                  type="button"
-                >
-                  Variable picker…
-                </button>
-              </div>
+              <p className={s.hint} style={{ marginBottom: 8 }}>
+                One channel per line. Quotes are optional — added automatically on save.
+              </p>
+              <button
+                className={s.pickVarsBtn}
+                type="button"
+                onClick={() => setShowOutVarModal(true)}
+                style={{ marginBottom: 8, alignSelf: "flex-start" }}
+              >
+                <List size={11} strokeWidth={2} />
+                Pick variables
+              </button>
               <textarea
                 className={s.outListArea}
                 value={p.OutList}
                 onChange={setE("OutList")}
                 spellCheck={false}
               />
-              {pickerOpen && (
-                <OutVarPicker
-                  key={pickerOpen}
-                  open={pickerOpen}
-                  onClose={() => setPickerOpen(false)}
-                  mode="add"
-                  currentVars={(p.OutList||"").split("\n").map(l=>l.trim().replace(/"/g,"")).filter(Boolean)}
-                  onApply={(names) => {
-                    const existing = new Set((p.OutList||"").split("\n").map(l=>l.trim().replace(/"/g,"")).filter(Boolean));
-                    const toAdd = names.filter(n=>!existing.has(n));
-                    if (toAdd.length===0) return;
-                    const newList = [...existing, ...toAdd].join("\n");
-                    setE("OutList")({ target:{ value: newList } });
-                  }}
+              {showOutVarModal && (
+                <EdOutVarModal
+                  current={p.OutList}
+                  onClose={() => setShowOutVarModal(false)}
+                  onApply={outList => setP(prev => ({ ...prev, OutList: outList }))}
                 />
               )}
             </div>
