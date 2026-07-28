@@ -1017,7 +1017,7 @@ function BtsScannerModal({ onClose, onLoad, loadedPaths, initialDir = '' }) {
   }, [results]);
 
   return (
-    <div className={`${s.scanOverlay}${closing ? ` ${s.scanOverlayExit}` : ''}`}>
+    <div className={`${s.scanOverlay}${closing ? ` ${s.scanOverlayExit}` : ''}`} onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
       <div className={`${s.scanModal}${closing ? ` ${s.scanModalExit}` : ''}`}>
         <div className={s.scanHead}>
           <span className={s.scanTitle}>Scan for .bts files</span>

@@ -1010,10 +1010,10 @@
 .scanGroupBody {
   display: grid;
   grid-template-rows: 1fr;
-  transition: grid-template-rows 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: grid-template-rows 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .scanGroupBodyCollapsed { grid-template-rows: 0fr; }
-.scanGroupBodyInner { overflow: hidden; }
+.scanGroupBodyInner { overflow: hidden; min-height: 0; }
 
 .scanGroupLabel {
   padding: 5px 14px 4px;

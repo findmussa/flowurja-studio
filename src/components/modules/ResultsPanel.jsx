@@ -1485,13 +1485,15 @@ function FolderScannerModal({ open, defaultDir, onClose, onLoadRuns, loadedPaths
               })}
             </div>
 
-            <div className={s.scannerFooter}>
-              <span className={s.scanCount}>{selected.size} of {files.length} selected</span>
-              <button className={s.scannerClearBtn} onClick={() => setSelected(new Set())} disabled={selected.size === 0}>Clear</button>
-              <button className={s.scannerLoadBtn} onClick={handleLoad} disabled={selected.size === 0}>
-                Load {selected.size || ''} selected as runs
-              </button>
-            </div>
+            {selected.size > 0 && (
+              <div className={s.scannerFooter}>
+                <span className={s.scanCount}>{selected.size} file{selected.size > 1 ? 's' : ''} selected</span>
+                <button className={s.scannerClearBtn} onClick={() => setSelected(new Set())}>Clear</button>
+                <button className={s.scannerLoadBtn} onClick={handleLoad}>
+                  Load {selected.size} selected as run{selected.size > 1 ? 's' : ''}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
