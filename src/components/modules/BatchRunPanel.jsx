@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { invoke }  from "@tauri-apps/api/core";
 import { listen }  from "@tauri-apps/api/event";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -324,6 +324,32 @@ export default function BatchRunPanel({
   });
   const [cpuCores,      setCpuCores]      = useState(null);
   const [batchLabel,    setBatchLabel]    = useState("");
+
+  // Next available simulation batch sequence — scanned from results/ on project load
+  const [nextSimSeq, setNextSimSeq] = useState("001");
+  useEffect(() => {
+    if (!project?.workingDir) return;
+    (async () => {
+      try {
+        const resultsDir = project.resultsDir ?? `${project.workingDir}/results`;
+        const entries = await invoke("list_dir", { path: resultsDir });
+        let max = 0;
+        for (const e of entries) {
+          const name = e.replace(/\\/g, "/").split("/").pop();
+          const m = name.match(/_r(\d+)$/i);
+          if (m) max = Math.max(max, parseInt(m[1], 10));
+        }
+        setNextSimSeq(String(max + 1).padStart(3, "0"));
+      } catch { /* no results dir yet — default 001 */ }
+    })();
+  }, [project?.workingDir]);
+
+  const simSuggestions = useMemo(() => {
+    const base    = `sim_r${nextSimSeq}`;
+    const latest  = sweeps[0]?.batch_id;
+    return latest ? [`${latest}_sim_r${nextSimSeq}`, base] : [base];
+  }, [nextSimSeq, sweeps]);
+
   const [queueFilter,   setQueueFilter]   = useState("all");
   const [expandedLogId, setExpandedLogId] = useState(null);
 
@@ -682,6 +708,7 @@ export default function BatchRunPanel({
     await Promise.all(Array.from({ length: workers }, (_, i) => runWorker(i)));
 
     setRunStatus("done");
+    setNextSimSeq(s => String(parseInt(s, 10) + 1).padStart(3, "0"));
     tabDirRef.current = 1;
     setTab("results");
     onLog?.("ok", `Batch "${batchName}" finished.`);
@@ -703,11 +730,8 @@ export default function BatchRunPanel({
       return;
     }
 
-    // Build batch name from user label + timestamp
-    const d  = new Date();
-    const ts = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}${String(d.getSeconds()).padStart(2,"0")}`;
     const label     = sanitizeName(batchLabel);
-    const batchName = label ? `${label}_${ts}` : `batch_${ts}`;
+    const batchName = label || simSuggestions[0];
     batchNameRef.current = batchName;
 
     const resultsDir = project.resultsDir ?? `${project.workingDir}/results`;
@@ -1178,11 +1202,19 @@ export default function BatchRunPanel({
                     className={s.batchNameInput}
                     value={batchLabel}
                     onChange={e => setBatchLabel(e.target.value)}
-                    placeholder="e.g. IEA15_DLC11_baseline"
+                    placeholder={simSuggestions[0]}
                     spellCheck={false}
                   />
+                  <div className={s.suggestions} style={{ marginTop: 5 }}>
+                    {simSuggestions.map(name => (
+                      <button key={name} className={s.suggestionChip}
+                        onClick={() => setBatchLabel(name)}>
+                        {name}
+                      </button>
+                    ))}
+                  </div>
                   <p className={s.batchNameHint} style={{ marginTop: 5 }}>
-                    → <code>results/{sanitizeName(batchLabel) || "batch"}_YYYYMMDD_HHMMSS/</code>
+                    → <code>results/{sanitizeName(batchLabel) || simSuggestions[0]}/</code>
                   </p>
                 </div>
               </div>

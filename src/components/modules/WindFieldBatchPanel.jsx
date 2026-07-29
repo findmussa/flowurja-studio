@@ -10,7 +10,7 @@
  *          wind/sweeps/{batch_id}/sweep.json   ← read by Simulation Batch
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { invoke }  from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
@@ -201,6 +201,25 @@ export default function WindFieldBatchPanel({
   // Turbine hints
   const [turbineHints,  setTurbineHints]  = useState(null);
 
+  // Next available batch sequence number — scanned from wind/sweeps/ on project load
+  const [nextWfSeq, setNextWfSeq] = useState("001");
+  useEffect(() => {
+    if (!project?.workingDir) return;
+    (async () => {
+      try {
+        const sweepsDir = `${project.windDir ?? project.workingDir + "/wind"}/sweeps`;
+        const entries = await invoke("list_dir", { path: sweepsDir });
+        let max = 0;
+        for (const e of entries) {
+          const name = e.replace(/\\/g, "/").split("/").pop();
+          const m = name.match(/_r(\d+)$/i);
+          if (m) max = Math.max(max, parseInt(m[1], 10));
+        }
+        setNextWfSeq(String(max + 1).padStart(3, "0"));
+      } catch { /* no sweeps dir yet — default 001 */ }
+    })();
+  }, [project?.workingDir]);
+
   const abortRef      = useRef(false);
   const pidsRef       = useRef(new Set()); // all live TurbSim PIDs (one per parallel worker)
 
@@ -328,6 +347,12 @@ export default function WindFieldBatchPanel({
 
   const safeLabel = sanitize(batchLabel);
 
+  // Clickable name suggestions — short sequential + DLC variant when in DLC mode
+  const wfSuggestions = useMemo(() => {
+    const base = `wf_r${nextWfSeq}`;
+    return mode === "dlc" ? [`dlc_r${nextWfSeq}`, base] : [base];
+  }, [nextWfSeq, mode]);
+
   // ── Generate .inp files ───────────────────────────────────────────────────
   const handleGenerate = async () => {
     if (!project) { onLog?.("warn", "Open a project directory first."); return; }
@@ -336,18 +361,7 @@ export default function WindFieldBatchPanel({
       return;
     }
 
-    const now = new Date();
-    const ts  = [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, "0"),
-      String(now.getDate()).padStart(2, "0"),
-      "_",
-      String(now.getHours()).padStart(2, "0"),
-      String(now.getMinutes()).padStart(2, "0"),
-      String(now.getSeconds()).padStart(2, "0"),
-    ].join("");
-
-    const batchId  = safeLabel ? `${safeLabel}_${ts}` : ts;
+    const batchId  = safeLabel || wfSuggestions[0];
     const windDir  = project.windDir ?? `${project.workingDir}/wind`;
     const turbinePayload = { ...turbine, windClass, turbModel, iecStandard: 0 };
 
@@ -400,6 +414,7 @@ export default function WindFieldBatchPanel({
       setCases(res.cases);
       setStatus(Object.fromEntries(res.cases.map(c => [c.id, "pending"])));
       setShowAll(false);
+      setNextWfSeq(s => String(parseInt(s, 10) + 1).padStart(3, "0"));
       onLog?.("ok", `Generated ${res.cases.length} .inp files → wind/sweeps/${batchId}/`);
     } catch (err) {
       onLog?.("error", `Generate failed: ${err.message ?? err}`);
@@ -873,12 +888,20 @@ export default function WindFieldBatchPanel({
                 className={s.batchLabelInput}
                 value={batchLabel}
                 onChange={e => setBatchLabel(e.target.value)}
-                placeholder="e.g. NREL5MW_site_A  (optional)"
+                placeholder={wfSuggestions[0]}
                 spellCheck={false}
                 disabled={running}
               />
+              <div className={s.suggestions}>
+                {wfSuggestions.map(name => (
+                  <button key={name} className={s.suggestionChip}
+                    onClick={() => setBatchLabel(name)} disabled={running}>
+                    {name}
+                  </button>
+                ))}
+              </div>
               <span className={s.batchLabelHint}>
-                → <code>wind/sweeps/{safeLabel || "<label>"}_YYYYMMDD_HHMMSS/</code>
+                → <code>wind/sweeps/{safeLabel || wfSuggestions[0]}/</code>
               </span>
             </div>
           </div>
@@ -936,7 +959,7 @@ export default function WindFieldBatchPanel({
               );
             })()}
             {safeLabel && (
-              <span className={s.previewPath}>wind/sweeps/{safeLabel}_…/inp/</span>
+              <span className={s.previewPath}>wind/sweeps/{safeLabel || wfSuggestions[0]}/inp/</span>
             )}
           </div>
 

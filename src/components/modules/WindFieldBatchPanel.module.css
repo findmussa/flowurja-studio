@@ -622,6 +622,29 @@
   color: var(--tx-4);
 }
 
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.suggestionChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: rgba(29,158,117,0.07);
+  border: 0.5px solid rgba(29,158,117,0.22);
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  color: #1D9E75;
+  cursor: pointer;
+  transition: background 0.12s;
+  letter-spacing: -0.01em;
+}
+.suggestionChip:hover { background: rgba(29,158,117,0.14); }
+.suggestionChip:disabled { opacity: 0.4; cursor: default; }
+
 /* ── Preview row ─────────────────────────────────────────────────────────────── */
 .previewRow {
   display: flex;
