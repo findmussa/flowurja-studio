@@ -1108,7 +1108,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles, isActive = f
                         </p>
                       )}
                       {useGTI && (
-                        <Callout type="info" style={{ marginTop: 8 }}>
+                        <Callout type="info" style={{ marginTop: 12 }}>
                           Ratio = {p.gTI} — switches to <strong>USRVKM</strong> + <strong>USR profile</strong>.
                           σ<sub>u</sub>(z) gradient: bottom TI is {p.gTI}× top TI, anchored to IEC class at hub.
                         </Callout>

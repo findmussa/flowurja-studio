@@ -891,7 +891,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .tiActiveBadge {
   font-size: 10px;
@@ -1027,5 +1027,5 @@
 .cardDivider {
   height: 0.5px;
   background: var(--bd-subtle);
-  margin: 14px -16px;
+  margin: 20px -16px;
 }
