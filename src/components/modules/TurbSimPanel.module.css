@@ -773,12 +773,10 @@
   gap: 12px 16px;
 }
 
-/* ── Parameters card — natural height, not stretched to heroCard ── */
+/* ── Parameters card — equal width to bottom-row cards ── */
 .paramCard {
   display: flex;
   flex-direction: column;
-  max-width: 360px;
-  align-self: flex-start;
 }
 
 /* ── Hero velocity-field card ─────────────────────────────── */
@@ -790,6 +788,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 220px;
+  max-height: 400px;
 }
 
 .heroGridWrap {
