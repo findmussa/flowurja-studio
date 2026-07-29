@@ -403,20 +403,22 @@ const FIELD_TAB = {
   // files
   BldNodes:"files", BldFile1:"files", BldFile2:"files", BldFile3:"files",
   TwrNodes:"files", TwrFile:"files",  Furling:"files",  FurlFile:"files",
-  OutFile:"files",  OutFmt:"files",
-  SumPrint:"files", TabDelim:"files", Echo:"files",
-  NTwGages:"files", TwrGagNd:"files", NBlGages:"files", BldGagNd:"files",
-  BldNd_BladesOut:"files", BldNd_BlOutNd:"files",
   Method:"files",   DT:"files",
+  // output
+  OutFile:"output",  OutFmt:"output",
+  SumPrint:"output", TabDelim:"output", Echo:"output",
+  NTwGages:"output", TwrGagNd:"output", NBlGages:"output", BldGagNd:"output",
+  BldNd_BladesOut:"output", BldNd_BlOutNd:"output",
 };
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: "quick",    label: "Quick"         },
-  { id: "geometry", label: "Geometry"      },
-  { id: "dofs",     label: "DOFs"          },
-  { id: "mass",     label: "Mass & Drive"  },
-  { id: "files",    label: "Files & Output"},
+  { id: "quick",    label: "Quick"        },
+  { id: "geometry", label: "Geometry"     },
+  { id: "dofs",     label: "DOFs"         },
+  { id: "mass",     label: "Mass & Drive" },
+  { id: "files",    label: "Files"        },
+  { id: "output",   label: "Output"       },
 ];
 
 const INTEGRATION_METHODS = [
@@ -1892,7 +1894,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
             </div>
           )}
 
-          {/* ── Files & Output tab ────────────────────────── */}
+          {/* ── Files tab ──────────────────────────────────── */}
           {tab === "files" && (
             <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Integration</SectionHead>
@@ -1937,7 +1939,12 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
                   </div>
                 </Field>
               </div>
+            </div>
+          )}
 
+          {/* ── Output tab ─────────────────────────────────── */}
+          {tab === "output" && (
+            <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
               <SectionHead>Output settings</SectionHead>
               <div className={s.grid2}>
                 <Field label="Output file (OutFile)">

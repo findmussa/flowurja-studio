@@ -46,7 +46,7 @@ const FIELD_TAB = {
   InCol_Cd:"blades", InCol_Cm:"blades", InCol_Cpmin:"blades", NumAFfiles:"blades",
   // output
   VolHub:"output", HubCenBx:"output", VolNac:"output", NacCenB:"output",
-  NumTwrNds:"output", SumPrint:"output",
+  NumTwrNds:"general", SumPrint:"output",
   NBlOuts:"output", BlOutNd:"output", NTwOuts:"output", TwOutNd:"output",
   BldNd_BladesOut:"output", BldNd_BlOutNd:"output",
 };
@@ -57,7 +57,7 @@ const TABS = [
   { id: "general", label: "General"         },
   { id: "models",  label: "Aero Models"     },
   { id: "blades",  label: "Blade & Airfoils"},
-  { id: "output",  label: "Tower & Output"  },
+  { id: "output",  label: "Output"          },
 ];
 
 const WAKE_MODES = [
@@ -1300,6 +1300,23 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
           </div>
         </Field>
       </Collapsible>
+
+      <SectionHead>Tower Definition</SectionHead>
+      <div className={s.grid1}>
+        <Field label="Number of tower nodes (NumTwrNds)">
+          <input className={s.inp} value={p.NumTwrNds}
+            onChange={e => set("NumTwrNds", parseInt(e.target.value) || p.NumTwrNds)} />
+        </Field>
+      </div>
+      <Field label="Tower properties table"
+        hint="Columns: TwrElev (m), TwrDiam (m), TwrCd (−), TwrTI (−), TwrCb (−). Edit directly or import a .dat file.">
+        <textarea
+          className={s.outListArea}
+          style={{ minHeight: 200, fontFamily: '"SF Mono", ui-monospace, monospace', fontSize: 11 }}
+          value={p.TowerTable}
+          onChange={e => set("TowerTable", e.target.value)}
+        />
+      </Field>
     </div>
   );
 
@@ -1503,24 +1520,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
 
   const renderOutput = () => (
     <div className={`${s.form} ${s.tabEnter}`} style={{ "--tab-dir": tabDirRef.current }}>
-      <SectionHead>Tower Definition</SectionHead>
-      <div className={s.grid1}>
-        <Field label="Number of tower nodes (NumTwrNds)">
-          <input className={s.inp} value={p.NumTwrNds}
-            onChange={e => set("NumTwrNds", parseInt(e.target.value) || p.NumTwrNds)} />
-        </Field>
-      </div>
-      <Field label="Tower properties table"
-        hint="Columns: TwrElev (m), TwrDiam (m), TwrCd (−), TwrTI (−), TwrCb (−). Edit directly or import a .dat file.">
-        <textarea
-          className={s.outListArea}
-          style={{ minHeight: 200, fontFamily: '"SF Mono", ui-monospace, monospace', fontSize: 11 }}
-          value={p.TowerTable}
-          onChange={e => set("TowerTable", e.target.value)}
-        />
-      </Field>
-
-      <div style={{ marginTop: 20 }}><SectionHead>Output Settings</SectionHead></div>
+      <SectionHead>Output Settings</SectionHead>
       <div className={s.toggleGrid}>
         <Toggle label="Generate summary file (SumPrint)" value={p.SumPrint}
           onChange={v => set("SumPrint", v)} />
