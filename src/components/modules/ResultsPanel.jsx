@@ -318,6 +318,15 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
 
   useThemeRedraw(drawFnRef);
 
+  // Size canvas buffer synchronously before first paint so no blurry frame is ever shown.
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current, wrap = wrapRef.current;
+    if (!canvas || !wrap || !wrap.clientWidth || !wrap.clientHeight) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(wrap.clientWidth * dpr);
+    canvas.height = Math.round(wrap.clientHeight * dpr);
+  }, []);
+
   const visRuns = useMemo(() => runs.filter(r => r.visible), [runs]);
   const selArr  = useMemo(() => [...selectedNames], [selectedNames]);
 
@@ -375,8 +384,7 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
       if (wrap && wrap.clientWidth > 0 && wrap.clientHeight > 0 &&
           (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
         canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
-        canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
-      }
+        }
       const W = canvas.width / dpr, H = canvas.height / dpr;
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -494,7 +502,6 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
       const canvas = canvasRef.current; if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
-      canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
       drawFnRef.current?.();
     });
     ro.observe(wrap); return () => ro.disconnect();
@@ -639,6 +646,14 @@ function FFTChart({ runs, selectedNames, onResetRef, onCaptureRef }) {
 
   useThemeRedraw(drawFnRef);
 
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current, wrap = wrapRef.current;
+    if (!canvas || !wrap || !wrap.clientWidth || !wrap.clientHeight) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(wrap.clientWidth * dpr);
+    canvas.height = Math.round(wrap.clientHeight * dpr);
+  }, []);
+
   const visRuns = useMemo(() => runs.filter(r => r.visible), [runs]);
   const selArr  = useMemo(() => [...selectedNames], [selectedNames]);
   const nVis    = visRuns.length;
@@ -716,8 +731,7 @@ function FFTChart({ runs, selectedNames, onResetRef, onCaptureRef }) {
       if (wrap && wrap.clientWidth > 0 && wrap.clientHeight > 0 &&
           (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
         canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
-        canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
-      }
+        }
       const W = canvas.width / dpr, H = canvas.height / dpr;
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -856,7 +870,6 @@ function FFTChart({ runs, selectedNames, onResetRef, onCaptureRef }) {
       const canvas = canvasRef.current; if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
-      canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
       drawFnRef.current?.();
     });
     ro.observe(wrap); return () => ro.disconnect();
@@ -1158,6 +1171,14 @@ function ScatterChart({ runs, xName, yName, onCaptureRef }) {
 
   useThemeRedraw(drawFnRef);
 
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current, wrap = wrapRef.current;
+    if (!canvas || !wrap || !wrap.clientWidth || !wrap.clientHeight) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(wrap.clientWidth * dpr);
+    canvas.height = Math.round(wrap.clientHeight * dpr);
+  }, []);
+
   const visRuns = useMemo(() => runs.filter(r => r.visible), [runs]);
 
   // Flatten points from all visible runs
@@ -1198,8 +1219,7 @@ function ScatterChart({ runs, xName, yName, onCaptureRef }) {
       if (wrap && wrap.clientWidth > 0 && wrap.clientHeight > 0 &&
           (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
         canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
-        canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
-      }
+        }
       const W = canvas.width / dpr, H = canvas.height / dpr;
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
