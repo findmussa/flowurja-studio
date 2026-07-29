@@ -925,6 +925,8 @@
 .paramGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  flex: 1;
   gap: 1px;
   background: var(--bd-subtle);
   border-radius: 10px;
