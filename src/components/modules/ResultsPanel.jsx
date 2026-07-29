@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { downloadDir } from "@tauri-apps/api/path";
+import { toast } from "sonner";
 import {
   FolderOpen, LineChart, Search, BarChart2, X, RotateCcw,
   Eye, EyeOff, FolderSearch, Activity, Zap, Copy, Check,
@@ -1993,6 +1994,7 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
       const outPath = `${dlDir}/flowurja_${chartMode}_${ts}.png`;
       await invoke('write_binary_file', { path: outPath, dataB64: b64 });
       onLog?.('ok', `Chart saved → ${outPath}`);
+      toast.success('Chart saved', { description: outPath });
     } catch (e) {
       onLog?.('error', `PNG save failed: ${e?.message ?? e}`);
     } finally {

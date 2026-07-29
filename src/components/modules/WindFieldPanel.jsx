@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { downloadDir } from "@tauri-apps/api/path";
+import { toast } from "sonner";
 import {
   Play, Pause, SkipBack, SkipForward, FolderOpen, Search, X,
   ChevronUp, ChevronDown, Lock, Unlock, Download, RotateCcw,
@@ -1560,12 +1562,19 @@ export default function WindFieldPanel({ onLog, project, onFileLoaded }) {
     setPlaying(false); setFrame(t);
   }, []);
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     const canvas = canvasRef.current; if (!canvas) return;
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
-    a.download = `windfield_frame${frameRef.current}.png`;
-    a.click();
+    try {
+      const dataUrl = canvas.toDataURL('image/png');
+      const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+      const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const dlDir = await downloadDir();
+      const outPath = `${dlDir}/windfield_frame${frameRef.current}_${ts}.png`;
+      await invoke('write_binary_file', { path: outPath, dataB64: b64 });
+      toast.success('Frame exported', { description: outPath });
+    } catch (e) {
+      toast.error('Export failed', { description: e?.message ?? String(e) });
+    }
   }, []);
 
   // ── Derived display ──────────────────────────────────────────────────────
