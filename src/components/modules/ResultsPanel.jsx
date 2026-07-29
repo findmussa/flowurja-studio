@@ -1708,6 +1708,21 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
     }
   }, [runs, selectedNames]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load scatter X/Y columns on demand — scatterX/Y are independent of selectedNames.
+  useEffect(() => {
+    if (!scatterX && !scatterY) return;
+    for (const run of runs) {
+      if (!run.parsed._path) continue;
+      const needed = [];
+      for (const name of [scatterX, scatterY]) {
+        if (!name) continue;
+        const ci = run.parsed.channels.indexOf(name);
+        if (ci >= 0 && !run.parsed._loaded.has(ci)) needed.push(ci);
+      }
+      if (needed.length) loadRunColumns(run.id, run.parsed._path, needed);
+    }
+  }, [runs, scatterX, scatterY]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const unionChannels = useMemo(() => {
     const map = new Map();
     for (const run of runs) {
