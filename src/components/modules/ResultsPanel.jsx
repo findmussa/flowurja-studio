@@ -18,16 +18,22 @@ function HoverTip({ tip, children }) {
   const tipRef = useRef(null);
   const child = Children.only(children);
 
-  // Clamp tooltip so it never overflows the viewport edges.
+  // Clamp tooltip so it never overflows any viewport edge; flip above→below when near the top.
   useLayoutEffect(() => {
     const el = tipRef.current;
     if (!el || !pos) return;
     const r = el.getBoundingClientRect();
     const margin = 8;
+    // Left/right clamping
     let adj = pos.x;
-    if (r.right  > window.innerWidth  - margin) adj -= r.right  - (window.innerWidth  - margin);
-    if (r.left   < margin)                      adj += margin   - r.left;
+    if (r.right > window.innerWidth  - margin) adj -= r.right - (window.innerWidth  - margin);
+    if (r.left  < margin)                      adj += margin  - r.left;
     if (adj !== pos.x) el.style.left = adj + 'px';
+    // Top overflow → flip below the trigger
+    if (r.top < margin) {
+      el.style.top = (pos.yBottom + 6) + 'px';
+      el.style.transform = 'translate(-50%, 0)';
+    }
   }, [pos]);
 
   return (
@@ -35,7 +41,7 @@ function HoverTip({ tip, children }) {
       {cloneElement(child, {
         onMouseEnter(e) {
           const r = e.currentTarget.getBoundingClientRect();
-          setPos({ x: r.left + r.width / 2, y: r.top });
+          setPos({ x: r.left + r.width / 2, y: r.top, yBottom: r.bottom });
           child.props.onMouseEnter?.(e);
         },
         onMouseLeave(e) { setPos(null); child.props.onMouseLeave?.(e); },
