@@ -773,10 +773,11 @@
   gap: 12px 16px;
 }
 
-/* ── Parameters card (equal column, cells stretch to fill) ── */
+/* ── Parameters card — capped so it doesn't dominate in fullscreen ── */
 .paramCard {
   display: flex;
   flex-direction: column;
+  max-width: 360px;
 }
 
 /* ── Hero velocity-field card ─────────────────────────────── */
