@@ -2016,7 +2016,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
                 />
               )}
 
-              <SectionHead>Blade node outputs (NodeOutList)</SectionHead>
+              <div style={{ marginTop: 20 }}><SectionHead>Blade node outputs (NodeOutList)</SectionHead></div>
               <p className={s.hint} style={{ marginBottom: 10 }}>
                 Outputs time series at individual blade nodes — useful for distributed load and deflection analysis.
               </p>

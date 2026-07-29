@@ -1569,8 +1569,8 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         />
       )}
 
-      <SectionHead>Blade-node detailed output (OutListAD)</SectionHead>
-      <p className={s.hint}>
+      <div style={{ marginTop: 20 }}><SectionHead>Blade-node detailed output (OutListAD)</SectionHead></div>
+      <p className={s.hint} style={{ marginBottom: 8 }}>
         Per-station blade aerodynamic channels (e.g. Alpha, Cl, Fn). Requires BldNd_BladesOut ≥ 1.
       </p>
       <div className={s.grid2}>
