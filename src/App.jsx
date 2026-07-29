@@ -68,7 +68,7 @@ function isSkippedTarget(el) {
 const platform = navigator.userAgent.includes("Windows") ? "windows" : "macos";
 document.documentElement.setAttribute("data-platform", platform);
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const GITHUB_REPO = "findmussa/flowurja-studio";
 
 function semverGt(a, b) {
@@ -587,7 +587,7 @@ export default function App() {
   const [isFullscreen,  setIsFullscreen]  = useState(false);
   // Start with empty logs — modules add their own on mount
   const [consoleLogs, setConsoleLogs] = useState([
-    { ts: "00:00:00", level: "info", text: "FlowUrja Studio v1.0.0 — ready." },
+    { ts: "00:00:00", level: "info", text: "FlowUrja Studio v1.1.0 — ready." },
   ]);
 
   const consoleHeightRef = useRef(CONSOLE_DEFAULT);
