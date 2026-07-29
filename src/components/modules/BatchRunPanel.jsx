@@ -738,13 +738,9 @@ export default function BatchRunPanel({
     batchRootRef.current = `${resultsDir}/${batchName}`;
 
     // Pre-create the outb/ directory before any worker starts.
-    // OpenFAST (cwd=outbDir) will write {caseName}.outb there directly.
     const outbDir = `${batchRootRef.current}/outb`;
     try {
-      await invoke("write_text_file", {
-        path:    `${outbDir}/.fws_batch`,
-        content: `batch: ${batchName}\ncreated: ${new Date().toISOString()}\ncases: ${enabled.length}\n`,
-      });
+      await invoke("create_dir", { path: outbDir });
     } catch (e) {
       onLog?.("warn", `Could not pre-create outb/ directory: ${e}`);
     }
