@@ -368,6 +368,14 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
     const draw = () => {
       const canvas = canvasRef.current; if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
+      // Guard: resize canvas buffer if ResizeObserver hasn't fired yet after data load.
+      // Without this, the first draw after loading uses the default 300×150 canvas
+      // buffer, which CSS then stretches to full size → blurry render.
+      const wrap = wrapRef.current;
+      if (wrap && (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
+        canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
+        canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
+      }
       const W = canvas.width / dpr, H = canvas.height / dpr;
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -700,6 +708,14 @@ function FFTChart({ runs, selectedNames, onResetRef, onCaptureRef }) {
     const draw = () => {
       const canvas = canvasRef.current; if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
+      // Guard: resize canvas buffer if ResizeObserver hasn't fired yet after data load.
+      // Without this, the first draw after loading uses the default 300×150 canvas
+      // buffer, which CSS then stretches to full size → blurry render.
+      const wrap = wrapRef.current;
+      if (wrap && (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
+        canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
+        canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
+      }
       const W = canvas.width / dpr, H = canvas.height / dpr;
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1173,6 +1189,14 @@ function ScatterChart({ runs, xName, yName, onCaptureRef }) {
     const draw = () => {
       const canvas = canvasRef.current; if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
+      // Guard: resize canvas buffer if ResizeObserver hasn't fired yet after data load.
+      // Without this, the first draw after loading uses the default 300×150 canvas
+      // buffer, which CSS then stretches to full size → blurry render.
+      const wrap = wrapRef.current;
+      if (wrap && (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
+        canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
+        canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
+      }
       const W = canvas.width / dpr, H = canvas.height / dpr;
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
