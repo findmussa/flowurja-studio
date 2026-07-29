@@ -1691,16 +1691,12 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
   const captureRef     = useRef(null); // set by active chart via onCaptureRef → returns canvas element
   const chanClickTimer = useRef(null); // debounce single-click vs double-click on channel rows
   const presetBtnRef  = useRef(null);
-  // Ref so on-demand column loading can read latest runs without re-triggering the effect.
-  const runsRef = useRef(runs);
-  useEffect(() => { runsRef.current = runs; }, [runs]);
-
   useEffect(() => { onFileLoaded?.(runs.length > 0 ? 'loaded' : null); }, [runs.length, onFileLoaded]);
 
-  // On-demand column loading: whenever the selected channel set changes, fetch any
-  // columns that are selected but not yet loaded for streaming .outb runs.
+  // On-demand column loading: fires when a new run is added OR when the selected
+  // channel set changes. Fetches any columns that are needed but not yet loaded.
   useEffect(() => {
-    for (const run of runsRef.current) {
+    for (const run of runs) {
       if (!run.parsed._path) continue; // .out text files have all cols already
       const needed = [];
       for (let i = 0; i < run.parsed.channels.length; i++) {
@@ -1710,7 +1706,7 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
       }
       if (needed.length) loadRunColumns(run.id, run.parsed._path, needed);
     }
-  }, [selectedNames]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [runs, selectedNames]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const unionChannels = useMemo(() => {
     const map = new Map();
@@ -1817,17 +1813,12 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
         const run = { id: runId, label: name, filePath: fp, parsed, colorIdx, visible: true };
         setRuns(prev => [...prev, run]);
         // Auto-select first data channel name (if nothing selected yet).
-        let autoName = null;
         setSelectedNames(prev => {
           if (prev.size > 0) return prev;
-          autoName = hdr.channels[1] ?? null;
-          return autoName ? new Set([autoName]) : prev;
+          const first = hdr.channels[1] ?? null;
+          return first ? new Set([first]) : prev;
         });
         onLog?.('info', `Results: opened ${parts[parts.length - 1]} — ${nCols - 1} channels, ${hdr.nRows.toLocaleString()} steps`);
-        // Phase 2 — load Time (0) + the auto-selected channel immediately.
-        const autoIdx = autoName ? hdr.channels.indexOf(autoName) : -1;
-        const initIndices = [0, ...(autoIdx > 0 ? [autoIdx] : [])];
-        await loadRunColumns(runId, fp, initIndices);
       } else {
         const text = await invoke('read_text_file', { path: fp });
         parsed = parseOutFile(text);
