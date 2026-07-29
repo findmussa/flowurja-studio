@@ -369,10 +369,11 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
       const canvas = canvasRef.current; if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       // Guard: resize canvas buffer if ResizeObserver hasn't fired yet after data load.
-      // Without this, the first draw after loading uses the default 300×150 canvas
-      // buffer, which CSS then stretches to full size → blurry render.
+      // Skip when wrap has no layout yet (clientWidth === 0) — writing 0 to canvas
+      // collapses the container, preventing ResizeObserver from ever recovering it.
       const wrap = wrapRef.current;
-      if (wrap && (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
+      if (wrap && wrap.clientWidth > 0 && wrap.clientHeight > 0 &&
+          (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
         canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
         canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
       }
@@ -709,10 +710,11 @@ function FFTChart({ runs, selectedNames, onResetRef, onCaptureRef }) {
       const canvas = canvasRef.current; if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       // Guard: resize canvas buffer if ResizeObserver hasn't fired yet after data load.
-      // Without this, the first draw after loading uses the default 300×150 canvas
-      // buffer, which CSS then stretches to full size → blurry render.
+      // Skip when wrap has no layout yet (clientWidth === 0) — writing 0 to canvas
+      // collapses the container, preventing ResizeObserver from ever recovering it.
       const wrap = wrapRef.current;
-      if (wrap && (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
+      if (wrap && wrap.clientWidth > 0 && wrap.clientHeight > 0 &&
+          (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
         canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
         canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
       }
@@ -1190,10 +1192,11 @@ function ScatterChart({ runs, xName, yName, onCaptureRef }) {
       const canvas = canvasRef.current; if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       // Guard: resize canvas buffer if ResizeObserver hasn't fired yet after data load.
-      // Without this, the first draw after loading uses the default 300×150 canvas
-      // buffer, which CSS then stretches to full size → blurry render.
+      // Skip when wrap has no layout yet (clientWidth === 0) — writing 0 to canvas
+      // collapses the container, preventing ResizeObserver from ever recovering it.
       const wrap = wrapRef.current;
-      if (wrap && (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
+      if (wrap && wrap.clientWidth > 0 && wrap.clientHeight > 0 &&
+          (canvas.width !== Math.round(wrap.clientWidth * dpr) || canvas.height !== Math.round(wrap.clientHeight * dpr))) {
         canvas.width = wrap.clientWidth * dpr; canvas.height = wrap.clientHeight * dpr;
         canvas.style.width = `${wrap.clientWidth}px`; canvas.style.height = `${wrap.clientHeight}px`;
       }
