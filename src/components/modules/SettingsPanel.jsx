@@ -398,12 +398,9 @@ export default function SettingsPanel({ onLog, onCheckForUpdates }) {
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
               {[
-                { label: DEVELOPER.website,           href: `https://${DEVELOPER.website}` },
-                { label: DEVELOPER.email,             href: `mailto:${DEVELOPER.email}` },
-                { label: DEVELOPER.web,               href: `https://${DEVELOPER.web}` },
-                { label: DEVELOPER.github,            href: `https://${DEVELOPER.github}` },
-                { label: DEVELOPER.linkedin,          href: `https://${DEVELOPER.linkedin}` },
-                { label: `ORCID ${DEVELOPER.orcid}`, href: `https://orcid.org/${DEVELOPER.orcid}` },
+                { label: DEVELOPER.website,  href: `https://${DEVELOPER.website}` },
+                { label: DEVELOPER.github,   href: `https://${DEVELOPER.github}` },
+                { label: DEVELOPER.linkedin, href: `https://${DEVELOPER.linkedin}` },
               ].map(({ label, href }) => (
                 <a key={href} href={href} target="_blank" rel="noreferrer" className="sp-link" style={{
                   fontSize: 12, color: "#0891B2", textDecoration: "none",
