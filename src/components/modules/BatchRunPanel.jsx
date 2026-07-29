@@ -6,12 +6,12 @@ import {
   Play, Square, Layers, AlertCircle, CheckCircle2,
   XCircle, Loader2, Trash2, Wind, FolderOpen, RefreshCw,
   ChevronDown, ChevronRight, Download, RotateCcw, FileText,
-  Zap, Waves, Cpu,
+  Zap, Waves, Cpu, FileStack,
 } from "lucide-react";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
 import s from "./BatchRunPanel.module.css";
 
-const ACCENT       = "#7C3AED";
+const ACCENT       = "var(--br-accent)";
 const PROGRESS_RE  = /\s+Time:\s+([\d.]+)\s+of\s+([\d.]+)/i;
 const FATAL_RE     = /FATAL\s+ERROR|OpenFAST\s+FATAL|FAST_InitializeAll\s+error/i;
 const MAX_LOG      = 120;
@@ -828,7 +828,11 @@ export default function BatchRunPanel({
   const runningCases  = allSt.filter(v => v.status === "running").length;
   const overallPct    = totalRun > 0 ? Math.round(((doneCount + failedCount + cancelCount) / totalRun) * 100) : 0;
   const elapsedMs     = runStartTime ? now - runStartTime : 0;
-  const etaStr        = formatETA((doneCount + failedCount + cancelCount) / Math.max(1, totalRun), elapsedMs);
+  // Include fractional per-case progress so ETA decreases smoothly within each case
+  // rather than climbing during a run and dropping only when a case completes.
+  const runningPctSum = allSt.filter(v => v.status === "running").reduce((s, v) => s + (v.pct ?? 0) / 100, 0);
+  const effectiveDone = doneCount + failedCount + cancelCount + runningPctSum;
+  const etaStr        = formatETA(effectiveDone / Math.max(1, totalRun), elapsedMs);
   const hasFst        = !!(moduleFiles?.fstPath);
 
   // Filter case objects by their run status (for Run tab queue)
@@ -863,7 +867,7 @@ export default function BatchRunPanel({
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className={s.header}>
-        <Play size={14} strokeWidth={1.8} style={{ color: ACCENT, flexShrink: 0 }} />
+        <FileStack size={14} strokeWidth={1.8} style={{ color: ACCENT, flexShrink: 0 }} />
         <span className={s.title}>Batch Run</span>
         <span className={s.badge}>OpenFAST</span>
 
@@ -1008,7 +1012,7 @@ export default function BatchRunPanel({
                     )}
                     {!sweepsLoading && sweeps.length === 0 && (
                       <div className={s.callout} style={{ marginBottom: 0 }}>
-                        <Wind size={13} style={{ flexShrink: 0 }} />
+                        <Layers size={13} style={{ flexShrink: 0 }} />
                         <span>No sweeps found. Generate .bts files in <strong>Wind Field Batch</strong> first.</span>
                       </div>
                     )}
@@ -1421,7 +1425,7 @@ export default function BatchRunPanel({
                                 const isTime = PROGRESS_RE.test(line);
                                 return (
                                   <div key={li} className={[s.logLine, isTime ? s.logLineTime : ""].join(" ")}>
-                                    {line}
+                                    {isTime ? line.trimStart() : line}
                                   </div>
                                 );
                               })}
@@ -1516,7 +1520,7 @@ export default function BatchRunPanel({
                                 const isTime = PROGRESS_RE.test(line);
                                 return (
                                   <div key={li} className={[s.logLine, isTime ? s.logLineTime : ""].join(" ")}>
-                                    {line}
+                                    {isTime ? line.trimStart() : line}
                                   </div>
                                 );
                               })}

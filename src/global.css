@@ -70,6 +70,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
+    --c-batchrun: #A78BFA;
     --bg-base:         #1a1a1c;
     --bg-app:          rgba(26,26,28,0.88);
     --bg-console:      rgba(22,22,24,0.92);
@@ -113,6 +114,7 @@
 /* Forced dark mode (manual override) */
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --c-batchrun: #A78BFA;
   --bg-base:         #1a1a1c;
   --bg-app:          rgba(26,26,28,0.88);
   --bg-console:      rgba(22,22,24,0.92);
