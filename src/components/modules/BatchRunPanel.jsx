@@ -599,13 +599,15 @@ export default function BatchRunPanel({
         const actualMsg = !ok ? errMsg : hasFatalError ? (fatalMsg || "OpenFAST FATAL ERROR — check case log") : null;
 
         if (actualOk) {
-          // OpenFAST writes {stem}.outb next to the .fst (in inp/{caseName}/).
-          // Move it to outb/ so outputs and inputs live in separate folders.
-          const stem    = caseFstPath.replace(/\\/g, "/").split("/").pop().replace(/\.fst$/i, "");
-          const srcOutb = `${caseInpDir}/${stem}.outb`;
-          const dstOutb = `${caseDir}/${stem}.outb`;
-          invoke("rename_file", { src: srcOutb, dst: dstOutb })
-            .catch(e => onLog?.("warn", `Could not move ${stem}.outb to outb/: ${e}`));
+          // OpenFAST writes output files next to the .fst (in inp/{caseName}/).
+          // Move them to outb/ so outputs and inputs live in separate folders.
+          const stem = caseFstPath.replace(/\\/g, "/").split("/").pop().replace(/\.fst$/i, "");
+          for (const ext of [".outb", ".out"]) {
+            const src = `${caseInpDir}/${stem}${ext}`;
+            const dst = `${caseDir}/${stem}${ext}`;
+            invoke("rename_file", { src, dst })
+              .catch(e => onLog?.("warn", `Could not move ${stem}${ext} to outb/: ${e}`));
+          }
 
           setBatchStatus(prev => ({
             ...prev,
