@@ -180,13 +180,14 @@ function Collapsible({ title, children, defaultOpen=false }) {
   );
 }
 
-function Callout({ type="info", children }) {
+function Callout({ type="info", style: extraStyle, children }) {
   const color  = type==="warn" ? "#7A4B00" : "#185FA5";
   const bg     = type==="warn" ? "rgba(186,117,23,0.07)" : "rgba(24,95,165,0.06)";
   const border = type==="warn" ? "rgba(186,117,23,0.18)" : "rgba(24,95,165,0.15)";
   return (
     <div style={{ display:"flex", gap:9, alignItems:"flex-start", background:bg,
-      border:`0.5px solid ${border}`, borderRadius:8, padding:"10px 13px", marginBottom:14 }}>
+      border:`0.5px solid ${border}`, borderRadius:8, padding:"10px 13px", marginBottom:14,
+      ...extraStyle }}>
       <Info size={13} strokeWidth={1.8} style={{ color, flexShrink:0, marginTop:1 }} />
       <p style={{ fontSize:12, color, lineHeight:1.55, margin:0 }}>{children}</p>
     </div>
@@ -1107,7 +1108,7 @@ export default function TurbSimPanel({ onLog, project, moduleFiles, isActive = f
                         </p>
                       )}
                       {useGTI && (
-                        <Callout type="info">
+                        <Callout type="info" style={{ marginTop: 8 }}>
                           Ratio = {p.gTI} — switches to <strong>USRVKM</strong> + <strong>USR profile</strong>.
                           σ<sub>u</sub>(z) gradient: bottom TI is {p.gTI}× top TI, anchored to IEC class at hub.
                         </Callout>
