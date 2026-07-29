@@ -131,6 +131,17 @@ function patchTMax(fstContent, tMax) {
   }).join("\n");
 }
 
+/** Parse key=value pairs from an ElastoDyn .dat file (same pattern as TurbSimPanel). */
+function parseTurbineHints(content) {
+  const kv = {};
+  for (const line of content.split("\n")) {
+    if (line.trimStart().startsWith("!")) continue;
+    const m = line.match(/^[\s]*([+-]?[\d.eE+\-]+)\s+(\w+)/);
+    if (m) kv[m[2]] = parseFloat(m[1]);
+  }
+  return kv;
+}
+
 // ── Case preparation ──────────────────────────────────────────────────────────
 
 async function prepareCase(bc, batchName, moduleFiles, project) {
@@ -276,7 +287,6 @@ function StatusIcon({ status, size = 13 }) {
 
 export default function BatchRunPanel({
   onLog, project, moduleFiles, simRunning,
-  // Optional: called by WindFieldBatchPanel "Send to Sim Batch"
   externalSweep,
 }) {
   const { resolvedPath: ofBinary } = useBinarySettings("openfast");
@@ -288,6 +298,21 @@ export default function BatchRunPanel({
   const [steadySpeeds,  setSteadySpeeds]  = useState("4,6,8,10,12,14,16,18,20,22,24");
   const [steadyHubHt,   setSteadyHubHt]  = useState(90);
   const [pendingImport, setPendingImport] = useState(null);
+
+  // Auto-set Hub Height from loaded turbine model (silent).
+  useEffect(() => {
+    const edPath = moduleFiles?.elastodyn;
+    if (!edPath) return;
+    (async () => {
+      try {
+        const content = await invoke("read_text_file", { path: edPath });
+        const kv = parseTurbineHints(content);
+        if (kv["TowerHt"] !== undefined && kv["Twr2Shft"] !== undefined) {
+          setSteadyHubHt(+(kv["TowerHt"] + kv["Twr2Shft"]).toFixed(2));
+        }
+      } catch { /* file unreadable — silently ignore */ }
+    })();
+  }, [moduleFiles?.elastodyn]);
 
   // UI state
   const [tab,           setTab]           = useState("define");

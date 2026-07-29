@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { toast } from "sonner";
 import { Wind, Square, ChevronDown, ChevronRight, Eye, Plus, Info, Play } from "lucide-react";
 import RawFileModal from "../RawFileModal";
 import InfoPopover from "../InfoPopover";
@@ -592,7 +593,7 @@ function parseTurbineHints(content) {
 let _loggedTurbsimPath = null;
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function TurbSimPanel({ onLog, project, moduleFiles }) {
+export default function TurbSimPanel({ onLog, project, moduleFiles, isActive = false }) {
   const [tab,     setTab]   = useState("dashboard");
   const tabDirRef = useRef(1);
   const [p,       setP]     = useState(DEFAULT);
@@ -608,7 +609,6 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
   const [rawContent,   setRawContent]   = useState("");
   // Hints propagated from ElastoDyn / FST when moduleFiles is available
   const [turbineHints, setTurbineHints] = useState(null);   // { HubHt, GridHeight, GridWidth, RefHt, AnalysisTime }
-  const [hintDismissed, setHintDismissed] = useState(false);
 
   // ── Project / cases ──────────────────────────────────────────────────────
   const [cases,        setCases]        = useState([]);
@@ -745,26 +745,9 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
   };
   // ── Propagate turbine geometry from ElastoDyn / FST whenever moduleFiles changes ─
   // We store "actioned" (applied OR dismissed) in sessionStorage keyed by file path so that
-  // the bar stays hidden across component remounts within the same app session, but reappears
-  // automatically whenever a different ElastoDyn file is loaded.
-  const prevElastodynPath = useRef("");
   useEffect(() => {
     const edPath = moduleFiles?.elastodyn;
     if (!edPath) return;
-
-    const storageKey = `ts_hint_actioned:${edPath}`;
-    const alreadyActioned = sessionStorage.getItem(storageKey) === "1";
-
-    // If the path hasn't changed since last render (remount scenario) and the user
-    // already actioned this file's hints, just restore the dismissed state silently.
-    if (edPath === prevElastodynPath.current) {
-      if (alreadyActioned) setHintDismissed(true);
-      return;
-    }
-    prevElastodynPath.current = edPath;
-
-    // New file — reset dismissed state (respecting prior actioned state)
-    setHintDismissed(alreadyActioned);
 
     (async () => {
       try {
@@ -864,27 +847,23 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
     ? (project.windDir ?? `${project.workingDir}/turbsim`).replace(/\\/g, "/").split("/").pop()
     : "wind";
 
-  const hintStorageKey = moduleFiles?.elastodyn ? `ts_hint_actioned:${moduleFiles.elastodyn}` : null;
-
-  const applyHints = () => {
+  // Auto-apply turbine hints silently whenever a new turbine is loaded.
+  useEffect(() => {
     if (!turbineHints) return;
     setP(prev => ({ ...prev, ...turbineHints }));
-    setHintDismissed(true);
-    if (hintStorageKey) sessionStorage.setItem(hintStorageKey, "1");
     onLog?.("info", `TurbSim ← ElastoDyn: ${Object.entries(turbineHints).map(([k,v])=>`${k}=${v}`).join(", ")}`);
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turbineHints]);
 
-  const handleDismissHints = () => {
-    setHintDismissed(true);
-    if (hintStorageKey) sessionStorage.setItem(hintStorageKey, "1");
-  };
-
-  const reshowHints = () => {
-    setHintDismissed(false);
-    if (hintStorageKey) sessionStorage.removeItem(hintStorageKey);
-  };
-
-  const showPropBar = turbineHints && !hintDismissed;
+  // Toast when user navigates to this panel (isActive flips true) and a turbine is loaded.
+  useEffect(() => {
+    if (!isActive || !turbineHints) return;
+    const parts = Object.entries(turbineHints).map(([k, v]) =>
+      `${k} = ${v}${k.includes("Ht") || k.includes("Height") || k.includes("Width") ? " m" : k === "UsableTime" ? " s" : ""}`
+    );
+    toast.success("TurbSim — applied from turbine model", { description: parts.join("  ·  ") });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
 
   const handleRun = async () => {
     if (!turbsimPath) { onLog?.("error", "TurbSim binary not found — open Settings (⚙ in the sidebar footer) to configure the binary path."); return; }
@@ -999,26 +978,6 @@ export default function TurbSimPanel({ onLog, project, moduleFiles }) {
               </button>
             ))}
           </div>
-          {turbineHints && hintDismissed && (
-            <button className={`${s.caseHintBtn}`} onClick={reshowHints} title="Re-show turbine parameter suggestions">
-              <Wind size={11} strokeWidth={1.8} /> Turbine hints
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Propagation hint bar */}
-      {showPropBar && (
-        <div className={s.propBar}>
-          <Wind size={12} strokeWidth={1.8} style={{ flexShrink:0, marginTop:1 }} />
-          <span className={s.propBarText}>
-            <strong>From loaded turbine:</strong>{" "}
-            {Object.entries(turbineHints).map(([k, v]) => (
-              <span key={k} className={s.propBadge}>{k} = {v}{k.includes("Ht") || k.includes("Height") || k.includes("Width") ? " m" : k === "UsableTime" ? " s" : ""}</span>
-            ))}
-          </span>
-          <button className={s.propApplyBtn} onClick={applyHints}>Apply to case</button>
-          <button className={s.propDismissBtn} onClick={handleDismissHints} title="Dismiss">×</button>
         </div>
       )}
 

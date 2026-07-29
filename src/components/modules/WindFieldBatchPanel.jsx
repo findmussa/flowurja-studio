@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { invoke }  from "@tauri-apps/api/core";
+import { toast } from "sonner";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
 import { listen }  from "@tauri-apps/api/event";
 import {
@@ -157,7 +158,7 @@ function Lbl({ children, k }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function WindFieldBatchPanel({
-  onLog, project, moduleFiles, onSendToSimBatch,
+  onLog, project, moduleFiles, onSendToSimBatch, isActive = false,
 }) {
 
   // ── Core state ────────────────────────────────────────────────────────────
@@ -199,11 +200,9 @@ export default function WindFieldBatchPanel({
 
   // Turbine hints
   const [turbineHints,  setTurbineHints]  = useState(null);
-  const [hintDismissed, setHintDismissed] = useState(false);
 
   const abortRef      = useRef(false);
   const pidsRef       = useRef(new Set()); // all live TurbSim PIDs (one per parallel worker)
-  const prevEdPath    = useRef("");
 
   // ── Init ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -229,14 +228,6 @@ export default function WindFieldBatchPanel({
   useEffect(() => {
     const edPath = moduleFiles?.elastodyn;
     if (!edPath) return;
-    const storageKey    = `wfb_hint_actioned:${edPath}`;
-    const alreadyDone   = sessionStorage.getItem(storageKey) === "1";
-    if (edPath === prevEdPath.current) {
-      if (alreadyDone) setHintDismissed(true);
-      return;
-    }
-    prevEdPath.current = edPath;
-    setHintDismissed(alreadyDone);
 
     (async () => {
       try {
@@ -263,28 +254,26 @@ export default function WindFieldBatchPanel({
     })();
   }, [moduleFiles?.elastodyn]);
 
-  const hintStorageKey = moduleFiles?.elastodyn ? `wfb_hint_actioned:${moduleFiles.elastodyn}` : null;
-
-  const applyHints = () => {
+  // Auto-apply turbine hints silently whenever a new turbine is loaded.
+  useEffect(() => {
     if (!turbineHints) return;
     if (turbineHints.HubHt     !== undefined) setTurbine(p => ({ ...p, hubHeight:  turbineHints.HubHt }));
     if (turbineHints.RotorDiam !== undefined) setTurbine(p => ({ ...p, rotorDiam:  turbineHints.RotorDiam }));
     if (turbineHints.GridSize  !== undefined) setGrid(p    => ({ ...p, gridHeight: turbineHints.GridSize, gridWidth: turbineHints.GridSize }));
-    setHintDismissed(true);
-    if (hintStorageKey) sessionStorage.setItem(hintStorageKey, "1");
     onLog?.("info", `Wind Field Batch ← ElastoDyn: ${Object.entries(turbineHints).map(([k,v]) => `${k}=${v}`).join(", ")}`);
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turbineHints]);
 
-  const dismissHints = () => {
-    setHintDismissed(true);
-    if (hintStorageKey) sessionStorage.setItem(hintStorageKey, "1");
-  };
-  const reshowHints = () => {
-    setHintDismissed(false);
-    if (hintStorageKey) sessionStorage.removeItem(hintStorageKey);
-  };
-
-  const showPropBar = turbineHints && !hintDismissed;
+  // Toast when user navigates to this panel and a turbine is loaded.
+  useEffect(() => {
+    if (!isActive || !turbineHints) return;
+    const parts = [];
+    if (turbineHints.HubHt     !== undefined) parts.push(`HubHt = ${turbineHints.HubHt} m`);
+    if (turbineHints.RotorDiam !== undefined) parts.push(`RotorDiam = ${turbineHints.RotorDiam} m`);
+    if (turbineHints.GridSize  !== undefined) parts.push(`GridSize = ${turbineHints.GridSize} m`);
+    if (parts.length > 0) toast.success("Wind Field Batch — applied from turbine model", { description: parts.join("  ·  ") });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
 
   // ── Derived counts ────────────────────────────────────────────────────────
   const activeDLCs    = DLC_DEFS.filter(d => dlcSelected[d.key]);
@@ -523,31 +512,11 @@ export default function WindFieldBatchPanel({
         <Wind size={14} strokeWidth={1.8} className={s.headerIcon} />
         <span className={s.title}>Wind Field Batch</span>
         <span className={s.subtitle}>TurbSim</span>
-        {turbineHints && hintDismissed && (
-          <button className={s.hintChip} onClick={reshowHints}>
-            <Layers size={10} strokeWidth={2} /> Turbine hints
-          </button>
-        )}
         <span className={s.headerSpacer} />
         {cases.length > 0 && (
           <span className={s.badge}>{cases.length} cases</span>
         )}
       </div>
-
-      {/* ── Turbine hint bar ────────────────────────────────────────────── */}
-      {showPropBar && (
-        <div className={s.propBar}>
-          <Layers size={12} strokeWidth={1.8} style={{ flexShrink: 0 }} />
-          <span className={s.propBarText}>
-            <strong>From loaded turbine:</strong>{" "}
-            {turbineHints.HubHt     !== undefined && <span className={s.propBadge}>HubHt = {turbineHints.HubHt} m</span>}
-            {turbineHints.RotorDiam !== undefined && <span className={s.propBadge}>RotorDiam = {turbineHints.RotorDiam} m</span>}
-            {turbineHints.GridSize  !== undefined && <span className={s.propBadge}>GridSize = {turbineHints.GridSize} m</span>}
-          </span>
-          <button className={s.propApplyBtn} onClick={applyHints}>Apply</button>
-          <button className={s.propDismissBtn} onClick={dismissHints} title="Dismiss">×</button>
-        </div>
-      )}
 
       {/* ── Scrollable content ──────────────────────────────────────────── */}
       <div className={s.scroll}>

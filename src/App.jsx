@@ -918,7 +918,18 @@ export default function App() {
               <OpenFASTPanel onLog={addLog} project={project} tabRequest={ofTabReq} onModuleFilesDetected={handleModuleFilesDetected} onModuleActiveChange={handleModuleActiveChange} onDirtyChange={ofOnDirtyChange} onRegisterSave={ofOnRegisterSave} discardSeq={ofDiscardSeq} onModuleSelect={handleModuleSelect} isActive={activeModule === "openfast"} inflowWindParams={sharedInflowParams} onSimRunningChange={handleSimRunningChange} onPidChange={handlePidChange} onInflowPatch={onInflowPatch} />
             </div>
 
-            {activeModule === "turbsim"    && !!project && <TurbSimPanel    onLog={addLog} project={project} moduleFiles={moduleFiles} />}
+            {/* TurbSim stays mounted so run state survives navigation */}
+            <div style={activeModule === "turbsim" && !!project
+              ? { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }
+              : { display: "none" }
+            }>
+              <TurbSimPanel
+                onLog={addLog}
+                project={project}
+                moduleFiles={moduleFiles}
+                isActive={activeModule === "turbsim" && !!project}
+              />
+            </div>
 
             {/* Wind Field Batch stays mounted so sweep state survives navigation */}
             <div style={activeModule === "windbatch" && !!project
@@ -930,6 +941,7 @@ export default function App() {
                 project={project}
                 moduleFiles={moduleFiles}
                 onSendToSimBatch={wfbOnSendToSim}
+                isActive={activeModule === "windbatch" && !!project}
               />
             </div>
             {/* Simulation Batch stays mounted so run state survives navigation */}
