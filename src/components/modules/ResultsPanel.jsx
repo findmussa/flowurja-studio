@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, Children, cloneElement } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -11,6 +11,53 @@ import {
   Download, ChevronDown, ChevronRight,
 } from "lucide-react";
 import s from "./ResultsPanel.module.css";
+
+// ── Styled hover tooltip — replaces native title attributes ──────────────────
+function HoverTip({ tip, children }) {
+  const [pos, setPos] = useState(null);
+  const tipRef = useRef(null);
+  const child = Children.only(children);
+
+  // Clamp tooltip so it never overflows the viewport edges.
+  useLayoutEffect(() => {
+    const el = tipRef.current;
+    if (!el || !pos) return;
+    const r = el.getBoundingClientRect();
+    const margin = 8;
+    let adj = pos.x;
+    if (r.right  > window.innerWidth  - margin) adj -= r.right  - (window.innerWidth  - margin);
+    if (r.left   < margin)                      adj += margin   - r.left;
+    if (adj !== pos.x) el.style.left = adj + 'px';
+  }, [pos]);
+
+  return (
+    <>
+      {cloneElement(child, {
+        onMouseEnter(e) {
+          const r = e.currentTarget.getBoundingClientRect();
+          setPos({ x: r.left + r.width / 2, y: r.top });
+          child.props.onMouseEnter?.(e);
+        },
+        onMouseLeave(e) { setPos(null); child.props.onMouseLeave?.(e); },
+      })}
+      {pos && createPortal(
+        <div ref={tipRef} style={{
+          position:'fixed', left:pos.x, top:pos.y - 6, transform:'translate(-50%,-100%)',
+          background:'var(--bg-popover, rgba(255,255,255,0.92))',
+          WebkitBackdropFilter:'blur(16px) saturate(1.8)', backdropFilter:'blur(16px) saturate(1.8)',
+          border:'0.5px solid var(--bd-popover, rgba(0,0,0,0.10))', borderRadius:8,
+          padding:'5px 9px', fontSize:11, lineHeight:1.45, color:'var(--tx-2)',
+          whiteSpace:'normal', maxWidth:190, boxShadow:'0 4px 20px rgba(0,0,0,0.14)',
+          pointerEvents:'none', zIndex:99999,
+          fontFamily:'-apple-system, BlinkMacSystemFont, sans-serif',
+        }}>
+          {tip}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
 // ── Theme-change → force canvas redraw ───────────────────────────────────────
 function useThemeRedraw(drawFnRef) {
@@ -305,7 +352,7 @@ function computeDeltaRun(runA, runB, colorIdx) {
 }
 
 // ── Time-series chart ─────────────────────────────────────────────────────────
-function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptureRef }) {
+function TimeSeriesChart({ runs, selectedNames, trimCommon, transientTime, onResetRef, onCaptureRef }) {
   const canvasRef  = useRef(null);
   const wrapRef    = useRef(null);
   const drawFnRef  = useRef(null);
@@ -345,7 +392,7 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
     return { cMin: lo, cMax: hi };
   }, [visRuns, gMin, gMax]);
 
-  const tMin = trimCommon ? cMin : gMin;
+  const tMin = Math.max(trimCommon ? cMin : gMin, transientTime ?? 0);
   const tMax = trimCommon ? cMax : gMax;
 
   const autoY = useCallback((xLo, xHi) => {
@@ -370,7 +417,7 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
     return { yMin: lo - p, yMax: hi + p };
   }, [visRuns, selArr, trimCommon, cMin, cMax]);
 
-  useEffect(() => { viewRef.current = null; hovRef.current = null; setViewTick(n => n + 1); setHovTick(n => n + 1); }, [runs, selArr.join(',')]); // eslint-disable-line
+  useEffect(() => { viewRef.current = null; hovRef.current = null; setViewTick(n => n + 1); setHovTick(n => n + 1); }, [runs, selArr.join(','), transientTime]); // eslint-disable-line
   useEffect(() => { if (onResetRef) onResetRef.current = () => { viewRef.current = null; hovRef.current = null; setViewTick(n => n + 1); setHovTick(n => n + 1); }; }, [onResetRef]);
   useEffect(() => { if (onCaptureRef) onCaptureRef.current = () => canvasRef.current; }, [onCaptureRef]);
 
@@ -630,7 +677,7 @@ function TimeSeriesChart({ runs, selectedNames, trimCommon, onResetRef, onCaptur
 }
 
 // ── FFT chart (log-log PSD, with pan / zoom / crosshair / tooltip) ────────────
-function FFTChart({ runs, selectedNames, onResetRef, onCaptureRef }) {
+function FFTChart({ runs, selectedNames, transientTime, onResetRef, onCaptureRef }) {
   const canvasRef  = useRef(null);
   const wrapRef    = useRef(null);
   const drawFnRef  = useRef(null);
@@ -662,20 +709,23 @@ function FFTChart({ runs, selectedNames, onResetRef, onCaptureRef }) {
   // ── Compute PSDs ────────────────────────────────────────────────────────────
   const psds = useMemo(() => {
     if (visRuns.length === 0 || selArr.length === 0) return [];
+    const tt = transientTime ?? 0;
     const out = [];
     for (const run of visRuns) {
       const t = run.parsed.cols[0]; if (!t) continue;
       const dt = t.length >= 2 ? (t[1] - t[0]) : 0.05;
+      const iStart = tt > 0 ? Math.max(0, t.findIndex(v => v >= tt)) : 0;
       for (let si = 0; si < selArr.length; si++) {
         const name = selArr[si];
         const ci = run.parsed.channels.indexOf(name); if (ci < 0) continue;
         const col = run.parsed.cols[ci]; if (!col) continue;
-        const psd = welchPSD(col, dt); if (!psd) continue;
+        const sliced = iStart > 0 ? col.subarray(iStart) : col;
+        const psd = welchPSD(sliced, dt); if (!psd) continue;
         out.push({ run, name, si, freqs: psd.freqs, psd: psd.psd, unit: run.parsed.units[ci] });
       }
     }
     return out;
-  }, [visRuns, selArr]);
+  }, [visRuns, selArr, transientTime]); // eslint-disable-line
 
   const oneP = useMemo(() => find1P(visRuns), [visRuns]);
 
@@ -1555,14 +1605,19 @@ const STAT_KEYS      = ['mean', 'std', 'min', 'max'];
 const STAT_LABELS    = ['mean', 'σ', 'min', 'max'];
 
 // ── Stats drawer: one card per channel, unified for single + multi run ────────
-function StatsArea({ runs, selectedNames, wohlerM, onWohlerM }) {
+function StatsArea({ runs, selectedNames, wohlerM, onWohlerM, transientTime, onTransientTime, dtOut }) {
   const [copied, setCopied] = useState(false);
+  const [trimInput, setTrimInput] = useState(String(transientTime ?? 0));
   const visRuns = runs.filter(r => r.visible);
   const selArr  = [...selectedNames];
+
+  useEffect(() => { setTrimInput(String(transientTime ?? 0)); }, [transientTime]);
+
   if (visRuns.length === 0 || selArr.length === 0) return null;
   const isSingle = visRuns.length === 1;
 
   const stats = useMemo(() => {
+    const tt = transientTime ?? 0;
     return selArr.map(name => {
       const row = { name };
       for (const run of visRuns) {
@@ -1570,21 +1625,37 @@ function StatsArea({ runs, selectedNames, wohlerM, onWohlerM }) {
         if (ci < 0) { row[run.id] = null; continue; }
         const col = run.parsed.cols[ci];
         if (!col) { row[run.id] = null; continue; }
+        const t = run.parsed.cols[0];
+        const iStart = (tt > 0 && t) ? Math.max(0, t.findIndex(v => v >= tt)) : 0;
+        const n = col.length;
+        const count = n - iStart;
+        if (count <= 0) { row[run.id] = null; continue; }
         let lo = Infinity, hi = -Infinity, sum = 0;
-        for (let i = 0; i < col.length; i++) {
+        for (let i = iStart; i < n; i++) {
           if (col[i] < lo) lo = col[i]; if (col[i] > hi) hi = col[i]; sum += col[i];
         }
-        const mean = sum / col.length; let ssq = 0;
-        for (let i = 0; i < col.length; i++) ssq += (col[i] - mean) ** 2;
-        const cycles = rainflowCount(Array.from(col));
-        const t = run.parsed.cols[0];
-        const T = t && t.length >= 2 ? t[t.length - 1] - t[0] : 1;
+        const mean = sum / count; let ssq = 0;
+        for (let i = iStart; i < n; i++) ssq += (col[i] - mean) ** 2;
+        const cycles = rainflowCount(Array.from(col.subarray(iStart)));
+        const T = (t && t.length >= 2) ? (t[n - 1] - Math.max(t[0], tt)) : 1;
         const del = computeDEL(cycles, wohlerM, T > 0 ? T : 1);
-        row[run.id] = { mean, std: Math.sqrt(ssq / col.length), min: lo, max: hi, del, unit: run.parsed.units[ci] };
+        row[run.id] = { mean, std: Math.sqrt(ssq / count), min: lo, max: hi, del, unit: run.parsed.units[ci] };
       }
       return row;
     });
-  }, [visRuns, selArr, wohlerM]); // eslint-disable-line
+  }, [visRuns, selArr, wohlerM, transientTime]); // eslint-disable-line
+
+  const handleTrimCommit = () => {
+    const raw = parseFloat(trimInput);
+    if (!isFinite(raw)) { setTrimInput(String(transientTime ?? 0)); return; }
+    const dt = dtOut || 0;
+    const t0 = visRuns[0]?.parsed.cols[0];
+    const tMax = t0 ? t0[t0.length - 1] : 0;
+    const snapped = dt > 0 ? Math.round(raw / dt) * dt : raw;
+    const clamped = +Math.max(0, Math.min(snapped, tMax > dt ? tMax - dt : tMax)).toFixed(4);
+    onTransientTime(clamped);
+    setTrimInput(String(clamped));
+  };
 
   const handleCopy = () => {
     const hdr = ['Channel', 'Unit', ...visRuns.flatMap(r =>
@@ -1607,13 +1678,40 @@ function StatsArea({ runs, selectedNames, wohlerM, onWohlerM }) {
       {/* ── Drawer header ── */}
       <div className={s.statsDrawerHead}>
         <span className={s.statsDrawerTitle}>Statistics</span>
+
+        {/* Centre: trim control */}
+        <div className={s.trimControl}>
+          <HoverTip tip="Exclude initial seconds from analysis. Snaps to dt_out.">
+            <label className={s.trimLabel}>
+              Trim Initial Transient
+              <input
+                className={s.trimInput}
+                type="number"
+                min={0}
+                step={dtOut || 0.05}
+                value={trimInput}
+                onChange={e => setTrimInput(e.target.value)}
+                onBlur={handleTrimCommit}
+                onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+              />
+              s
+            </label>
+          </HoverTip>
+          <HoverTip tip="Apply trim value">
+            <button className={s.trimSetBtn} onClick={handleTrimCommit}>Set</button>
+          </HoverTip>
+        </div>
+
+        {/* Right: DEL + copy */}
         <div className={s.statsDrawerRight}>
-          <label className={s.wohlerLabel} title="Wöhler exponent m for DEL (Damage Equivalent Load)">
-            DEL m =
-            <select className={s.wohlerSelect} value={wohlerM} onChange={e => onWohlerM(+e.target.value)}>
-              {WOHLER_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </label>
+          <HoverTip tip="Wöhler m for DEL — 3: welded, 4: cast iron">
+            <label className={s.wohlerLabel}>
+              DEL m =
+              <select className={s.wohlerSelect} value={wohlerM} onChange={e => onWohlerM(+e.target.value)}>
+                {WOHLER_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </label>
+          </HoverTip>
           <button className={s.copyBtn} onClick={handleCopy}>
             {copied ? <Check size={11} /> : <Copy size={11} />}
             {copied ? 'Copied' : 'Copy'}
@@ -1706,6 +1804,16 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
   const [scatterY,      setScatterY]      = useState('');
   // Feature: Wöhler exponent for DEL
   const [wohlerM,       setWohlerM]       = useState(4);
+  // Feature: trim initial transient
+  const [transientTime, setTransientTime] = useState(0);
+  const dtOut = useMemo(() => {
+    let dt = 0;
+    for (const run of runs) {
+      const t = run.parsed.cols[0];
+      if (t && t.length >= 2) dt = Math.max(dt, t[1] - t[0]);
+    }
+    return dt;
+  }, [runs]);
 
   const resetZoomRef   = useRef(null);
   const resetFftRef    = useRef(null);
@@ -2016,24 +2124,30 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
         </div>
         <div className={s.headerRight}>
           {runs.length > 1 && (
-            <label className={s.trimToggle} title="Trim all run x-axes to their common (overlapping) time range">
-              <input type="checkbox" checked={trimCommon} onChange={e => setTrimCommon(e.target.checked)} />
-              Trim to common
-            </label>
+            <HoverTip tip="Trim all runs to their common time window">
+              <label className={s.trimToggle}>
+                <input type="checkbox" checked={trimCommon} onChange={e => setTrimCommon(e.target.checked)} />
+                Trim to common
+              </label>
+            </HoverTip>
           )}
-          <button className={s.scanBtn} onClick={() => setShowScanner(true)} title="Scan project folder for output files">
-            <Search size={12} strokeWidth={1.8} />
-            Scan folder
-          </button>
+          <HoverTip tip="Scan folder for .outb result files">
+            <button className={s.scanBtn} onClick={() => setShowScanner(true)}>
+              <Search size={12} strokeWidth={1.8} />
+              Scan folder
+            </button>
+          </HoverTip>
           <button className={s.openBtn} onClick={handleOpen} disabled={!!loadingPath}>
             <FolderOpen size={12} strokeWidth={1.8} />
             {loadingPath ? 'Loading…' : 'Open .outb'}
           </button>
           {runs.length >= 2 && (
-            <button className={s.deltaBtn} onClick={() => setShowDeltaModal(true)} title="Create a Δ (A − B) virtual run">
-              <GitMerge size={12} strokeWidth={1.8} />
-              Δ run
-            </button>
+            <HoverTip tip="Create a Δ (A − B) virtual run">
+              <button className={s.deltaBtn} onClick={() => setShowDeltaModal(true)}>
+                <GitMerge size={12} strokeWidth={1.8} />
+                Δ run
+              </button>
+            </HoverTip>
           )}
         </div>
       </div>
@@ -2052,31 +2166,39 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
           {runs.map(run => (
             <div key={run.id} className={[s.runPill, !run.visible ? s.runPillDim : ''].join(' ')}>
               {run.isDelta && (
-                <span className={s.deltaBadge} title="Virtual delta run (A − B)">Δ</span>
+                <HoverTip tip="Virtual Δ run (A − B)">
+                  <span className={s.deltaBadge}>Δ</span>
+                </HoverTip>
               )}
               {editingId === run.id
                 ? <input className={s.runLabelInput} value={editLabel} autoFocus
                     onChange={e => setEditLabel(e.target.value)}
                     onBlur={commitRename}
                     onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setEditingId(null); }} />
-                : <span className={s.runLabelText} style={{ borderLeft: `3px solid ${runColorText(run)}` }}
-                    onDoubleClick={() => !run.isDelta && startRename(run)}
-                    title={run.isDelta ? run.label : 'Double-click to rename'}>
-                    {run.label}
-                  </span>
+                : <HoverTip tip={run.isDelta ? run.label : 'Double-click to rename'}>
+                    <span className={s.runLabelText} style={{ borderLeft: `3px solid ${runColorText(run)}` }}
+                      onDoubleClick={() => !run.isDelta && startRename(run)}>
+                      {run.label}
+                    </span>
+                  </HoverTip>
               }
-              <button className={s.runEye} onClick={() => toggleRunVisible(run.id)}
-                title={run.visible ? 'Hide run' : 'Show run'}>
-                {run.visible ? <Eye size={10} strokeWidth={2} /> : <EyeOff size={10} strokeWidth={2} />}
-              </button>
-              <button className={s.runX} onClick={() => removeRun(run.id)} title="Remove run">
-                <X size={10} strokeWidth={2.5} />
-              </button>
+              <HoverTip tip={run.visible ? 'Hide run' : 'Show run'}>
+                <button className={s.runEye} onClick={() => toggleRunVisible(run.id)}>
+                  {run.visible ? <Eye size={10} strokeWidth={2} /> : <EyeOff size={10} strokeWidth={2} />}
+                </button>
+              </HoverTip>
+              <HoverTip tip="Remove run">
+                <button className={s.runX} onClick={() => removeRun(run.id)}>
+                  <X size={10} strokeWidth={2.5} />
+                </button>
+              </HoverTip>
             </div>
           ))}
-          <button className={s.runAdd} onClick={() => setShowScanner(true)} disabled={!!loadingPath} title="Scan for output files">
-            {loadingPath ? <RotateCcw size={11} className={s.spin}/> : <Plus size={12} strokeWidth={2}/>}
-          </button>
+          <HoverTip tip="Scan folder for more result files">
+            <button className={s.runAdd} onClick={() => setShowScanner(true)} disabled={!!loadingPath}>
+              {loadingPath ? <RotateCcw size={11} className={s.spin}/> : <Plus size={12} strokeWidth={2}/>}
+            </button>
+          </HoverTip>
         </div>
       )}
 
@@ -2282,11 +2404,12 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
                 </button>
               )}
               {/* Save PNG */}
-              <button className={s.savePngBtn} onClick={handleSavePNG} disabled={savingPng}
-                title="Export current chart as PNG">
-                <Download size={11} strokeWidth={2} />
-                {savingPng ? 'Saving…' : 'PNG'}
-              </button>
+              <HoverTip tip="Export chart as PNG">
+                <button className={s.savePngBtn} onClick={handleSavePNG} disabled={savingPng}>
+                  <Download size={11} strokeWidth={2} />
+                  {savingPng ? 'Saving…' : 'PNG'}
+                </button>
+              </HoverTip>
             </div>
 
             {/* Channel dash-pattern legend — shown only in multi-run + multi-channel */}
@@ -2320,14 +2443,15 @@ export default function ResultsPanel({ onLog, project, onFileLoaded }) {
               )
               : chartMode === 'time'
                 ? <TimeSeriesChart runs={runs} selectedNames={selectedNames}
-                    trimCommon={trimCommon} onResetRef={resetZoomRef} onCaptureRef={captureRef} />
+                    trimCommon={trimCommon} transientTime={transientTime} onResetRef={resetZoomRef} onCaptureRef={captureRef} />
                 : chartMode === 'freq'
-                  ? <FFTChart runs={runs} selectedNames={selectedNames} onResetRef={resetFftRef} onCaptureRef={captureRef} />
+                  ? <FFTChart runs={runs} selectedNames={selectedNames} transientTime={transientTime} onResetRef={resetFftRef} onCaptureRef={captureRef} />
                   : <ScatterChart runs={runs} xName={scatterX} yName={scatterY} onCaptureRef={captureRef} />
             }
 
             {/* Stats area */}
-            {visRuns.length > 0 && <StatsArea runs={runs} selectedNames={selectedNames} wohlerM={wohlerM} onWohlerM={setWohlerM} />}
+            {visRuns.length > 0 && <StatsArea runs={runs} selectedNames={selectedNames} wohlerM={wohlerM} onWohlerM={setWohlerM}
+              transientTime={transientTime} onTransientTime={setTransientTime} dtOut={dtOut} />}
 
           </div>
         </div>

@@ -304,14 +304,23 @@
   max-height:190px; overflow:hidden;
 }
 
-/* Drawer master header */
+/* Drawer master header — 3-column grid so trim stays centred */
 .statsDrawerHead {
-  display:flex; align-items:center; justify-content:space-between;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px;
   padding:5px 12px 4px; border-bottom:0.5px solid var(--bd-subtle);
   flex-shrink:0; background:var(--bg-muted);
 }
 .statsDrawerTitle { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--tx-4); }
-.statsDrawerRight { display:flex; align-items:center; gap:8px; }
+.trimControl { display:flex; align-items:center; gap:5px; justify-self:center; }
+.statsDrawerRight { display:flex; align-items:center; gap:8px; justify-self:end; }
+
+/* Trim Set button */
+.trimSetBtn {
+  padding:2px 7px; border-radius:5px; border:0.5px solid var(--bd-input);
+  background:var(--bg-input); color:var(--tx-3); font-size:11px;
+  font-family:inherit; cursor:pointer; transition:background 0.1s, color 0.1s, border-color 0.1s;
+}
+.trimSetBtn:hover { background:var(--bg-hover-md); color:var(--tx-1); border-color:#0891B2; }
 
 /* Horizontal card strip */
 .statsCards {
@@ -797,13 +806,25 @@
 .scatterSelect:focus { border-color:#0891B2; }
 
 /* ── Wöhler m selector (in stats drawer header) ──────────────────────────── */
-.wohlerLabel { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--tx-4); cursor:default; }
+.wohlerLabel { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--tx-4); cursor:default; white-space:nowrap; }
 .wohlerSelect {
   padding:2px 6px; border-radius:5px; border:0.5px solid var(--bd-input);
   background:var(--bg-input); color:var(--tx-2); font-size:11px;
   font-family:inherit; outline:none; cursor:pointer;
 }
 .wohlerSelect:focus { border-color:#0891B2; }
+
+/* ── Trim transient control (in stats drawer header) ─────────────────────── */
+.trimLabel { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--tx-4); cursor:default; white-space:nowrap; }
+.trimInput {
+  width:52px; padding:2px 5px; border-radius:5px; border:0.5px solid var(--bd-input);
+  background:var(--bg-input); color:var(--tx-2); font-size:11px;
+  font-family:inherit; outline:none; text-align:right;
+  -moz-appearance:textfield;
+}
+.trimInput::-webkit-inner-spin-button,
+.trimInput::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+.trimInput:focus { border-color:#0891B2; }
 
 /* Dark mode overrides for Δ button and badge */
 @media (prefers-color-scheme: dark) {
