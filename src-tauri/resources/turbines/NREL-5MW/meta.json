@@ -12,5 +12,5 @@
   "available": true,
   "turbineClass": "IEC Class A",
   "windDefault": "wind/default.inp",
-  "notes": "CompServo=0 (open-loop). To enable closed-loop ROSCO control: set CompServo=1 in NREL-5MW.fst — libdiscon.dylib, DISCON.IN, and Cp_Ct_Cq.NREL5MW.txt are already bundled in the model directory."
+  "notes": "ROSCO closed-loop control enabled (CompServo=1). libdiscon.dylib, DISCON.IN, and Cp_Ct_Cq.NREL5MW.txt are bundled in the model directory."
 }

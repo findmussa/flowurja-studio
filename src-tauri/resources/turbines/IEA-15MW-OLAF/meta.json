@@ -14,5 +14,5 @@
   "available": true,
   "turbineClass": "IEC Class IB",
   "windDefault": "wind/default.inp",
-  "notes": "CompServo=0 (open-loop). Structural files (ElastoDyn, HydroDyn, SubDyn, ServoDyn) are shared from the IEA-15-240-RWT-Monopile sibling directory. Wake_Mod=3 activates OLAF free-vortex wake; expect longer runtimes than BEM. To enable ROSCO: set CompServo=1 — libdiscon.dylib is bundled in IEA-15-240-RWT-Monopile/."
+  "notes": "ROSCO closed-loop control enabled (CompServo=1). Structural files (ElastoDyn, HydroDyn, SubDyn, ServoDyn) shared from IEA-15-240-RWT-Monopile sibling. Wake_Mod=3 activates OLAF free-vortex wake; expect longer runtimes than BEM. libdiscon.dylib bundled in IEA-15-240-RWT-Monopile/."
 }

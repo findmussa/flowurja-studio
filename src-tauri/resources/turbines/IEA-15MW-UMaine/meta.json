@@ -14,5 +14,5 @@
   "available": true,
   "turbineClass": "IEC Class IB",
   "windDefault": "wind/default.inp",
-  "notes": "CompServo=0 (open-loop). To enable closed-loop ROSCO control: set CompServo=1 in the .fst file — libdiscon.dylib, IEA-15-240-RWT-UMaineSemi_DISCON.IN, and Cp_Ct_Cq.IEA15MW.txt are already bundled. The shared IEA-15-240-RWT/ sibling directory contains blade, airfoil, and Cp/Ct/Cq data referenced by relative path from the model."
+  "notes": "ROSCO closed-loop control enabled (CompServo=1). libdiscon.dylib, IEA-15-240-RWT-UMaineSemi_DISCON.IN, and Cp_Ct_Cq.IEA15MW.txt are bundled. The shared IEA-15-240-RWT/ sibling directory contains blade, airfoil, and Cp/Ct/Cq data referenced by relative path from the model."
 }
