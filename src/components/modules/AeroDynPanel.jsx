@@ -1569,7 +1569,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
         />
       )}
 
-      <div style={{ marginTop: 24 }}><SectionHead>Blade-node detailed output (OutListAD)</SectionHead></div>
+      <SectionHead>Blade-node detailed output (OutListAD)</SectionHead>
       <p className={s.hint}>
         Per-station blade aerodynamic channels (e.g. Alpha, Cl, Fn). Requires BldNd_BladesOut ≥ 1.
       </p>
@@ -1586,9 +1586,7 @@ export default function AeroDynPanel({ onLog, project, filePathFromProject, onDi
             onChange={e => set("BldNd_BlOutNd", e.target.value)} />
         </Field>
       </div>
-      <div style={{ marginBottom:4, marginTop:10 }}>
-        <span style={{ fontSize:12, fontWeight:600, color:"var(--tx-2)" }}>OutListAD — blade-station channel names</span>
-      </div>
+      <SectionHead>OutListAD — blade-station channel names</SectionHead>
       <div style={{ marginBottom:6 }}>
         <button type="button" className={s.pickVarsBtn}
           disabled={(p.BldNd_BladesOut ?? 0) === 0}

@@ -2020,7 +2020,7 @@ export default function ElastoDynPanel({ onLog, project, filePathFromProject, on
               <p className={s.hint} style={{ marginBottom: 10 }}>
                 Outputs time series at individual blade nodes — useful for distributed load and deflection analysis.
               </p>
-              <div className={s.fieldGrid}>
+              <div className={s.grid2}>
                 <Field
                   label="BldNd_BladesOut — blades to output"
                   hint="0 = disabled; 1, 2, or 3 to output that many blades"
