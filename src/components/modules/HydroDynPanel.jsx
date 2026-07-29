@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { invoke }             from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
-  Droplets, FolderOpen, Eye, Save, ChevronDown, ChevronRight,
+  Droplets, FolderOpen, Eye, Save, ChevronDown, ChevronRight, List,
 } from "lucide-react";
 import RawFileModal from "../RawFileModal";
 import InfoPopover from "../InfoPopover";
@@ -343,53 +344,81 @@ function SectionHead({ children }) {
   return <h3 className={s.sectionHead}>{children}</h3>;
 }
 
-function Field({ label, unit, children, hint, info }) {
+function DisabledHintPortal({ text, rect }) {
+  const tipW = 230;
+  const left = Math.min(rect.left + rect.width / 2 - tipW / 2, window.innerWidth - tipW - 10);
+  const top  = rect.top - 6;
+  return createPortal(
+    <div style={{
+      position: "fixed", left, top, transform: "translateY(-100%)",
+      width: tipW,
+      background: "color-mix(in srgb, var(--bg-surface) 88%, transparent)",
+      backdropFilter: "blur(20px) saturate(1.8)",
+      WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+      border: "0.5px solid var(--bd)", borderRadius: 9,
+      padding: "7px 10px", fontSize: 11.5, color: "var(--tx-3)",
+      lineHeight: 1.45, zIndex: 9999, pointerEvents: "none",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+    }}>
+      <span style={{ color: ACCENT, fontWeight: 600 }}>Disabled — </span>{text}
+    </div>,
+    document.body
+  );
+}
+
+function Field({ label, unit, children, hint, info, disabled = false, disabledHint }) {
+  const rowRef = useRef(null);
+  const [hintRect, setHintRect] = useState(null);
+  const isOff = disabled || !!disabledHint;
   return (
-    <div className={s.field}>
+    <div
+      ref={rowRef}
+      className={[s.field, isOff ? s.fieldDisabled : ""].join(" ")}
+      onMouseEnter={() => disabledHint && rowRef.current && setHintRect(rowRef.current.getBoundingClientRect())}
+      onMouseLeave={() => setHintRect(null)}
+    >
       <div className={s.fieldHeader}>
         <span className={s.fieldLabel}>{label}</span>
         {unit && <span className={s.unit}>{unit}</span>}
         {info && <InfoPopover content={info} accentColor={ACCENT} />}
+        {disabled && !disabledHint && <span className={s.naTag}>n/a</span>}
       </div>
       {children}
       {hint && <span className={s.hint}>{hint}</span>}
+      {disabledHint && hintRect && <DisabledHintPortal text={disabledHint} rect={hintRect} />}
     </div>
   );
 }
 
-// ── Guided-simulation: visually disable a group of fields when inapplicable ──
-function FieldDisabled({ disabled, reason, children }) {
+function Toggle({ label, value, onChange, note, disabled = false, disabledHint }) {
+  const rowRef = useRef(null);
+  const [hintRect, setHintRect] = useState(null);
+  const isOff = disabled || !!disabledHint;
   return (
-    <div style={disabled
-      ? { opacity: 0.38, pointerEvents: "none", position: "relative" }
-      : {}}>
-      {children}
-      {disabled && reason && (
-        <p className={s.hint} style={{ marginTop: 4, fontStyle: "italic" }}>{reason}</p>
-      )}
-    </div>
-  );
-}
-
-function Toggle({ label, value, onChange, note }) {
-  return (
-    <div className={s.toggleRow}>
+    <div
+      ref={rowRef}
+      className={[s.toggleRow, isOff ? s.fieldDisabled : ""].join(" ")}
+      onMouseEnter={() => disabledHint && rowRef.current && setHintRect(rowRef.current.getBoundingClientRect())}
+      onMouseLeave={() => setHintRect(null)}
+    >
       <button
         className={[s.toggle, value ? s.on : ""].join(" ")}
-        onClick={() => onChange(!value)}
+        onClick={() => !isOff && onChange(!value)}
         type="button"
       >
         <span className={s.toggleThumb} />
       </button>
       <span className={s.toggleLabel}>{label}</span>
       {note && <span className={s.toggleNote}>{note}</span>}
+      {disabled && !disabledHint && <span className={s.naTag}>n/a</span>}
+      {disabledHint && hintRect && <DisabledHintPortal text={disabledHint} rect={hintRect} />}
     </div>
   );
 }
 
-function SelField({ label, value, onChange, options, hint, info }) {
+function SelField({ label, value, onChange, options, hint, info, disabledHint, disabled = false }) {
   return (
-    <Field label={label} hint={hint} info={info}>
+    <Field label={label} hint={hint} info={info} disabledHint={disabledHint} disabled={disabled}>
       <select className={s.select} value={value} onChange={e => onChange(Number(e.target.value))}>
         {options.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
       </select>
@@ -444,6 +473,211 @@ function OffshoreSchematic() {
   );
 }
 
+// ── HydroDyn output variable catalogue ───────────────────────────────────────
+const HD_OUT_VARS = [
+  { group: "Total Hydrodynamic Loads", vars: [
+    { name: "HydroFxi",  unit: "N",   desc: "Total hydrodynamic X-force at platform reference point" },
+    { name: "HydroFyi",  unit: "N",   desc: "Total hydrodynamic Y-force at platform reference point" },
+    { name: "HydroFzi",  unit: "N",   desc: "Total hydrodynamic Z-force at platform reference point" },
+    { name: "HydroMxi",  unit: "N·m", desc: "Total hydrodynamic X-moment at platform reference point" },
+    { name: "HydroMyi",  unit: "N·m", desc: "Total hydrodynamic Y-moment at platform reference point" },
+    { name: "HydroMzi",  unit: "N·m", desc: "Total hydrodynamic Z-moment at platform reference point" },
+  ]},
+  { group: "Wave Elevation", vars: [
+    { name: "Wave1Elev", unit: "m", desc: "Wave surface elevation at output point 1" },
+    { name: "Wave2Elev", unit: "m", desc: "Wave surface elevation at output point 2" },
+    { name: "Wave3Elev", unit: "m", desc: "Wave surface elevation at output point 3" },
+    { name: "Wave4Elev", unit: "m", desc: "Wave surface elevation at output point 4" },
+    { name: "Wave5Elev", unit: "m", desc: "Wave surface elevation at output point 5" },
+  ]},
+  { group: "Potential Flow — Body 1 Wave Excitation (PotMod=1)", vars: [
+    { name: "B1WaveF1xi", unit: "N",   desc: "WAMIT wave excitation X-force on body 1" },
+    { name: "B1WaveF1yi", unit: "N",   desc: "WAMIT wave excitation Y-force on body 1" },
+    { name: "B1WaveF1zi", unit: "N",   desc: "WAMIT wave excitation Z-force on body 1" },
+    { name: "B1WaveMxi",  unit: "N·m", desc: "WAMIT wave excitation roll moment on body 1" },
+    { name: "B1WaveMyi",  unit: "N·m", desc: "WAMIT wave excitation pitch moment on body 1" },
+    { name: "B1WaveMzi",  unit: "N·m", desc: "WAMIT wave excitation yaw moment on body 1" },
+  ]},
+  { group: "Potential Flow — Body 1 Radiation (PotMod=1, RdtnMod≠0)", vars: [
+    { name: "B1RadF1xi",  unit: "N",   desc: "WAMIT radiation X-force on body 1" },
+    { name: "B1RadF1yi",  unit: "N",   desc: "WAMIT radiation Y-force on body 1" },
+    { name: "B1RadF1zi",  unit: "N",   desc: "WAMIT radiation Z-force on body 1" },
+    { name: "B1RadMxi",   unit: "N·m", desc: "WAMIT radiation roll moment on body 1" },
+    { name: "B1RadMyi",   unit: "N·m", desc: "WAMIT radiation pitch moment on body 1" },
+    { name: "B1RadMzi",   unit: "N·m", desc: "WAMIT radiation yaw moment on body 1" },
+  ]},
+  { group: "Potential Flow — Body 1 Added Mass (PotMod=1)", vars: [
+    { name: "B1AMF1xi",   unit: "N",   desc: "Added-mass X-force on body 1" },
+    { name: "B1AMF1yi",   unit: "N",   desc: "Added-mass Y-force on body 1" },
+    { name: "B1AMF1zi",   unit: "N",   desc: "Added-mass Z-force on body 1" },
+    { name: "B1AMMxi",    unit: "N·m", desc: "Added-mass roll moment on body 1" },
+    { name: "B1AMMyi",    unit: "N·m", desc: "Added-mass pitch moment on body 1" },
+    { name: "B1AMMzi",    unit: "N·m", desc: "Added-mass yaw moment on body 1" },
+  ]},
+  { group: "Strip Theory Joint Outputs — Joint 1 (NJOutputs≥1)", vars: [
+    { name: "J1VelX",  unit: "m/s",  desc: "Fluid particle X-velocity at output joint 1" },
+    { name: "J1VelY",  unit: "m/s",  desc: "Fluid particle Y-velocity at output joint 1" },
+    { name: "J1VelZ",  unit: "m/s",  desc: "Fluid particle Z-velocity at output joint 1" },
+    { name: "J1AccX",  unit: "m/s²", desc: "Fluid particle X-acceleration at output joint 1" },
+    { name: "J1AccY",  unit: "m/s²", desc: "Fluid particle Y-acceleration at output joint 1" },
+    { name: "J1AccZ",  unit: "m/s²", desc: "Fluid particle Z-acceleration at output joint 1" },
+    { name: "J1DynP",  unit: "Pa",   desc: "Hydrodynamic dynamic pressure at output joint 1" },
+  ]},
+  { group: "Strip Theory Joint Outputs — Joint 2 (NJOutputs≥2)", vars: [
+    { name: "J2VelX",  unit: "m/s",  desc: "Fluid particle X-velocity at output joint 2" },
+    { name: "J2VelY",  unit: "m/s",  desc: "Fluid particle Y-velocity at output joint 2" },
+    { name: "J2VelZ",  unit: "m/s",  desc: "Fluid particle Z-velocity at output joint 2" },
+    { name: "J2AccX",  unit: "m/s²", desc: "Fluid particle X-acceleration at output joint 2" },
+    { name: "J2AccY",  unit: "m/s²", desc: "Fluid particle Y-acceleration at output joint 2" },
+    { name: "J2AccZ",  unit: "m/s²", desc: "Fluid particle Z-acceleration at output joint 2" },
+    { name: "J2DynP",  unit: "Pa",   desc: "Hydrodynamic dynamic pressure at output joint 2" },
+  ]},
+];
+
+// ── Output variable picker modal (Liquid Glass, identical to ElastoDyn) ───────
+function HdOutVarModal({ current, onClose, onApply }) {
+  const [selected,  setSelected]  = useState(() => {
+    const names = (current || "").split("\n")
+      .map(l => l.trim().replace(/^"|"$/g, "")).filter(Boolean);
+    return new Set(names);
+  });
+  const [query,     setQuery]     = useState("");
+  const [visible,   setVisible]   = useState(false);
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  const toggleGroup = (groupName) =>
+    setCollapsed(prev => { const n = new Set(prev); n.has(groupName) ? n.delete(groupName) : n.add(groupName); return n; });
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 220);
+  };
+
+  const handleApply = () => {
+    const outList = [...selected].map(n => `"${n}"`).join("\n");
+    onApply(outList);
+    handleClose();
+  };
+
+  const toggle = (name) =>
+    setSelected(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
+
+  const q = query.toLowerCase();
+  const filteredGroups = HD_OUT_VARS.map(g => ({
+    ...g,
+    vars: q ? g.vars.filter(v =>
+      v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q) || v.unit.toLowerCase().includes(q)
+    ) : g.vars,
+  })).filter(g => g.vars.length > 0);
+
+  return createPortal(
+    <div
+      className={`${s.modalOverlay} ${visible ? s.modalOverlayVisible : ""}`}
+      onClick={handleClose}
+    >
+      <div
+        className={`${s.modal} ${visible ? s.modalVisible : ""}`}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className={s.modalHeader}>
+          <span className={s.modalTitle}>HydroDyn — Output variable picker</span>
+          <span className={s.modalCount}>{selected.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button className={s.modalClose} onClick={handleClose} type="button">✕</button>
+        </div>
+
+        <div className={s.modalSearch}>
+          <div className={s.modalSearchBox}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              className={s.modalSearchInput}
+              placeholder="Search channels… (name, description, unit)"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className={s.modalBody}>
+          {filteredGroups.map(g => {
+            const allOn  = g.vars.every(v => selected.has(v.name));
+            const someOn = g.vars.some(v => selected.has(v.name));
+            const isOpen = q ? true : !collapsed.has(g.group);
+            return (
+              <div key={g.group} className={s.varGroup}>
+                <div className={s.varGroupHead} onClick={() => toggleGroup(g.group)}>
+                  <button
+                    type="button"
+                    className={`${s.groupCheck} ${allOn ? s.groupCheckAll : someOn ? s.groupCheckSome : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(prev => {
+                        const n = new Set(prev);
+                        if (allOn) g.vars.forEach(v => n.delete(v.name));
+                        else       g.vars.forEach(v => n.add(v.name));
+                        return n;
+                      });
+                    }}
+                  />
+                  <span className={s.groupLabel}>{g.group}</span>
+                  <span className={s.varGroupCount}>{g.vars.filter(v => selected.has(v.name)).length}/{g.vars.length}</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    className={`${s.groupChevron} ${isOpen ? s.groupChevronOpen : ""}`}>
+                    <polyline points="2,4 6,8 10,4" stroke="currentColor" strokeWidth="1.5"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div className={`${s.varGroupBody} ${!isOpen ? s.varGroupBodyCollapsed : ""}`}>
+                  <div className={s.varGroupBodyInner}>
+                    {g.vars.map(v => (
+                      <label key={v.name} className={`${s.varRow} ${selected.has(v.name) ? s.varRowOn : ""}`}>
+                        <input
+                          type="checkbox"
+                          className={s.varCheck}
+                          checked={selected.has(v.name)}
+                          onChange={() => toggle(v.name)}
+                        />
+                        <span className={s.varName}>{v.name}</span>
+                        <span className={s.varUnit}>{v.unit}</span>
+                        <span className={s.varDesc}>{v.desc}</span>
+                        {selected.has(v.name) && (
+                          <svg width="11" height="11" viewBox="0 0 12 12" className={s.varCheck__mark}>
+                            <polyline points="1.5,6 4.5,9 10.5,3" stroke={ACCENT} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {filteredGroups.length === 0 && (
+            <p className={s.varNoMatch}>No channels match &quot;{query}&quot;</p>
+          )}
+        </div>
+
+        <div className={s.modalFooter}>
+          <button className={s.modalCancelBtn} onClick={handleClose} type="button">Cancel</button>
+          <button className={s.modalApplyBtn} onClick={handleApply} type="button">
+            Apply {selected.size} channel{selected.size !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function HydroDynPanel({ onLog, project, filePathFromProject, onDirtyChange, onRegisterSave, simRunning = false }) {
   const [tab,           setTab]           = useState("overview");
@@ -452,6 +686,7 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
   const [filePath,      setFilePath]      = useState("");
   const [isDirtyFlag,   setIsDirtyFlag]   = useState(false);
   const [rawOpen,       setRawOpen]       = useState(false);
+  const [showOutVarModal, setShowOutVarModal] = useState(false);
   const rawContent    = useRef("");  // the actual file text from disk
   const originalRef   = useRef(null); // JSON snapshot of last loaded / saved state
 
@@ -554,9 +789,9 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
     <div className={`${s.form} ${s.tabEnterFirst}`}>
       <div className={s.callout}>
         HydroDyn computes hydrodynamic loads on the substructure. Wave and current
-        conditions are defined in the <strong>SeaState</strong> module (in the .fst file).
-        For strip-theory monopiles, set PotMod=0. For floating platforms, enable
-        potential flow (PotMod=1) and point to WAMIT output files.
+        conditions (WaveMod, TMax, seeds) are set in the SeaState module.
+        For fixed-bottom monopiles use PotMod = 0 (strip theory only).
+        For floating platforms set PotMod = 1 and configure WAMIT files in the Potential Flow tab.
       </div>
 
       <SectionHead>Hydrodynamic Model</SectionHead>
@@ -572,32 +807,30 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
             { v: 2, label: "2 – Fluid-impulse (FIT)" },
           ]}
         />
-        <FieldDisabled disabled={p.PotMod !== 1} reason="Requires PotMod = 1 (WAMIT)">
-          <SelField
-            label="Wave excitation model (ExctnMod)"
-            value={p.ExctnMod}
-            onChange={v => set("ExctnMod", v)}
-            info={INFO.ExctnMod}
-            options={[
-              { v: 0, label: "0 – None" },
-              { v: 1, label: "1 – DFT" },
-              { v: 2, label: "2 – State-space" },
-            ]}
-          />
-        </FieldDisabled>
-        <FieldDisabled disabled={p.PotMod !== 1} reason="Requires PotMod = 1 (WAMIT)">
-          <SelField
-            label="Radiation model (RdtnMod)"
-            value={p.RdtnMod}
-            onChange={v => set("RdtnMod", v)}
-            info={INFO.RdtnMod}
-            options={[
-              { v: 0, label: "0 – No memory effect" },
-              { v: 1, label: "1 – Convolution" },
-              { v: 2, label: "2 – State-space" },
-            ]}
-          />
-        </FieldDisabled>
+        <SelField
+          label="Wave excitation model (ExctnMod)"
+          value={p.ExctnMod}
+          onChange={v => set("ExctnMod", v)}
+          info={INFO.ExctnMod}
+          disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable wave excitation settings" : undefined}
+          options={[
+            { v: 0, label: "0 – None" },
+            { v: 1, label: "1 – DFT" },
+            { v: 2, label: "2 – State-space" },
+          ]}
+        />
+        <SelField
+          label="Radiation model (RdtnMod)"
+          value={p.RdtnMod}
+          onChange={v => set("RdtnMod", v)}
+          info={INFO.RdtnMod}
+          disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable radiation memory settings" : undefined}
+          options={[
+            { v: 0, label: "0 – No memory effect" },
+            { v: 1, label: "1 – Convolution" },
+            { v: 2, label: "2 – State-space" },
+          ]}
+        />
       </div>
 
       <SectionHead>Strip Theory</SectionHead>
@@ -629,10 +862,7 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
         <>
           <SectionHead>Morison Structure (from file)</SectionHead>
           <div className={s.calloutInfo}>
-            The file defines <strong>{p.NJoints}</strong> joint{p.NJoints !== 1 ? "s" : ""},&nbsp;
-            <strong>{p.NMembers}</strong> member{p.NMembers !== 1 ? "s" : ""}, and&nbsp;
-            <strong>{p.NAxCoef}</strong> axial coefficient set{p.NAxCoef !== 1 ? "s" : ""}.
-            Edit these tables directly in the .dat file — use <em>View</em> to open the raw text.
+            {`Loaded from file: ${p.NJoints} joint${p.NJoints !== 1 ? "s" : ""}, ${p.NMembers} member${p.NMembers !== 1 ? "s" : ""}, and ${p.NAxCoef} axial coefficient set${p.NAxCoef !== 1 ? "s" : ""}. Structural geometry tables are preserved verbatim when saving.`}
           </div>
         </>
       )}
@@ -661,97 +891,111 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
             { v: 2, label: "2 – Fluid-impulse (FIT)" },
           ]}
         />
-        <FieldDisabled disabled={p.PotMod === 0} reason="Not used when PotMod = 0">
-          <Field label="WAMIT file root path (PotFile)" hint="Unused when PotMod=0" info={INFO.PotFile}>
-            <div className={s.fileRow}>
-              <input className={s.inp} value={p.PotFile} onChange={e => set("PotFile", e.target.value)} />
-              <button className={s.browseBtn} type="button"
-                onClick={async () => {
-                  const f = await openDialog({ multiple: false });
-                  if (f) set("PotFile", f);
-                }}>
-                <FolderOpen size={12} strokeWidth={1.8} />
-              </button>
-            </div>
-          </Field>
-        </FieldDisabled>
-        <FieldDisabled disabled={p.PotMod === 0} reason="Not used when PotMod = 0">
-          <Field label="Body length scale (WAMITULEN)" unit="m" hint="Used to redimensionalize WAMIT output">
-            <input className={s.inp} value={p.WAMITULEN}
-              onChange={e => set("WAMITULEN", parseFloat(e.target.value) || p.WAMITULEN)} />
-          </Field>
-        </FieldDisabled>
-        <FieldDisabled disabled={p.PotMod === 0} reason="Not used when PotMod = 0">
-          <Field label="Body coupling model (NBodyMod)"
-            hint="1=coupled, 2=decoupled (XBODY=0), 3=decoupled (XBODY≠0)"
-            info={INFO.NBodyMod}>
-            <select className={s.select} value={p.NBodyMod} onChange={e => set("NBodyMod", Number(e.target.value))}>
-              {[{ v: 1, l: "1 – Coupled" }, { v: 2, l: "2 – Decoupled XBODY=0" }, { v: 3, l: "3 – Decoupled XBODY≠0" }]
-                .map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-            </select>
-          </Field>
-        </FieldDisabled>
+        <Field
+          label="WAMIT file root path (PotFile)"
+          hint="Unused when PotMod=0"
+          info={INFO.PotFile}
+          disabledHint={p.PotMod === 0 ? "Set Potential-flow model (PotMod) to 1 or 2 to enable WAMIT file configuration" : undefined}
+        >
+          <div className={s.fileRow}>
+            <input className={s.inp} value={p.PotFile} onChange={e => set("PotFile", e.target.value)} />
+            <button className={s.browseBtn} type="button"
+              onClick={async () => {
+                const f = await openDialog({ multiple: false });
+                if (f) set("PotFile", f);
+              }}>
+              <FolderOpen size={12} strokeWidth={1.8} />
+            </button>
+          </div>
+        </Field>
+        <Field
+          label="Body length scale (WAMITULEN)"
+          unit="m"
+          hint="Used to redimensionalize WAMIT output"
+          disabledHint={p.PotMod === 0 ? "Set Potential-flow model (PotMod) to 1 or 2 to enable WAMIT file configuration" : undefined}
+        >
+          <input className={s.inp} value={p.WAMITULEN}
+            onChange={e => set("WAMITULEN", parseFloat(e.target.value) || p.WAMITULEN)} />
+        </Field>
+        <Field
+          label="Body coupling model (NBodyMod)"
+          hint="1=coupled, 2=decoupled (XBODY=0), 3=decoupled (XBODY≠0)"
+          info={INFO.NBodyMod}
+          disabledHint={p.PotMod === 0 ? "Set Potential-flow model (PotMod) to 1 or 2 to enable WAMIT file configuration" : undefined}
+        >
+          <select className={s.select} value={p.NBodyMod} onChange={e => set("NBodyMod", Number(e.target.value))}>
+            {[{ v: 1, l: "1 – Coupled" }, { v: 2, l: "2 – Decoupled XBODY=0" }, { v: 3, l: "3 – Decoupled XBODY≠0" }]
+              .map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+          </select>
+        </Field>
       </div>
 
       <Collapsible title="Wave excitation & radiation" defaultOpen={p.PotMod === 1}>
-        <FieldDisabled disabled={p.PotMod !== 1} reason="These settings only apply when PotMod = 1 (WAMIT-based potential flow)">
-          <div className={s.grid2}>
-            <SelField
-              label="Wave excitation model (ExctnMod)"
-              value={p.ExctnMod}
-              onChange={v => set("ExctnMod", v)}
-              info={INFO.ExctnMod}
-              options={[
-                { v: 0, label: "0 – None" },
-                { v: 1, label: "1 – DFT" },
-                { v: 2, label: "2 – State-space (*.ssexctn required)" },
-              ]}
-            />
-            <SelField
-              label="Wave excitation displacement (ExctnDisp)"
-              value={p.ExctnDisp}
-              onChange={v => set("ExctnDisp", v)}
-              options={[
-                { v: 0, label: "0 – Undisplaced position" },
-                { v: 1, label: "1 – Displaced position" },
-                { v: 2, label: "2 – Low-pass filtered displaced" },
-              ]}
-              hint="Used when ExctnMod>0"
-            />
-            <FieldDisabled disabled={p.ExctnDisp !== 2} reason="Only active when ExctnDisp = 2">
-              <Field label="Excitation cut-off frequency (ExctnCutOff)" unit="Hz">
-                <input className={s.inp} value={p.ExctnCutOff}
-                  onChange={e => set("ExctnCutOff", parseFloat(e.target.value) || p.ExctnCutOff)} />
-              </Field>
-            </FieldDisabled>
-            <SelField
-              label="Radiation memory model (RdtnMod)"
-              value={p.RdtnMod}
-              onChange={v => set("RdtnMod", v)}
-              info={INFO.RdtnMod}
-              options={[
-                { v: 0, label: "0 – No memory effect" },
-                { v: 1, label: "1 – Convolution" },
-                { v: 2, label: "2 – State-space (*.ss required)" },
-              ]}
-            />
-            <FieldDisabled disabled={p.RdtnMod === 0} reason="Only active when RdtnMod ≠ 0">
-              <Field label="Radiation analysis time (RdtnTMax)" unit="s"
-                hint="Should be long enough for IRF to decay to zero"
-                info={INFO.RdtnTMax}>
-                <input className={s.inp} value={p.RdtnTMax}
-                  onChange={e => set("RdtnTMax", parseFloat(e.target.value) || p.RdtnTMax)} />
-              </Field>
-            </FieldDisabled>
-            <FieldDisabled disabled={p.RdtnMod === 0} reason="Only active when RdtnMod ≠ 0">
-              <Field label="Radiation time step (RdtnDT)" unit="s"
-                hint="DT ≤ RdtnDT ≤ 0.1 recommended">
-                <input className={s.inp} value={p.RdtnDT}
-                  onChange={e => set("RdtnDT", parseFloat(e.target.value) || 0)} />
-              </Field>
-            </FieldDisabled>
-          </div>
-        </FieldDisabled>
+        <div className={s.grid2}>
+          <SelField
+            label="Wave excitation model (ExctnMod)"
+            value={p.ExctnMod}
+            onChange={v => set("ExctnMod", v)}
+            info={INFO.ExctnMod}
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable wave excitation settings" : undefined}
+            options={[
+              { v: 0, label: "0 – None" },
+              { v: 1, label: "1 – DFT" },
+              { v: 2, label: "2 – State-space (*.ssexctn required)" },
+            ]}
+          />
+          <SelField
+            label="Wave excitation displacement (ExctnDisp)"
+            value={p.ExctnDisp}
+            onChange={v => set("ExctnDisp", v)}
+            hint="Used when ExctnMod>0"
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable wave excitation settings" : undefined}
+            options={[
+              { v: 0, label: "0 – Undisplaced position" },
+              { v: 1, label: "1 – Displaced position" },
+              { v: 2, label: "2 – Low-pass filtered displaced" },
+            ]}
+          />
+          <Field
+            label="Excitation cut-off frequency (ExctnCutOff)"
+            unit="Hz"
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable wave excitation settings" : p.ExctnDisp !== 2 ? "Set ExctnDisp to 2 (Low-pass filtered displaced) to enable excitation cut-off frequency" : undefined}
+          >
+            <input className={s.inp} value={p.ExctnCutOff}
+              onChange={e => set("ExctnCutOff", parseFloat(e.target.value) || p.ExctnCutOff)} />
+          </Field>
+          <SelField
+            label="Radiation memory model (RdtnMod)"
+            value={p.RdtnMod}
+            onChange={v => set("RdtnMod", v)}
+            info={INFO.RdtnMod}
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable radiation settings" : undefined}
+            options={[
+              { v: 0, label: "0 – No memory effect" },
+              { v: 1, label: "1 – Convolution" },
+              { v: 2, label: "2 – State-space (*.ss required)" },
+            ]}
+          />
+          <Field
+            label="Radiation analysis time (RdtnTMax)"
+            unit="s"
+            hint="Should be long enough for IRF to decay to zero"
+            info={INFO.RdtnTMax}
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable radiation settings" : p.RdtnMod === 0 ? "Set Radiation model (RdtnMod) to 1 (Convolution) or 2 (State-space) to enable radiation time parameters" : undefined}
+          >
+            <input className={s.inp} value={p.RdtnTMax}
+              onChange={e => set("RdtnTMax", parseFloat(e.target.value) || p.RdtnTMax)} />
+          </Field>
+          <Field
+            label="Radiation time step (RdtnDT)"
+            unit="s"
+            hint="DT ≤ RdtnDT ≤ 0.1 recommended"
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable radiation settings" : p.RdtnMod === 0 ? "Set Radiation model (RdtnMod) to 1 (Convolution) or 2 (State-space) to enable radiation time parameters" : undefined}
+          >
+            <input className={s.inp} value={p.RdtnDT}
+              onChange={e => set("RdtnDT", parseFloat(e.target.value) || 0)} />
+          </Field>
+        </div>
       </Collapsible>
 
       <Collapsible title="Platform reference offsets (WAMIT origin → platform origin)">
@@ -774,53 +1018,63 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
       </Collapsible>
 
       <Collapsible title="Platform yaw offset model (PtfmYMod)">
-        <FieldDisabled disabled={p.PotMod !== 1} reason="Platform yaw model only applies to potential-flow bodies (PotMod = 1)">
-          <div className={s.grid2}>
-            <SelField
-              label="Platform yaw model (PtfmYMod)"
-              value={p.PtfmYMod}
-              onChange={v => set("PtfmYMod", v)}
-              options={[
-                { v: 0, label: "0 – Static reference yaw (PtfmRefY)" },
-                { v: 1, label: "1 – Dynamic low-pass filtered yaw" },
-              ]}
-            />
-            <Field label="Reference yaw offset (PtfmRefY)" unit="deg">
-              <input className={s.inp} value={p.PtfmRefY}
-                onChange={e => set("PtfmRefY", parseFloat(e.target.value) || 0)} />
-            </Field>
-            <FieldDisabled disabled={p.PtfmYMod !== 1} reason="Only active when PtfmYMod = 1">
-              <Field label="Yaw cut-off frequency (PtfmYCutOff)" unit="Hz">
-                <input className={s.inp} value={p.PtfmYCutOff}
-                  onChange={e => set("PtfmYCutOff", parseFloat(e.target.value) || p.PtfmYCutOff)} />
-              </Field>
-            </FieldDisabled>
-            <FieldDisabled disabled={p.PtfmYMod !== 1} reason="Only active when PtfmYMod = 1">
-              <Field label="N heading angles (NExctnHdg)" hint="Evenly distributed over ±180°">
-                <input className={s.inp} value={p.NExctnHdg}
-                  onChange={e => set("NExctnHdg", parseInt(e.target.value) || p.NExctnHdg)} />
-              </Field>
-            </FieldDisabled>
-          </div>
-        </FieldDisabled>
+        <div className={s.grid2}>
+          <SelField
+            label="Platform yaw model (PtfmYMod)"
+            value={p.PtfmYMod}
+            onChange={v => set("PtfmYMod", v)}
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable platform yaw model settings" : undefined}
+            options={[
+              { v: 0, label: "0 – Static reference yaw (PtfmRefY)" },
+              { v: 1, label: "1 – Dynamic low-pass filtered yaw" },
+            ]}
+          />
+          <Field
+            label="Reference yaw offset (PtfmRefY)"
+            unit="deg"
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable platform yaw model settings" : undefined}
+          >
+            <input className={s.inp} value={p.PtfmRefY}
+              onChange={e => set("PtfmRefY", parseFloat(e.target.value) || 0)} />
+          </Field>
+          <Field
+            label="Yaw cut-off frequency (PtfmYCutOff)"
+            unit="Hz"
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable platform yaw model settings" : p.PtfmYMod !== 1 ? "Set PtfmYMod to 1 (Dynamic low-pass filtered yaw) to enable yaw cut-off frequency" : undefined}
+          >
+            <input className={s.inp} value={p.PtfmYCutOff}
+              onChange={e => set("PtfmYCutOff", parseFloat(e.target.value) || p.PtfmYCutOff)} />
+          </Field>
+          <Field
+            label="N heading angles (NExctnHdg)"
+            hint="Evenly distributed over ±180°"
+            disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable platform yaw model settings" : p.PtfmYMod !== 1 ? "Set PtfmYMod to 1 (Dynamic low-pass filtered yaw) to enable number of excitation heading angles" : undefined}
+          >
+            <input className={s.inp} value={p.NExctnHdg}
+              onChange={e => set("NExctnHdg", parseInt(e.target.value) || p.NExctnHdg)} />
+          </Field>
+        </div>
       </Collapsible>
 
       <Collapsible title="2nd-order floating platform forces">
-        <FieldDisabled disabled={p.PotMod !== 1} reason="2nd-order QTF forces require PotMod = 1 (WAMIT-based potential flow)">
-          <div className={s.grid2}>
-            {[
-              ["MnDrift",   "Mean-drift 2nd-order (MnDrift)", "0=none, 7–12=WAMIT file number"],
-              ["NewmanApp", "Newman's approximation (NewmanApp)", "0=none, 7–12=WAMIT file"],
-              ["DiffQTF",   "Full difference-freq. QTF (DiffQTF)", "0=none, 10–12=WAMIT file"],
-              ["SumQTF",    "Full summation-freq. QTF (SumQTF)", "0=none, 10–12=WAMIT file"],
-            ].map(([k, lbl, hint]) => (
-              <Field key={k} label={lbl} hint={hint}>
-                <input className={s.inp} value={p[k]}
-                  onChange={e => set(k, parseInt(e.target.value) || 0)} />
-              </Field>
-            ))}
-          </div>
-        </FieldDisabled>
+        <div className={s.grid2}>
+          {[
+            ["MnDrift",   "Mean-drift 2nd-order (MnDrift)", "0=none, 7–12=WAMIT file number"],
+            ["NewmanApp", "Newman's approximation (NewmanApp)", "0=none, 7–12=WAMIT file"],
+            ["DiffQTF",   "Full difference-freq. QTF (DiffQTF)", "0=none, 10–12=WAMIT file"],
+            ["SumQTF",    "Full summation-freq. QTF (SumQTF)", "0=none, 10–12=WAMIT file"],
+          ].map(([k, lbl, hint]) => (
+            <Field
+              key={k}
+              label={lbl}
+              hint={hint}
+              disabledHint={p.PotMod !== 1 ? "Set Potential-flow model (PotMod) to 1 – WAMIT-based to enable 2nd-order QTF force configuration" : undefined}
+            >
+              <input className={s.inp} value={p[k]}
+                onChange={e => set(k, parseInt(e.target.value) || 0)} />
+            </Field>
+          ))}
+        </div>
       </Collapsible>
     </div>
   );
@@ -854,16 +1108,9 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
 
       <SectionHead>Morison Member Summary</SectionHead>
       <div className={s.calloutInfo}>
-        The Morison member tables (joints, members, cross-section properties, hydrodynamic
-        coefficients) are complex multi-column data and are <strong>not editable in this
-        panel</strong>. They are preserved verbatim when saving. Use <em>View</em> to
-        inspect or edit them directly in the raw file.
-        {filePath && (
-          <span style={{ marginLeft: 6 }}>
-            Currently loaded: <strong>{p.NJoints}</strong> joints,&nbsp;
-            <strong>{p.NMembers}</strong> members.
-          </span>
-        )}
+        {filePath
+          ? `Loaded: ${p.NJoints} joint${p.NJoints !== 1 ? "s" : ""} and ${p.NMembers} member${p.NMembers !== 1 ? "s" : ""}. Morison geometry tables (joints, members, cross-sections, hydrodynamic coefficients) cannot be edited here yet — use the View button above to edit the raw file directly. In-panel table editing is coming in a future update.`
+          : "Morison geometry tables (joints, members, cross-sections, hydrodynamic coefficients) cannot be edited here yet — use the View button above to edit the raw file directly. In-panel table editing is coming in a future update."}
       </div>
 
       <Collapsible title="Member output list">
@@ -909,15 +1156,27 @@ export default function HydroDynPanel({ onLog, project, filePathFromProject, onD
         <Toggle label="Echo input file (Echo)" value={p.Echo} onChange={v => set("Echo", v)} />
       </div>
 
-      <Field
-        label="Output channel names (OutList)"
-        hint='One quoted channel name per line, e.g. "Wave1Elev"'>
-        <textarea
-          className={s.outListArea}
-          value={p.OutList}
-          onChange={e => set("OutList", e.target.value)}
+      <SectionHead>Output Channel List (OutList)</SectionHead>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <button type="button" className={s.pickVarsBtn} onClick={() => setShowOutVarModal(true)}>
+          <List size={12} strokeWidth={2} />
+          Pick variables…
+        </button>
+        <span style={{ fontSize: 11.5, color: "var(--tx-4)" }}>One quoted channel name per line</span>
+      </div>
+      <textarea
+        className={s.outListArea}
+        value={p.OutList}
+        onChange={e => set("OutList", e.target.value)}
+        spellCheck={false}
+      />
+      {showOutVarModal && (
+        <HdOutVarModal
+          current={p.OutList}
+          onClose={() => setShowOutVarModal(false)}
+          onApply={(outList) => set("OutList", outList)}
         />
-      </Field>
+      )}
     </div>
   );
 
