@@ -254,6 +254,7 @@ export async function scanModelDependencies(fstPath) {
 
 /** Build the canonical project object from a loaded .fws file and its path. */
 function buildProjectFromFws(fws, fwsPath) {
+  fwsPath = fwsPath.replace(/\\/g, "/"); // normalize Windows backslashes
   const dir = fwsPath.split("/").slice(0, -1).join("/");
 
   // Normalise to models[] — supports both old "modelFst" and new "models" schema
