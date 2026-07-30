@@ -97,6 +97,9 @@
 :global([data-platform="windows"][data-mica="true"]) .shell {
   background: transparent; /* Mica applied at OS level */
 }
+:global([data-platform="windows"][data-mica="true"]) .main {
+  background: var(--bg-app); /* semi-transparent — lets Mica tint fuse through */
+}
 :global([data-platform="windows"]) .mainCol {
   -webkit-app-region: no-drag;          /* no drag region — native title bar does this */
   backdrop-filter: none;
