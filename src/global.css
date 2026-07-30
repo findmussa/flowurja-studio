@@ -20,7 +20,7 @@
   --teal-dim:    #085041;
 
   --bg-base:         #f7f7f5;
-  --bg-app:          rgba(247,247,245,0.88);
+  --bg-app:          rgba(247,247,245,0.75);
   --bg-console:      rgba(248,248,246,0.92);
   --bg-header:       rgba(248,248,246,0.92);
   --bg-sidebar:      rgba(228,228,226,0.68);
@@ -72,7 +72,7 @@
     color-scheme: dark;
     --c-batchrun: #A78BFA;
     --bg-base:         #1a1a1c;
-    --bg-app:          rgba(26,26,28,0.88);
+    --bg-app:          rgba(26,26,28,0.75);
     --bg-console:      rgba(22,22,24,0.92);
     --bg-header:       rgba(30,30,33,0.92);
     --bg-sidebar:      rgba(38,38,42,0.76);
@@ -116,7 +116,7 @@
   color-scheme: dark;
   --c-batchrun: #A78BFA;
   --bg-base:         #1a1a1c;
-  --bg-app:          rgba(26,26,28,0.88);
+  --bg-app:          rgba(26,26,28,0.75);
   --bg-console:      rgba(22,22,24,0.92);
   --bg-header:       rgba(30,30,33,0.92);
   --bg-sidebar:      rgba(38,38,42,0.76);

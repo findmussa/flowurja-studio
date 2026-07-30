@@ -54,7 +54,7 @@ const FILE_MODULES = new Set([
 
 const OFFSHORE_STORAGE_KEY = "fws-offshore-open";
 
-const isMac = document.documentElement.getAttribute("data-platform") !== "windows";
+const isMac = !navigator.userAgent.includes("Windows");
 
 function shortPath(p) {
   if (!p) return "";
