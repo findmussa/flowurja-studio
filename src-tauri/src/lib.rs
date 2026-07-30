@@ -2417,12 +2417,28 @@ pub fn run() {
                     .traffic_light_position(LogicalPosition::new(20.0, 28.0))
             };
 
-            // Windows / Linux: standard native decorations — OS provides the title bar,
-            // min/max/close buttons, and drag region. No transparency needed.
-            #[cfg(not(target_os = "macos"))]
+            // Windows: native decorations + transparent WebView2 so Mica shows through.
+            #[cfg(target_os = "windows")]
+            let builder = builder.decorations(true).transparent(true);
+
+            // Linux: standard native decorations, no transparency.
+            #[cfg(not(any(target_os = "macos", target_os = "windows")))]
             let builder = builder.decorations(true);
 
             let _window = builder.build().unwrap();
+
+            // Windows: apply Mica effect (Windows 11+). Stamps data-mica="true" on
+            // the <html> element so CSS can safely make backgrounds transparent.
+            // Falls back silently on Windows 10 or unsupported builds.
+            #[cfg(target_os = "windows")]
+            {
+                use window_vibrancy::apply_mica;
+                if apply_mica(&_window, None).is_ok() {
+                    let _ = _window.eval(
+                        "document.documentElement.setAttribute('data-mica','true')"
+                    );
+                }
+            }
 
             #[cfg(target_os = "macos")]
             {

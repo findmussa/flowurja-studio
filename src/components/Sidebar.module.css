@@ -24,12 +24,19 @@
     0 2px 6px rgba(0,0,0,0.08),
     inset 0 1px 0 rgba(255,255,255,0.18);
 }
-/* On Windows the sidebar is a floating card on the solid canvas tray.
-   Semi-transparent backgrounds need to become solid (no compositor blur).     */
+/* On Windows without Mica — solid card on the canvas tray. */
 :global([data-platform="windows"]) .inner {
   background: var(--bg-base);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+/* With Mica — transparent so the OS effect shows through. */
+:global([data-platform="windows"][data-mica="true"]) .inner {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  border-color: var(--bd);
 }
 
 /* ── Title area — drag region that reserves space for the native traffic lights.

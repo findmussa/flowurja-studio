@@ -92,7 +92,10 @@
    mainCol) sit on a solid canvas tray — same rounded, layered aesthetic as
    macOS but without the compositor blur.                                       */
 :global([data-platform="windows"]) .shell {
-  background: var(--bg-canvas-win);
+  background: var(--bg-canvas-win); /* fallback — Windows 10 / no Mica */
+}
+:global([data-platform="windows"][data-mica="true"]) .shell {
+  background: transparent; /* Mica applied at OS level */
 }
 :global([data-platform="windows"]) .mainCol {
   -webkit-app-region: no-drag;          /* no drag region — native title bar does this */
