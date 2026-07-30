@@ -447,7 +447,3 @@
 .addBtn:active:not(:disabled) { transform: scale(0.97); transition-duration: 0.07s; }
 .addBtn:disabled { opacity: 0.4; cursor: default; }
 
-@media (prefers-reduced-motion: reduce) {
-  .overlay, .overlayExit, .sheet, .sheetExit, .card { animation: none; }
-  .card, .cancelBtn, .addBtn { transition: none; }
-}

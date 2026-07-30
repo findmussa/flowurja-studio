@@ -309,9 +309,3 @@
 .warnConfirm:hover  { background: #B45309; }
 .warnConfirm:active { transform: scale(0.97); transition-duration: 0.07s; }
 
-@media (prefers-reduced-motion: reduce) {
-  .overlay, .overlayExit, .card, .cardExit,
-  .warnOverlay, .warnCard { animation: none; }
-  .closeBtn, .editBtn, .discardBtn, .saveBtn,
-  .warnCancel, .warnConfirm { transition: none; }
-}

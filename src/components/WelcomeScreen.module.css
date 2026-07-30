@@ -115,10 +115,6 @@
   transform-origin: 100px 116px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bladeGroup { animation: none; }
-  .card { animation: none; }
-}
 
 .cardWide {
   width: 520px;

@@ -146,11 +146,3 @@
 .msg  { color: var(--tx-2); flex: 1; min-width: 0; word-break: break-word; overflow-wrap: anywhere; user-select: text; cursor: text; }
 .empty { font-size: 12px; color: var(--tx-6); padding: 8px 0; font-style: italic; }
 
-@media (prefers-reduced-motion: reduce) {
-  .console, .consoleDragging    { transition: none; }
-  .chevron, .chevronOpen        { transition: none; }
-  .body                         { animation: none; }
-  .dot                          { transition: none; }
-  .dotActive::after,
-  .dotError::after              { animation: none; }
-}

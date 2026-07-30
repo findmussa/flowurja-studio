@@ -42,10 +42,6 @@
   animation: bodyIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .welcomeOverlayExit { animation: none; }
-  .body               { animation: none; }
-}
 
 .sidebarWrap {
   flex-shrink: 0;
