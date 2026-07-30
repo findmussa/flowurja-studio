@@ -160,6 +160,28 @@ export default function App() {
     }
   }, [theme]);
 
+  // ── Mica conflict detection (Windows only) ────────────────────────────────
+  // Mica always follows the OS system theme. When the user forces the app to
+  // the opposite theme, Mica bleeds through with the wrong tone. Stamp
+  // data-mica-conflict on <html> so CSS can revert to solid backgrounds.
+  useEffect(() => {
+    if (platform !== "windows") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const check = () => {
+      const sysDark = mq.matches;
+      const conflict =
+        (theme === "dark" && !sysDark) ||
+        (theme === "light" && sysDark);
+      document.documentElement.toggleAttribute("data-mica-conflict", conflict);
+    };
+    check();
+    mq.addEventListener("change", check);
+    return () => {
+      mq.removeEventListener("change", check);
+      document.documentElement.removeAttribute("data-mica-conflict");
+    };
+  }, [theme]);
+
   // Handle sidebar navigation — intercept if current panel has unsaved changes
   const DIRTY_MODULES = ["openfast", "elastodyn", "aerodyn", "servodyn", "inflowwind", "seastate", "hydrodyn", "subdyn", "moordyn", "icedyn"];
   const handleModuleSelect = (id, tabHint) => {

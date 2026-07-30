@@ -111,3 +111,13 @@
 :global([data-platform="windows"]) .resizeHandle {
   width: 8px;   /* match macOS gap */
 }
+
+/* ── Mica conflict: app theme ≠ system theme ───────────────────────────────
+   Mica always reflects the OS theme. When they disagree, cover the transparent
+   areas with solid backgrounds — identical to the no-Mica Windows fallback.  */
+:global([data-platform="windows"][data-mica="true"][data-mica-conflict]) .shell {
+  background: var(--bg-canvas-win);
+}
+:global([data-platform="windows"][data-mica="true"][data-mica-conflict]) .main {
+  background: var(--bg-base);
+}

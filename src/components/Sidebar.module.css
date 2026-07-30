@@ -60,6 +60,18 @@
     inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
+/* ── Mica conflict: revert to solid card — same as Windows without Mica ── */
+:global([data-platform="windows"][data-mica="true"][data-mica-conflict]) .inner {
+  background: var(--bg-base);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:
+    0 8px 28px rgba(0,0,0,0.16),
+    0 2px 6px  rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+  border-color: var(--bd-card);
+}
+
 /* ── Title area — drag region that reserves space for the native traffic lights.
    Traffic-light position (x=20 y=28 logical px from window origin) is set in
    lib.rs via WebviewWindowBuilder::traffic_light_position(), which places the
