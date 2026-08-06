@@ -72,6 +72,7 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
   const [sourceFst,        setSourceFst]        = useState("");
   const [siblingDirs,      setSiblingDirs]      = useState([]);
   const [siblingFiles,     setSiblingFiles]     = useState([]);
+  const [sourceInProject,  setSourceInProject]  = useState(false);
   const [adding,           setAdding]           = useState(false);
   const [error,            setError]            = useState("");
   const [closing,          setClosing]          = useState(false);
@@ -105,9 +106,12 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
     try {
       const file = await openDialog({ multiple: false, filters: [{ name: "OpenFAST", extensions: ["fst"] }] });
       if (!file) return;
-      const file2 = file.replace(/\\/g, "/");
+      const file2  = file.replace(/\\/g, "/");
+      const dir2   = file2.split("/").slice(0, -1).join("/");
+      const normProjDir = (project?.dir || "").replace(/\\/g, "/");
       setSourceFst(file2);
-      setSourceDir(file2.split("/").slice(0, -1).join("/"));
+      setSourceDir(dir2);
+      setSourceInProject(normProjDir !== "" && dir2.startsWith(normProjDir + "/"));
       setSiblingDirs([]);
       setSiblingFiles([]);
       const { siblingDirs: sibs, siblingFiles: sibFiles } = await scanModelDependencies(file2);
@@ -147,25 +151,33 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
         modelLabel  = selectedTemplate.name || modelDirName;
 
       } else if (modelMode === "import" && sourceDir && sourceFst) {
-        const fstDirName = sourceDir.split("/").pop();
-        const parentDir  = sourceDir.split("/").slice(0, -1).join("/");
-        await invoke("copy_dir", { src: sourceDir, dst: `${modelBaseDir}/${fstDirName}` });
-        for (const sib of siblingDirs) {
-          await invoke("copy_dir", { src: `${parentDir}/${sib}`, dst: `${modelBaseDir}/${sib}` });
+        const normSourceDir = sourceDir.replace(/\\/g, "/");
+        const normSourceFst = sourceFst.replace(/\\/g, "/");
+        const fstDirName    = normSourceDir.split("/").pop();
+
+        if (sourceInProject) {
+          // Already inside the project — register path directly, no copy needed.
+          modelFstAbs = normSourceFst;
+        } else {
+          // External source — copy the whole directory into model/.
+          const parentDir = normSourceDir.split("/").slice(0, -1).join("/");
+          await invoke("copy_dir", { src: normSourceDir, dst: `${modelBaseDir}/${fstDirName}` });
+          for (const sib of siblingDirs) {
+            await invoke("copy_dir", { src: `${parentDir}/${sib}`, dst: `${modelBaseDir}/${sib}` });
+          }
+          for (const fileName of siblingFiles) {
+            const content = await invoke("read_text_file", { path: `${parentDir}/${fileName}` });
+            await invoke("write_text_file", { path: `${modelBaseDir}/${fileName}`, content });
+          }
+          modelFstAbs = `${modelBaseDir}/${fstDirName}/${normSourceFst.split("/").pop()}`;
         }
-        for (const fileName of siblingFiles) {
-          const content = await invoke("read_text_file", { path: `${parentDir}/${fileName}` });
-          await invoke("write_text_file", { path: `${modelBaseDir}/${fileName}`, content });
-        }
-        const fstName = sourceFst.split("/").pop();
-        modelFstAbs = `${modelBaseDir}/${fstDirName}/${fstName}`;
-        modelId     = fstDirName;
-        modelLabel  = fstDirName;
+        modelId    = fstDirName;
+        modelLabel = fstDirName;
       }
 
       if (!modelFstAbs) return;
 
-      const fstRelative = modelFstAbs.replace(`${project.dir}/`, "");
+      const fstRelative = modelFstAbs.replace(`${project.dir.replace(/\\/g, "/")}/`, "");
       const modelEntry  = { id: modelId, label: modelLabel, fstPath: fstRelative };
 
       // Read + update .fws
@@ -290,7 +302,11 @@ export default function AddModelSheet({ project, onModelAdded, onClose }) {
             )
           ) : (
             <div className={s.importArea}>
-              <p className={s.importHint}>Select the folder containing the .fst file and its supporting input files. The entire directory will be copied into this project's <code>model/</code> folder.</p>
+              <p className={s.importHint}>
+                {sourceInProject
+                  ? "This file is already inside the project — it will be registered directly with no copying."
+                  : "Select the .fst file. If it is outside this project, the directory will be copied into the project's model/ folder."}
+              </p>
               <button className={s.browseBtn} onClick={handleBrowseFst}>
                 <FolderOpen size={14} strokeWidth={1.8} />
                 {sourceFst ? sourceFst.split("/").pop() : "Browse for .fst file…"}
