@@ -1339,9 +1339,12 @@ export default function ServoDynPanel({ onLog, project, filePathFromProject, onD
 
       {/* File bar */}
       <div className={[s.fileBar, filePath ? s.fileBarLoaded : ""].join(" ")}>
-        <span className={[s.filePath, filePath ? s.filePathSet : ""].join(" ")}>
-          {filePath || "No file — editing defaults (NREL 5 MW)"}
-        </span>
+        {filePath ? (
+          <>
+            <span className={s.loadedFileName}>{filePath.replace(/\\/g, "/").split("/").pop()}</span>
+            <span className={s.loadedFilePath}>{(() => { const pts = filePath.replace(/\\/g, "/").split("/"); return pts.length > 2 ? "…/" + pts.slice(-3, -1).join("/") : pts.slice(0, -1).join("/"); })()}</span>
+          </>
+        ) : <span className={s.filePath}>No file — editing defaults (NREL 5 MW)</span>}
         <span className={s.dirtyDot} style={{ opacity: isDirty ? 1 : 0 }} />
         <button className={[s.saveBtn, (!isDirty || simRunning) ? s.saveBtnInactive : ""].join(" ")}
           onClick={(!isDirty || simRunning) ? undefined : handleSave}

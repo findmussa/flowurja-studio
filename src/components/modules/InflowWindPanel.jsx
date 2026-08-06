@@ -1242,10 +1242,6 @@ export default function InflowWindPanel({
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const wt          = WIND_TYPES.find(t => t.value === p.WindType);
-  const displayPath = filePath
-    ? filePath.replace(/\\/g, "/").split("/").slice(-3).join("/")
-    : "";
-
   const stats = [
     { k: "Type",       v: wt?.label || "—" },
     { k: "Hub height", v: `${p.WindVziList} m` },
@@ -1297,11 +1293,12 @@ export default function InflowWindPanel({
 
       {/* ── File bar ───────────────────────────────────────────────────────── */}
       <div className={[s.fileBar, filePath ? s.fileBarLoaded : ""].join(" ")}>
-        <span className={`${s.filePath} ${filePath ? s.filePathSet : ""}`}>
-          {filePath
-            ? (displayPath || filePath.split("/").pop())
-            : "No file open — click Open .dat to load an existing file"}
-        </span>
+        {filePath ? (
+          <>
+            <span className={s.loadedFileName}>{filePath.replace(/\\/g, "/").split("/").pop()}</span>
+            <span className={s.loadedFilePath}>{(() => { const pts = filePath.replace(/\\/g, "/").split("/"); return pts.length > 2 ? "…/" + pts.slice(-3, -1).join("/") : pts.slice(0, -1).join("/"); })()}</span>
+          </>
+        ) : <span className={s.filePath}>No file open — click Open .dat to load an existing file</span>}
         <span className={s.dirtyDot} style={{ opacity: isDirty ? 1 : 0 }} title="Unsaved changes" />
         <button
           className={[s.saveBtn, (!isDirty || simRunning) ? s.saveBtnInactive : ""].join(" ")}

@@ -1597,9 +1597,12 @@ export default function SeaStatePanel({
 
       {/* File bar */}
       <div className={[s.fileBar, filePath ? s.fileBarLoaded : ""].join(" ")}>
-        <span className={[s.filePath, filePath ? s.filePathSet : ""].join(" ")}>
-          {filePath || "No file loaded — open a SeaState .dat file"}
-        </span>
+        {filePath ? (
+          <>
+            <span className={s.loadedFileName}>{filePath.replace(/\\/g, "/").split("/").pop()}</span>
+            <span className={s.loadedFilePath}>{(() => { const pts = filePath.replace(/\\/g, "/").split("/"); return pts.length > 2 ? "…/" + pts.slice(-3, -1).join("/") : pts.slice(0, -1).join("/"); })()}</span>
+          </>
+        ) : <span className={s.filePath}>No file loaded — open a SeaState .dat file</span>}
         <span className={s.dirtyDot} style={{ opacity: isDirty ? 1 : 0 }} />
         <button
           className={[s.saveBtn, (!isDirty || simRunning) ? s.saveBtnInactive : ""].join(" ")}
