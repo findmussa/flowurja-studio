@@ -155,14 +155,13 @@ function FwsFileIcon({ size = 14, className }) {
 
 // ── Turbine rotor icon — 3-blade top-down silhouette ──────────────────────────
 function TurbineRotorIcon({ size = 13, className }) {
-  const blade = "M6,5 C5.4,3.6 5.5,2.1 6,1.3 C6.5,2.1 6.6,3.6 6,5Z";
   return (
     <svg width={size} height={size} viewBox="0 0 12 12"
          fill="currentColor" aria-hidden="true" className={className}>
-      <path d={blade} />
-      <path d={blade} transform="rotate(120,6,6)" />
-      <path d={blade} transform="rotate(240,6,6)" />
-      <circle cx="6" cy="6" r="1.15" />
+      <ellipse cx="6" cy="3.1" rx="1.15" ry="2.05" />
+      <ellipse cx="6" cy="3.1" rx="1.15" ry="2.05" transform="rotate(120,6,6)" />
+      <ellipse cx="6" cy="3.1" rx="1.15" ry="2.05" transform="rotate(240,6,6)" />
+      <circle cx="6" cy="6" r="1.45" />
     </svg>
   );
 }
