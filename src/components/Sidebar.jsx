@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Gauge, Wind, Cloud, Zap, Activity, Cpu,
   Droplets, LineChart,
@@ -154,16 +154,54 @@ function FwsFileIcon({ size = 14, className }) {
 }
 
 // ── Model switcher item ────────────────────────────────────────────────────────
-function ModelItem({ model, isActive, canDelete, onClick, onDelete }) {
+function ModelItem({ model, isActive, canDelete, onClick, onDelete, onRename }) {
+  const [editing, setEditing] = useState(false);
+  const [draft,   setDraft]   = useState("");
+  const inputRef = useRef(null);
+
+  const startEdit = (e) => {
+    e.stopPropagation();
+    setDraft(model.label || model.id);
+    setEditing(true);
+  };
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select();
+  }, [editing]);
+
+  const commitEdit = () => {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== (model.label || model.id)) onRename(model.id, trimmed);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter")  { e.preventDefault(); commitEdit(); }
+    if (e.key === "Escape") { setEditing(false); }
+  };
+
   return (
     <li
       className={[s.modelItem, isActive ? s.modelItemActive : ""].join(" ")}
-      onClick={() => !isActive && onClick(model.id)}
-      title={model.label || model.id}
+      onClick={() => !isActive && !editing && onClick(model.id)}
+      title={editing ? undefined : (model.label || model.id)}
     >
-      {isActive && <span className={s.modelDotActive} />}
-      <span className={s.modelItemLabel}>{model.label || model.id}</span>
-      {canDelete && (
+      {editing ? (
+        <input
+          ref={inputRef}
+          className={s.modelRenameInput}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={handleKeyDown}
+          onClick={e => e.stopPropagation()}
+        />
+      ) : (
+        <span className={s.modelItemLabel} onDoubleClick={startEdit}>
+          {model.label || model.id}
+        </span>
+      )}
+      {!editing && canDelete && (
         <button
           className={s.modelDeleteBtn}
           title={`Remove ${model.label || model.id}`}
@@ -206,6 +244,7 @@ export default function Sidebar({
   onSwitchModel,
   onAddModel,
   onRemoveModel,
+  onRenameModel,
   onSettings,
 }) {
   const loadedFstName = moduleFiles?.fstPath
@@ -298,6 +337,7 @@ export default function Sidebar({
                       canDelete={models.length > 1}
                       onClick={onSwitchModel}
                       onDelete={onRemoveModel}
+                      onRename={onRenameModel}
                     />
                   ))}
                 </ul>

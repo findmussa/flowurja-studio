@@ -291,6 +291,27 @@ export default function App() {
     }
   }, [removeModelConfirm, deleteFiles, project]);
 
+  // Rename model label — updates .fus and React state
+  const handleRenameModel = useCallback(async (modelId, newLabel) => {
+    if (!project) return;
+    try {
+      const raw = await invoke("read_text_file", { path: project.fwsPath });
+      const fws = JSON.parse(raw);
+      fws.models = (fws.models || []).map(m =>
+        m.id === modelId ? { ...m, label: newLabel } : m
+      );
+      await invoke("write_text_file", { path: project.fwsPath, content: JSON.stringify(fws, null, 2) });
+      setProject(prev => ({
+        ...prev,
+        models: (prev.models || []).map(m =>
+          m.id === modelId ? { ...m, label: newLabel } : m
+        ),
+      }));
+    } catch (e) {
+      console.error("Rename model failed:", e);
+    }
+  }, [project]);
+
   // Called by AddModelSheet when a model has been copied + .fus updated
   const handleModelAdded = useCallback((modelEntry) => {
     setProject(prev => {
@@ -889,6 +910,7 @@ export default function App() {
             onSwitchModel={handleSwitchModel}
             onAddModel={() => setShowAddModel(true)}
             onRemoveModel={handleRemoveModel}
+            onRenameModel={handleRenameModel}
             onSettings={() => handleModuleSelect("settings")}
           />
         </div>

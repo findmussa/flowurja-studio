@@ -477,13 +477,19 @@
 .modelItem:hover .modelDeleteBtn { opacity: 1; }
 .modelDeleteBtn:hover { background: rgba(239,68,68,0.12); color: #EF4444; }
 
-.modelDotActive {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10B981;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 1.5px rgba(16,185,129,0.25);
+.modelRenameInput {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--tx-1);
+  background: var(--bg-base);
+  border: 1px solid var(--bd-focus, #6366F1);
+  border-radius: 4px;
+  padding: 1px 5px;
+  outline: none;
+  font-family: inherit;
 }
 
 
