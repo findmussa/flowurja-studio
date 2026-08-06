@@ -477,6 +477,12 @@
 .modelItem:hover .modelDeleteBtn { opacity: 1; }
 .modelDeleteBtn:hover { background: rgba(239,68,68,0.12); color: #EF4444; }
 
+.modelRotorIcon {
+  flex-shrink: 0;
+  color: var(--c-openfast);
+  opacity: 0.85;
+}
+
 .modelRenameInput {
   flex: 1;
   min-width: 0;

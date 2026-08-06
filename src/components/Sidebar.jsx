@@ -153,6 +153,20 @@ function FwsFileIcon({ size = 14, className }) {
   );
 }
 
+// ── Turbine rotor icon — 3-blade top-down silhouette ──────────────────────────
+function TurbineRotorIcon({ size = 10, className }) {
+  const blade = "M6,5 C5.4,3.6 5.5,2.1 6,1.3 C6.5,2.1 6.6,3.6 6,5Z";
+  return (
+    <svg width={size} height={size} viewBox="0 0 12 12"
+         fill="currentColor" aria-hidden="true" className={className}>
+      <path d={blade} />
+      <path d={blade} transform="rotate(120,6,6)" />
+      <path d={blade} transform="rotate(240,6,6)" />
+      <circle cx="6" cy="6" r="1.15" />
+    </svg>
+  );
+}
+
 // ── Model switcher item ────────────────────────────────────────────────────────
 function ModelItem({ model, isActive, canDelete, onClick, onDelete, onRename }) {
   const [editing, setEditing] = useState(false);
@@ -186,6 +200,7 @@ function ModelItem({ model, isActive, canDelete, onClick, onDelete, onRename }) 
       onClick={() => !isActive && !editing && onClick(model.id)}
       title={editing ? undefined : (model.label || model.id)}
     >
+      {isActive && !editing && <TurbineRotorIcon className={s.modelRotorIcon} />}
       {editing ? (
         <input
           ref={inputRef}
