@@ -4,7 +4,7 @@ import { Settings, Cpu, Info, RefreshCw, ExternalLink } from "lucide-react";
 import BinaryRow from "../BinaryRow";
 import { useBinarySettings } from "../../hooks/useBinarySettings";
 
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.1.1";
 const OF_COMPAT   = "4.2.0";
 const TS_COMPAT   = "4.2.0";
 

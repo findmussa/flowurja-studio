@@ -1,6 +1,6 @@
 {
   "name": "flowurja-studio",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "OpenFAST & TurbSim desktop workflow environment",
   "type": "module",
   "scripts": {
